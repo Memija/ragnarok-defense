@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ragnarok Defense</title>
+  </head>
+  <body>
+    <div id="app-layout">
+      <!-- Settings Button & Modal -->
+      <button id="settings-btn" class="settings-btn" aria-label="Settings">⚙️</button>
+
+      <div id="settings-modal" class="settings-modal hidden">
+        <div class="settings-modal-content">
+          <button id="close-settings-btn" class="close-btn">&times;</button>
+          
+          <div class="logo">
+            <img src="/assets/logo.png" alt="Logo" class="logo-img" />
+            <span data-i18n="title">Ragnarok Defense</span>
+          </div>
+          
+          <div class="settings-row">
+            <span>Language</span>
+            <div class="custom-select" id="lang-select">
+              <div class="select-selected">
+                <img src="https://flagcdn.com/24x18/gb.png" alt="EN" /> <span>English</span>
+              </div>
+              <div class="select-items select-hide">
+                <div data-lang="en"><img src="https://flagcdn.com/24x18/gb.png" alt="EN" /> English</div>
+                <div data-lang="de"><img src="https://flagcdn.com/24x18/de.png" alt="DE" /> Deutsch</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <span>Theme</span>
+            <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme">☀️ Light Mode</button>
+          </div>
+
+          <div class="settings-footer">
+            <span data-i18n="version">Version</span>: v1.0.0
+          </div>
+        </div>
+      </div>
+
+      <div id="main-menu" class="active">
+        <canvas id="menu-canvas"></canvas>
+      </div>
+      <main id="game-container" class="hidden">
+      <div id="sidebar">
+        <div id="unit-selection">
+          <div class="unit-card" data-unit="sunflower" data-cost="50">
+            <div class="icon">🌻</div>
+            <div class="cost">☀️ 50</div>
+          </div>
+          <div class="unit-card" data-unit="peashooter" data-cost="100">
+            <div class="icon">🟢</div>
+            <div class="cost">☀️ 100</div>
+          </div>
+          <div class="unit-card" data-unit="snowpea" data-cost="175">
+            <div class="icon">❄️</div>
+            <div class="cost">☀️ 175</div>
+          </div>
+          <div class="unit-card" data-unit="repeater" data-cost="200">
+            <div class="icon">🌿</div>
+            <div class="cost">☀️ 200</div>
+          </div>
+          <div class="unit-card" data-unit="wallnut" data-cost="50">
+            <div class="icon">🛡️</div>
+            <div class="cost">☀️ 50</div>
+          </div>
+          <div class="unit-card" data-unit="potatomine" data-cost="25">
+            <div class="icon">🥔</div>
+            <div class="cost">☀️ 25</div>
+          </div>
+          <div class="unit-card" data-unit="chomper" data-cost="150">
+            <div class="icon">🪴</div>
+            <div class="cost">☀️ 150</div>
+          </div>
+          <div class="unit-card" data-unit="cherrybomb" data-cost="150">
+            <div class="icon">🍒</div>
+            <div class="cost">☀️ 150</div>
+          </div>
+          <div class="unit-card" data-unit="torchwood" data-cost="175">
+            <div class="icon">🔥</div>
+            <div class="cost">☀️ 175</div>
+          </div>
+          <div class="unit-card" data-unit="kernelpult" data-cost="100">
+            <div class="icon">🌽</div>
+            <div class="cost">☀️ 100</div>
+          </div>
+          <div class="unit-card shovel-card" data-unit="shovel" data-cost="0" style="margin-top: auto; border-color: #f44336; background: rgba(244, 67, 54, 0.1);">
+            <div class="icon">⛏️</div>
+            <div class="cost" style="border-color: #f44336; color: #ffcdd2;" data-i18n="dig">DIG</div>
+          </div>
+        </div>
+      </div>
+      <div id="game-content">
+        <div id="ui-top-bar">
+          <button id="return-menu-btn" class="return-btn">✦ Return to Realms</button>
+          <div id="active-realm-badge" class="realm-badge">
+            <span id="realm-icon">❄️</span>
+            <span id="realm-name">JÖTUNHEIM</span>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div id="resource-counter"><span data-i18n="sun">Sun</span>: <span id="sun-count">50</span></div>
+          <div id="level-counter">
+            <button id="level-down">-</button>
+            <span data-i18n="level">Level</span>: <span id="level-display">1</span>
+            <button id="level-up">+</button>
+          </div>
+        </div>
+        <canvas id="game-canvas" width="900" height="500"></canvas>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
