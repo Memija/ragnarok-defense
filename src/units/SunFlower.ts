@@ -1,5 +1,6 @@
 import { Defender } from '../entities/Defender';
 import { Game } from '../engine/Game';
+import { SoundManager } from '../engine/SoundManager';
 
 export class SunFlower extends Defender {
   produceTimer: number = 0;
@@ -16,6 +17,9 @@ export class SunFlower extends Defender {
       this.produceTimer = 0;
       game.sun += 25; 
       game.updateUI();
+      game.addFloatingText(this.x + this.width / 2, this.y, '+25 ☀️', '#ffd54f', true);
+      game.particles.emit(this.x + this.width / 2, this.y + 10, '#ffeb3b', 12, 4, 3, 400);
+      SoundManager.getInstance().playSun();
     }
   }
 

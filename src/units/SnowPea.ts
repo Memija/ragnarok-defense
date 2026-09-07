@@ -1,6 +1,7 @@
 import { Defender } from '../entities/Defender';
 import { Game } from '../engine/Game';
 import { SnowProjectile } from '../entities/SnowProjectile';
+import { SoundManager } from '../engine/SoundManager';
 
 export class SnowPea extends Defender {
   fireTimer: number = 0;
@@ -22,6 +23,7 @@ export class SnowPea extends Defender {
       if (isZombieInRow) {
         this.fireTimer = 0;
         game.projectiles.push(new SnowProjectile(this.x + this.width, this.y + 10, this.row));
+        SoundManager.getInstance().playShoot('ice');
         this.recoilX = -10; 
       }
     }

@@ -2,6 +2,7 @@ import { Defender } from '../entities/Defender';
 import { Game } from '../engine/Game';
 import { Kernel } from './Kernel';
 import { Butter } from './Butter';
+import { SoundManager } from '../engine/SoundManager';
 
 export class KernelPult extends Defender {
   fireTimer: number = 0;
@@ -25,8 +26,10 @@ export class KernelPult extends Defender {
         
         if (isButter) {
            game.projectiles.push(new Butter(this.x + this.width, this.y + 10, this.row));
+           SoundManager.getInstance().playShoot('butter');
         } else {
            game.projectiles.push(new Kernel(this.x + this.width, this.y + 10, this.row));
+           SoundManager.getInstance().playShoot('pea');
         }
         
         this.recoilX = -15;

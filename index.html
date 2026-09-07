@@ -2,116 +2,276 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ragnarok Defense</title>
+    <title>Ragnarok Defense — Defend the Nine Realms</title>
+    
+    <!-- Google Fonts: Nordic Mythic & Modern Game UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700;900&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <style>
+      /* Prevent FOUC (Flash of Unstyled Content) during load */
+      body { margin: 0; background-color: #0c1017; overflow: hidden; }
+      #app-layout { opacity: 0; transition: opacity 0.4s ease-in-out; }
+      .hidden { display: none !important; }
+    </style>
   </head>
   <body>
     <div id="app-layout">
-      <!-- Settings Button & Modal -->
-      <button id="settings-btn" class="settings-btn" aria-label="Settings">⚙️</button>
+      <!-- Ornate Settings & Sound Buttons -->
+      <div class="top-action-buttons">
+        <button id="sound-toggle" class="sound-toggle-btn" aria-label="Toggle Sound" title="Toggle Sound (M)" data-i18n-title="toggleSound" data-i18n-aria="toggleSound">
+          <span class="sound-icon">🔊</span>
+          <span class="settings-pulse"></span>
+        </button>
+        <button id="settings-btn" class="settings-btn" aria-label="Settings" title="Game Settings" data-i18n-title="gameSettings" data-i18n-aria="settings">
+          <span class="settings-gem">⚙️</span>
+          <span class="settings-pulse"></span>
+        </button>
+      </div>
 
+      <!-- Ancient Runic Settings Tablet Modal -->
       <div id="settings-modal" class="settings-modal hidden">
+        <div class="settings-modal-backdrop"></div>
         <div class="settings-modal-content">
-          <button id="close-settings-btn" class="close-btn">&times;</button>
+          <button id="close-settings-btn" class="close-btn" aria-label="Close Settings" title="Close Settings" data-i18n-title="closeSettings" data-i18n-aria="closeSettings">&times;</button>
           
-          <div class="logo">
-            <img src="/assets/logo.png" alt="Logo" class="logo-img" />
-            <span data-i18n="title">Ragnarok Defense</span>
+          <div class="modal-header">
+            <div class="runic-tag">ᛟ ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ ᛟ</div>
+            <div class="logo">
+              <span class="logo-title" data-i18n="title">Ragnarok Defense</span>
+            </div>
+            <div class="gold-divider"><span>✧ ᚱ ✧</span></div>
           </div>
           
-          <div class="settings-row">
-            <span>Language</span>
-            <div class="custom-select" id="lang-select">
-              <div class="select-selected">
-                <img src="https://flagcdn.com/24x18/gb.png" alt="EN" /> <span>English</span>
+          <div class="settings-body">
+            <div class="settings-row">
+              <div class="setting-label-group">
+                <span class="setting-icon">🌐</span>
+                <span class="setting-name" data-i18n="language">Language</span>
               </div>
-              <div class="select-items select-hide">
-                <div data-lang="en"><img src="https://flagcdn.com/24x18/gb.png" alt="EN" /> English</div>
-                <div data-lang="de"><img src="https://flagcdn.com/24x18/de.png" alt="DE" /> Deutsch</div>
+              <div class="custom-select" id="lang-select">
+                <div class="select-selected">
+                  <img src="/flags/gb.png" alt="EN" /> <span>English</span>
+                </div>
+                <div class="select-items select-hide">
+                  <div data-lang="en"><img src="/flags/gb.png" alt="EN" /> English</div>
+                  <div data-lang="de"><img src="/flags/de.png" alt="DE" /> Deutsch</div>
+                  <div data-lang="id"><img src="/flags/id.png" alt="ID" /> Bahasa Indonesia</div>
+                  <div data-lang="bs"><img src="/flags/ba.png" alt="BA" /> Bosanski</div>
+                  <div data-lang="pl"><img src="/flags/pl.png" alt="PL" /> Polski</div>
+                  <div data-lang="sr-Cyrl"><img src="/flags/rs.png" alt="RS" /> Српски</div>
+                </div>
               </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="setting-label-group">
+                <span class="setting-icon">🎨</span>
+                <span class="setting-name" data-i18n="theme">Theme</span>
+              </div>
+              <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme">
+                <span class="theme-btn-text">☀️ Light Mode</span>
+              </button>
             </div>
           </div>
 
-          <div class="settings-row">
-            <span>Theme</span>
-            <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme">☀️ Light Mode</button>
-          </div>
-
           <div class="settings-footer">
-            <span data-i18n="version">Version</span>: v1.0.0
+            <div class="footer-badge">
+              <span data-i18n="version">Version</span> <span class="ver-num">1.0.0</span>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Main Menu (Yggdrasil World Tree) -->
       <div id="main-menu" class="active">
+        <div class="main-menu-header">
+          <div class="runic-banner">ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ</div>
+          <h1 class="main-title" data-i18n="mainTitle">Ragnarök Defense</h1>
+          <p class="main-subtitle" data-i18n="mainSubtitle">❄ Defend Yggdrasil against Fimbulwinter ❄</p>
+        </div>
         <canvas id="menu-canvas"></canvas>
       </div>
-      <main id="game-container" class="hidden">
-      <div id="sidebar">
-        <div id="unit-selection">
-          <div class="unit-card" data-unit="sunflower" data-cost="50">
-            <div class="icon">🌻</div>
-            <div class="cost">☀️ 50</div>
+
+      <!-- Svartalfheim Map Menu -->
+      <div id="map-menu" class="hidden">
+        <button id="return-from-map-btn" class="return-btn tree-return-btn" title="Return to Yggdrasil World Tree" aria-label="Return to Yggdrasil" data-i18n-title="returnToYggdrasilTooltip" data-i18n-aria="returnToYggdrasil">
+          <span class="btn-corner-rune tl">ᛟ</span>
+          <span class="btn-corner-rune br">ᛟ</span>
+
+          <div class="tree-portal-glyph">
+            <span class="glyph-arrow">‹</span>
+            <div class="tree-icon-frame">
+              <svg viewBox="0 0 24 24" class="yggdrasil-tree-svg" fill="none" stroke="currentColor">
+                <path d="M12 22V13M12 13C12 13 8 10 5 11M12 13C12 13 16 10 19 11M12 9C12 9 8 7 6 4M12 9C12 9 16 7 18 4M12 13V4.5M12 4.5C10 2.5 8 1.5 12 1.5C16 1.5 14 2.5 12 4.5M12 22C10 22 7 21 5.5 18M12 22C14 22 17 21 18.5 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
           </div>
-          <div class="unit-card" data-unit="peashooter" data-cost="100">
-            <div class="icon">🟢</div>
-            <div class="cost">☀️ 100</div>
-          </div>
-          <div class="unit-card" data-unit="snowpea" data-cost="175">
-            <div class="icon">❄️</div>
-            <div class="cost">☀️ 175</div>
-          </div>
-          <div class="unit-card" data-unit="repeater" data-cost="200">
-            <div class="icon">🌿</div>
-            <div class="cost">☀️ 200</div>
-          </div>
-          <div class="unit-card" data-unit="wallnut" data-cost="50">
-            <div class="icon">🛡️</div>
-            <div class="cost">☀️ 50</div>
-          </div>
-          <div class="unit-card" data-unit="potatomine" data-cost="25">
-            <div class="icon">🥔</div>
-            <div class="cost">☀️ 25</div>
-          </div>
-          <div class="unit-card" data-unit="chomper" data-cost="150">
-            <div class="icon">🪴</div>
-            <div class="cost">☀️ 150</div>
-          </div>
-          <div class="unit-card" data-unit="cherrybomb" data-cost="150">
-            <div class="icon">🍒</div>
-            <div class="cost">☀️ 150</div>
-          </div>
-          <div class="unit-card" data-unit="torchwood" data-cost="175">
-            <div class="icon">🔥</div>
-            <div class="cost">☀️ 175</div>
-          </div>
-          <div class="unit-card" data-unit="kernelpult" data-cost="100">
-            <div class="icon">🌽</div>
-            <div class="cost">☀️ 100</div>
-          </div>
-          <div class="unit-card shovel-card" data-unit="shovel" data-cost="0" style="margin-top: auto; border-color: #f44336; background: rgba(244, 67, 54, 0.1);">
-            <div class="icon">⛏️</div>
-            <div class="cost" style="border-color: #f44336; color: #ffcdd2;" data-i18n="dig">DIG</div>
-          </div>
-        </div>
+
+          <span class="btn-text" data-i18n="returnToYggdrasil">Return to Yggdrasil</span>
+          <span class="return-btn-flourish">✧</span>
+          <div class="btn-shimmer-sweep"></div>
+        </button>
+        <canvas id="map-canvas"></canvas>
       </div>
-      <div id="game-content">
-        <div id="ui-top-bar">
-          <button id="return-menu-btn" class="return-btn">✦ Return to Realms</button>
-          <div id="active-realm-badge" class="realm-badge">
-            <span id="realm-icon">❄️</span>
-            <span id="realm-name">JÖTUNHEIM</span>
+
+      <!-- Game Container & Battle HUD -->
+      <main id="game-container" class="hidden">
+        <aside id="sidebar">
+          <div class="sidebar-header">
+            <span class="sidebar-title">Defenders</span>
           </div>
-          <div style="flex-grow: 1;"></div>
-          <div id="resource-counter"><span data-i18n="sun">Sun</span>: <span id="sun-count">50</span></div>
-          <div id="level-counter">
-            <button id="level-down">-</button>
-            <span data-i18n="level">Level</span>: <span id="level-display">1</span>
-            <button id="level-up">+</button>
+          <div id="unit-selection">
+            <div class="unit-card" data-unit="sunflower" data-cost="50" data-tooltip="Sunflower: Generates golden Sol energy over time">
+              <span class="hotkey-badge">1</span>
+              <div class="card-art">
+                <span class="icon">🌻</span>
+              </div>
+              <div class="unit-name">Solflower</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 50</div>
+            </div>
+
+            <div class="unit-card" data-unit="peashooter" data-cost="100" data-tooltip="Peashooter: Fires mystic kinetic orbs at invaders">
+              <span class="hotkey-badge">2</span>
+              <div class="card-art">
+                <span class="icon">🟢</span>
+              </div>
+              <div class="unit-name">Peashooter</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 100</div>
+            </div>
+
+            <div class="unit-card" data-unit="snowpea" data-cost="175" data-tooltip="Snow Pea: Fires frost shards that slow enemy advance">
+              <span class="hotkey-badge">3</span>
+              <div class="card-art">
+                <span class="icon">❄️</span>
+              </div>
+              <div class="unit-name">Snow Pea</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 175</div>
+            </div>
+
+            <div class="unit-card" data-unit="repeater" data-cost="200" data-tooltip="Repeater: Rapidly fires twin projectiles in succession">
+              <span class="hotkey-badge">4</span>
+              <div class="card-art">
+                <span class="icon">🌿</span>
+              </div>
+              <div class="unit-name">Repeater</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 200</div>
+            </div>
+
+            <div class="unit-card" data-unit="wallnut" data-cost="50" data-tooltip="Wall-nut: Sturdy barricade with high defensive vitality">
+              <span class="hotkey-badge">5</span>
+              <div class="card-art">
+                <span class="icon">🛡️</span>
+              </div>
+              <div class="unit-name">Wall-nut</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 50</div>
+            </div>
+
+            <div class="unit-card" data-unit="potatomine" data-cost="25" data-tooltip="Potato Mine: Arms underground and explodes on contact">
+              <span class="hotkey-badge">6</span>
+              <div class="card-art">
+                <span class="icon">🥔</span>
+              </div>
+              <div class="unit-name">Mine</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 25</div>
+            </div>
+
+            <div class="unit-card" data-unit="chomper" data-cost="150" data-tooltip="Chomper: Devours nearby enemies whole in one bite">
+              <span class="hotkey-badge">7</span>
+              <div class="card-art">
+                <span class="icon">🪴</span>
+              </div>
+              <div class="unit-name">Chomper</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 150</div>
+            </div>
+
+            <div class="unit-card" data-unit="cherrybomb" data-cost="150" data-tooltip="Cherry Bomb: Detonates instantly in a devastating 3x3 blast">
+              <span class="hotkey-badge">8</span>
+              <div class="card-art">
+                <span class="icon">🍒</span>
+              </div>
+              <div class="unit-name">Cherry Bomb</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 150</div>
+            </div>
+
+            <div class="unit-card" data-unit="torchwood" data-cost="175" data-tooltip="Torchwood: Ignites passing projectiles into flaming fury">
+              <span class="hotkey-badge">9</span>
+              <div class="card-art">
+                <span class="icon">🔥</span>
+              </div>
+              <div class="unit-name">Torchwood</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 175</div>
+            </div>
+
+            <div class="unit-card" data-unit="kernelpult" data-cost="100" data-tooltip="Kernel-pult: Lobs corn kernels and immobilizing butter">
+              <span class="hotkey-badge">0</span>
+              <div class="card-art">
+                <span class="icon">🌽</span>
+              </div>
+              <div class="unit-name">Kernel-pult</div>
+              <div class="cost"><span class="sun-icon">☀️</span> 100</div>
+            </div>
+
+            <div class="unit-card shovel-card" data-unit="shovel" data-cost="0" data-tooltip="Demolish: Clear a defender to free up battlefield space">
+              <span class="hotkey-badge">D</span>
+              <div class="card-art">
+                <span class="icon">⛏️</span>
+              </div>
+              <div class="unit-name" data-i18n="dig">Dig</div>
+              <div class="cost shovel-cost">Remove</div>
+            </div>
+          </div>
+        </aside>
+
+        <div id="game-content">
+          <header id="ui-top-bar">
+            <button id="return-menu-btn" class="return-btn" title="Return to Realm Selection" aria-label="Return to Realm Selection" data-i18n-title="returnToRealms" data-i18n-aria="returnToRealms">
+              <span class="btn-icon">«</span>
+              <span class="btn-text" data-i18n="realms">Realms</span>
+            </button>
+
+            <div id="active-realm-badge" class="realm-badge">
+              <div class="realm-crest">
+                <span id="realm-icon">❄️</span>
+              </div>
+              <div class="realm-text-group">
+                <span class="realm-subtext">Current Realm</span>
+                <span id="realm-name">Jötunheim</span>
+              </div>
+            </div>
+
+            <div class="top-bar-spacer"></div>
+
+            <div id="resource-counter" class="hud-stat-box">
+              <div class="sol-talisman">
+                <span class="sol-ray"></span>
+                <span class="sol-icon">☀️</span>
+              </div>
+              <div class="stat-info">
+                <span class="stat-label" data-i18n="sun">Sol Energy</span>
+                <span id="sun-count" class="stat-value">50</span>
+              </div>
+            </div>
+
+            <div id="level-counter" class="hud-stat-box">
+              <div class="stat-info">
+                <span class="stat-label" data-i18n="level">Level</span>
+                <div class="level-btn-group">
+                  <button id="level-down" class="lvl-btn" aria-label="Decrease Level">−</button>
+                  <span id="level-display" class="stat-value">1</span>
+                  <button id="level-up" class="lvl-btn" aria-label="Increase Level">+</button>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div class="canvas-wrapper">
+            <canvas id="game-canvas" width="900" height="500"></canvas>
           </div>
         </div>
-        <canvas id="game-canvas" width="900" height="500"></canvas>
       </main>
     </div>
     <script type="module" src="/src/main.ts"></script>

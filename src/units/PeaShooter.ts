@@ -1,6 +1,7 @@
 import { Defender } from '../entities/Defender';
 import { Game } from '../engine/Game';
 import { Pea } from './Pea';
+import { SoundManager } from '../engine/SoundManager';
 
 export class PeaShooter extends Defender {
   fireTimer: number = 0;
@@ -18,6 +19,7 @@ export class PeaShooter extends Defender {
       if (this.fireTimer >= this.fireRate) {
         this.fireTimer = 0;
         game.projectiles.push(new Pea(this.x + this.width, this.y + this.height / 2 - 10, this.row));
+        SoundManager.getInstance().playShoot('pea');
         
         this.recoilX = -15;
         this.scaleX = 0.8;

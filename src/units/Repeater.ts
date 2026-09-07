@@ -1,6 +1,7 @@
 import { Defender } from '../entities/Defender';
 import { Game } from '../engine/Game';
 import { Pea } from './Pea';
+import { SoundManager } from '../engine/SoundManager';
 
 export class Repeater extends Defender {
   fireTimer: number = 0;
@@ -24,6 +25,7 @@ export class Repeater extends Defender {
       if (this.secondFireTimer >= 150) { 
         this.isFiringSecond = false;
         game.projectiles.push(new Pea(this.x + this.width, this.y + 10, this.row));
+        SoundManager.getInstance().playShoot('pea');
         this.recoilX = -10;
       }
     } else if (this.fireTimer >= this.fireRate) {
@@ -31,6 +33,7 @@ export class Repeater extends Defender {
       if (isZombieInRow) {
         this.fireTimer = 0;
         game.projectiles.push(new Pea(this.x + this.width, this.y + 10, this.row));
+        SoundManager.getInstance().playShoot('pea');
         this.recoilX = -10;
         this.isFiringSecond = true;
         this.secondFireTimer = 0;
