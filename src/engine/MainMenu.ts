@@ -750,18 +750,19 @@ export class MainMenu {
     rimGrad.addColorStop(0.5, '#ca8a04');
     rimGrad.addColorStop(1, '#582d09');
     ctx.beginPath();
-    ctx.arc(rx, ry, oR + 2, 0, Math.PI * 2);
+    ctx.arc(rx, ry, Math.max(1, oR + 2), 0, Math.PI * 2);
     ctx.fillStyle = rimGrad;
     ctx.fill();
 
     // 4. Inner Elemental Core Sphere
-    const coreGrad = ctx.createRadialGradient(rx - oR * 0.3, ry - oR * 0.3, 0, rx, ry, oR);
+    const safeRadius = Math.max(1, oR);
+    const coreGrad = ctx.createRadialGradient(rx - oR * 0.3, ry - oR * 0.3, 0, rx, ry, safeRadius);
     coreGrad.addColorStop(0, '#ffffff');
     coreGrad.addColorStop(0.35, r.color);
     coreGrad.addColorStop(0.85, '#0f172a');
     coreGrad.addColorStop(1, '#020617');
     ctx.beginPath();
-    ctx.arc(rx, ry, oR - 1, 0, Math.PI * 2);
+    ctx.arc(rx, ry, Math.max(0.5, oR - 1), 0, Math.PI * 2);
     ctx.fillStyle = coreGrad;
     ctx.fill();
 
@@ -1586,8 +1587,8 @@ export class MainMenu {
     // === 10. NINE REALM MEDALLIONS ===
     for (const r of this.realms) {
       const rx = r.x * w, ry = r.y * h;
-      const bR = Math.min(w, h) * 0.042;
-      const oR = bR + bR * 0.25 * r.pulse;
+      const bR = Math.max(6, Math.min(w, h) * 0.042);
+      const oR = Math.max(6, bR + bR * 0.25 * r.pulse);
       r.pulse += ((this.hoveredRealm === r ? 1 : 0) - r.pulse) * 0.2;
 
       this.drawRealmMedallion(r, rx, ry, oR, time, isLight);

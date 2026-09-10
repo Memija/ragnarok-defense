@@ -23,6 +23,9 @@ export interface LocationNode {
   gemColor: string;
   accentColor: string;
   secondaryColor: string;
+  chapter?: string;
+  storyObjective?: string;
+  storyTip?: string;
 }
 
 export class MapMenu {
@@ -43,105 +46,125 @@ export class MapMenu {
     {
       id: 'althjofs-wheel',
       name: "Althjof's Wheel",
-      subtitle: 'Water Mining',
+      subtitle: 'Dwarven Watermill · Outer Canal',
+      chapter: 'Prologue · The River Gate',
       rune: 'ᚨ ᛚ ᛏ',
-      role: 'Hydraulic Extraction Mill',
+      role: 'Outer Canal Defense',
       threat: 'Normal',
       threatLevel: 1,
       level: 1,
       waves: 6,
       locked: false,
-      desc: 'The outer river waterwheel. Low monster activity along the waterways makes this the ideal breach point to deploy your initial vanguard.',
+      desc: 'Deep within the subterranean waterways of Svartalfheim, the colossal Great Wheel of master artisan Althjof churns the canal torrents to power the royal foundries of Nidavellir.\n\nAs the tremors of Ragnarök reverberate across the roots of Yggdrasil, an ominous advance threatens to breach the outer river gates. The dwarven architects have called upon you to secure the waterways and hold the threshold.',
+      storyObjective: "Hold the outer canal waterways and safeguard Althjof's Great Wheel from ruin.",
       px: 0.63, py: 0.48, radius: 34, hover: 0, type: 'mine', icon: 'waterwheel', gemColor: '#14b8a6',
       accentColor: '#14b8a6', secondaryColor: '#d97706'
     },
     {
       id: 'andvaris-falls',
       name: "Andvari's Falls",
-      subtitle: 'Cursed Waters',
+      subtitle: 'Mystical Waterfall Cavern',
+      chapter: 'Chapter II · Cursed Rapids',
       rune: 'ᚨ ᚾ ᛞ',
-      role: 'Mystical Waterfall Cavern',
+      role: 'Subterranean Rapids Chokepoint',
       threat: 'Normal',
       threatLevel: 2,
       level: 2,
       waves: 7,
       locked: true,
-      desc: 'Subterranean rapids plunging into crystal chasms. Waterborne raiders and serpent beasts contest the passage to the cursed gold hoards.',
+      desc: 'Subterranean rapids plunging into crystal chasms. Waterborne raiders and serpent beasts contest the passage to the cursed gold hoards. Hold the slippery stone bridge chokepoint before the waterways are overrun.',
+      storyObjective: 'Hold the central bridge against 7 waves of aquatic fiends',
+      storyTip: 'Pair rapid archers with slowing runes to control enemy flow.',
       px: 0.38, py: 0.82, radius: 34, hover: 0, type: 'waterfall', icon: 'waterfall', gemColor: '#38bdf8',
       accentColor: '#38bdf8', secondaryColor: '#0284c7'
     },
     {
       id: 'ivaldis-workshop',
       name: "Ivaldi's Workshop",
-      subtitle: 'Artifacts',
+      subtitle: 'Arcane Runecraft Sanctum',
+      chapter: 'Chapter III · The Divine Anvil',
       rune: 'ᛁ ᚹ ᚨ',
-      role: 'Arcane Runecraft Sanctum',
+      role: 'Ancient Celestial Forge',
       threat: 'Normal',
       threatLevel: 3,
       level: 3,
       waves: 8,
       locked: true,
-      desc: 'The sacred craft enclave of the Sons of Ivaldi. Corrupted shadow fiends attempt to desecrate the celestial forges where Gungnir was born.',
+      desc: 'The sacred craft enclave of the Sons of Ivaldi where legendary relics like Gungnir were forged. Corrupted shadow fiends swarm the crystal anvil chambers attempting to desecrate the divine armories.',
+      storyObjective: 'Safeguard the forge hall across 8 waves of shadow fiends',
+      storyTip: 'Upgrade your central towers to pierce heavily armored fiends.',
       px: 0.50, py: 0.24, radius: 32, hover: 0, type: 'city', icon: 'gungnir', gemColor: '#c084fc',
       accentColor: '#c084fc', secondaryColor: '#7e22ce'
     },
     {
       id: 'jarnsmida-quarry',
       name: 'Jarnsmida Quarry',
-      subtitle: 'Terraced Quarry',
+      subtitle: 'Terraced Iron Pit',
+      chapter: 'Chapter IV · The Iron Terraces',
       rune: 'ᛃ ᚨ ᚱ',
-      role: 'Terraced Iron Quarry',
+      role: 'Terraced Industrial Quarry',
       threat: 'Hard',
       threatLevel: 4,
       level: 4,
       waves: 9,
       locked: true,
-      desc: 'A colossal circular quarry descending in carved stone terraces. Armored iron-eaters and siege trolls have overrun the minecart rail lines.',
+      desc: 'A colossal circular quarry carved in descending terraces. Armored iron-eaters and heavy siege trolls have smashed the railway lines and storm the lifts toward the inner halls.',
+      storyObjective: 'Hold the spiral stone terraces against 9 siege waves',
+      storyTip: 'Splash damage and heavy ballistas are essential against grouped armored trolls.',
       px: 0.80, py: 0.28, radius: 34, hover: 0, type: 'mine', icon: 'minecart', gemColor: '#ea580c',
       accentColor: '#ea580c', secondaryColor: '#fb923c'
     },
     {
       id: 'dvalins-depths',
       name: "Dvalin's Depths",
-      subtitle: 'Deep Mines',
+      subtitle: 'Primordial Geode Shafts',
+      chapter: 'Chapter V · The Crystal Chasms',
       rune: 'ᛞ ᚹ ᚨ',
-      role: 'Primordial Geode Shafts',
+      role: 'Deep Crystal Mines',
       threat: 'Hard',
       threatLevel: 5,
       level: 5,
       waves: 10,
       locked: true,
-      desc: 'The colossal primordial mines of dwarf lord Dvalin. Vast timbered mine shafts and railway networks plunge into glowing crystal chasms.',
+      desc: 'The colossal primordial geode mines of dwarf lord Dvalin. Vast timbered mine shafts plunge into glowing crystal chasms where ancient subterranean horrors have awakened.',
+      storyObjective: 'Eliminate 10 waves of subterranean crystal horrors',
+      storyTip: 'Concentrate fire at the lift intersections to prevent breaches.',
       px: 0.91, py: 0.58, radius: 34, hover: 0, type: 'mine', icon: 'minehoist', gemColor: '#f59e0b',
       accentColor: '#f59e0b', secondaryColor: '#78350f'
     },
     {
       id: 'sindris-forge',
       name: "Sindri's Forge",
-      subtitle: 'Weaponsmiths',
+      subtitle: 'Legendary Dragonfire Armory',
+      chapter: 'Chapter VI · The Blast Furnaces',
       rune: 'ᛊ ᛁ ᚾ',
-      role: 'Legendary Weapon Forges',
+      role: 'Royal Weaponsmith Forges',
       threat: 'Extreme',
       threatLevel: 6,
       level: 6,
       waves: 11,
       locked: true,
-      desc: 'Twin blast furnaces roaring day and night. Elite dragonfire drakes and vanguard fiends launch an all-out assault on the divine armories.',
+      desc: 'Twin blast furnaces roaring day and night with divine dragonfire. Elite flame drakes and apocalyptic fiends launch an all-out assault on the divine armories.',
+      storyObjective: 'Protect the sacred furnaces through 11 extreme assault waves',
+      storyTip: 'Max-tier ballistas and tactical rune placement are required to survive.',
       px: 0.72, py: 0.68, radius: 36, hover: 0, type: 'city', icon: 'forge', gemColor: '#ff5722',
       accentColor: '#ff5722', secondaryColor: '#fbbf24'
     },
     {
       id: 'nidavellir',
       name: 'Nidavellir',
-      subtitle: 'The Capital',
+      subtitle: 'The Royal Dwarven Citadel',
+      chapter: 'Chapter VII · The Final Stand',
       rune: 'ᚲ ᚨ ᛈ',
-      role: 'Seat of Brokkr & Eitri · End Game',
+      role: 'Seat of Brokkr & Eitri · Capital',
       threat: 'Nightmare',
       threatLevel: 7,
       level: 7,
       waves: 12,
       locked: true,
-      desc: 'The great subterranean capital fortress. Massive stone keeps, fortified bastions, and iron portcullises face the final apocalyptic horde.',
+      desc: 'The great subterranean capital fortress. Massive stone keeps, fortified bastions, and the golden throne of Brokkr and Eitri face the final apocalyptic horde of Ragnarök.',
+      storyObjective: 'Survive 12 nightmare waves to defend the dwarven throne',
+      storyTip: 'Unleash every power, upgrade every bastion, and hold the citadel gate.',
       px: 0.20, py: 0.36, radius: 38, hover: 0, type: 'capital', icon: 'castle', gemColor: '#ffd700',
       accentColor: '#ffd700', secondaryColor: '#b45309'
     }
@@ -149,6 +172,8 @@ export class MapMenu {
 
   hoveredCity: LocationNode | null = null;
   lastHoveredCityId: string | null = null;
+  hoveredCard: boolean = false;
+  activeCardRect: { x: number; y: number; w: number; h: number; loc: LocationNode } | null = null;
   hoveredReturn = false;
   lastHoveredReturn = false;
 
@@ -228,6 +253,24 @@ export class MapMenu {
     }
   }
 
+  getActiveUnlockedCity(): LocationNode | null {
+    // If hovering an unlocked location, focus on it
+    if (this.hoveredCity && !this.hoveredCity.locked) {
+      return this.hoveredCity;
+    }
+    // If hovering a locked location, hide the card completely
+    if (this.hoveredCity && this.hoveredCity.locked) {
+      return null;
+    }
+    // If hovering over the active story card, maintain focus
+    if (this.hoveredCard && this.activeCardRect) {
+      return this.activeCardRect.loc;
+    }
+    // Default when no location is hovered: present the highest unlocked playable chapter!
+    const unlocked = this.locations.filter(l => !l.locked);
+    return unlocked.length > 0 ? unlocked[unlocked.length - 1] : null;
+  }
+
   loadBackgrounds() {
     this.bgDarkImg = new Image();
     this.bgDarkImg.src = '/assets/svartalfheim_map_dark.jpg';
@@ -243,20 +286,20 @@ export class MapMenu {
   }
 
   initParticles() {
-    // Waterfall spray particles (around lower-left cascade at x~0.38, y~0.85)
+    // Ambient water mist particles near Andvari's Falls
     for (let i = 0; i < 45; i++) {
       this.waterSprayParticles.push({
         x: 0.35 + Math.random() * 0.08,
-        y: 0.80 + Math.random() * 0.12,
-        vx: (Math.random() - 0.5) * 0.0006,
-        vy: -0.0008 - Math.random() * 0.0012,
-        size: 2.0 + Math.random() * 4.0,
-        alpha: 0.3 + Math.random() * 0.5,
-        life: Math.random()
+        y: 0.78 + Math.random() * 0.10,
+        vx: (Math.random() - 0.5) * 0.0008,
+        vy: -0.0008 - Math.random() * 0.0016,
+        size: 2.0 + Math.random() * 3.5,
+        alpha: 0.25 + Math.random() * 0.45,
+        phase: Math.random() * Math.PI * 2
       });
     }
 
-    // Forge embers (around Sindri's forge at x~0.72, y~0.68)
+    // Fiery volcanic embers rising from Sindri's Forge blast furnaces
     for (let i = 0; i < 50; i++) {
       this.forgeEmbers.push({
         x: 0.68 + Math.random() * 0.09,
@@ -297,6 +340,7 @@ export class MapMenu {
 
   onMouseLeave = () => {
     this.hoveredCity = null;
+    this.hoveredCard = false;
     this.hoveredReturn = false;
     this.lastHoveredCityId = null;
     this.canvas.style.cursor = 'default';
@@ -310,6 +354,7 @@ export class MapMenu {
     const h = rect.height;
 
     this.hoveredCity = null;
+    this.hoveredCard = false;
     this.hoveredReturn = false;
     this.canvas.style.cursor = 'default';
 
@@ -321,6 +366,15 @@ export class MapMenu {
         this.hoveredCity = loc;
         this.canvas.style.cursor = loc.locked ? 'not-allowed' : 'pointer';
         break;
+      }
+    }
+
+    // If not directly over a node, check if hovering over the active story card
+    if (!this.hoveredCity && this.activeCardRect && !this.activeCardRect.loc.locked) {
+      const { x, y, w: cw, h: ch } = this.activeCardRect;
+      if (mx >= x && mx <= x + cw && my >= y && my <= y + ch) {
+        this.hoveredCard = true;
+        this.canvas.style.cursor = 'pointer';
       }
     }
 
@@ -340,6 +394,14 @@ export class MapMenu {
       }
       SoundManager.getInstance().playClick();
       this.onSelectCity(this.hoveredCity.id);
+      return;
+    }
+
+    // Click on the story card action area / deploy button
+    if (this.hoveredCard && this.activeCardRect && !this.activeCardRect.loc.locked) {
+      SoundManager.getInstance().playClick();
+      this.onSelectCity(this.activeCardRect.loc.id);
+      return;
     }
   };
 
@@ -511,9 +573,12 @@ export class MapMenu {
       this.drawNamePlaque(ctx, lx, ly, r, loc, isLight);
     }
 
-    // ── 7. INTERACTIVE MISSION INTEL CARD ON HOVER ──
-    if (this.hoveredCity) {
-      this.drawMissionIntelCard(ctx, this.hoveredCity, w, h, isLight, time);
+    // ── 7. STORY MISSION BRIEFING CARD (HIDDEN FOR LOCKED PLACES) ──
+    const activeLoc = this.getActiveUnlockedCity();
+    if (activeLoc && !activeLoc.locked) {
+      this.drawMissionIntelCard(ctx, activeLoc, w, h, isLight, time);
+    } else {
+      this.activeCardRect = null;
     }
 
     // ── 8. MAJESTIC DWARVEN REALM TITLE BANNER ──
@@ -546,7 +611,7 @@ export class MapMenu {
     // Realm Title
     ctx.fillStyle = isLight ? '#1c1917' : '#fef08a';
     ctx.font = 'bold 15px "Outfit", "Inter", sans-serif';
-    ctx.fillText(`${t('world_svartalfheim')} · Niðavellir`, w / 2, bannerY + 35);
+    ctx.fillText(t('world_svartalfheim'), w / 2, bannerY + 35);
     ctx.restore();
   }
 
@@ -1680,6 +1745,35 @@ export class MapMenu {
     ctx.restore();
   }
 
+  // ── LOCALIZATION HELPERS FOR MAP NODES & INTEL ──
+  getLocalizedLocName(loc: LocationNode): string {
+    const key = `loc_${loc.id.replace(/-/g, '_')}_name`;
+    const val = t(key);
+    return val !== key ? val : loc.name;
+  }
+
+  getLocalizedChapter(loc: LocationNode): string {
+    const chapterPrefix = loc.chapter ? loc.chapter.split('·')[0].trim() : '';
+    if (chapterPrefix.toLowerCase() === 'prologue') {
+      return t('prologue');
+    }
+    const key = `loc_${loc.id.replace(/-/g, '_')}_chapter`;
+    const val = t(key);
+    return val !== key ? val : (chapterPrefix || t('prologue'));
+  }
+
+  getLocalizedDesc(loc: LocationNode): string {
+    const key = `loc_${loc.id.replace(/-/g, '_')}_desc`;
+    const val = t(key);
+    return val !== key ? val : loc.desc;
+  }
+
+  getLocalizedObjective(loc: LocationNode): string {
+    const key = `loc_${loc.id.replace(/-/g, '_')}_objective`;
+    const val = t(key);
+    return val !== key ? val : (loc.storyObjective || '');
+  }
+
   // ── INTEGRATED DWARVEN STONE NAME PLAQUE ──
   private drawNamePlaque(
     ctx: CanvasRenderingContext2D,
@@ -1691,7 +1785,15 @@ export class MapMenu {
   ) {
     ctx.save();
 
-    const plaqueW = Math.max(136, ctx.measureText(loc.name).width + 36);
+    const locName = this.getLocalizedLocName(loc);
+    ctx.font = `bold ${12.5 + loc.hover * 0.8}px "Outfit", "Inter", sans-serif`;
+    const nameW = ctx.measureText(locName).width;
+    const subText = loc.locked
+      ? `[ ${loc.rune} ] 🔒 ${t('level')} ${loc.level} · ${t('locked')}`
+      : `[ ${loc.rune} ] ✦ ${t('level')} ${loc.level} · ${t('unlocked')} ✦`;
+    ctx.font = `bold 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif`;
+    const subW = ctx.measureText(subText).width;
+    const plaqueW = Math.max(140, Math.max(nameW, subW) + 28);
     const plaqueH = 32;
     const px = lx - plaqueW * 0.5;
     const py = ly + 25;
@@ -1739,168 +1841,282 @@ export class MapMenu {
     ctx.font = `bold ${12.5 + loc.hover * 0.8}px "Outfit", "Inter", sans-serif`;
     ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
     ctx.shadowBlur = 4;
-    ctx.fillText(loc.name, lx, py + 11);
+    ctx.fillText(locName, lx, py + 11);
 
     // Rune Tag + Role Subtitle / Status
-    if (loc.locked) {
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = `700 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif`;
-      ctx.shadowBlur = 0;
-      ctx.fillText(`[ ${loc.rune} ] 🔒 Lvl ${loc.level} · Locked`, lx, py + 23);
-    } else {
-      ctx.fillStyle = '#fde047';
-      ctx.font = `bold 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif`;
-      ctx.shadowBlur = 0;
-      ctx.fillText(`[ ${loc.rune} ] ✦ Level 1 · Unlocked ✦`, lx, py + 23);
-    }
+    ctx.fillStyle = loc.locked ? '#fbbf24' : '#fde047';
+    ctx.font = `bold 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif`;
+    ctx.shadowBlur = 0;
+    ctx.fillText(subText, lx, py + 23);
 
     ctx.restore();
   }
 
-  // ── INTERACTIVE MISSION INTEL CARD (ON HOVER) ──
+  // ── IMMERSIVE STORY CHAPTER BRIEFING CARD ──
   drawMissionIntelCard(ctx: CanvasRenderingContext2D, loc: LocationNode, w: number, h: number, isLight: boolean, time: number) {
     ctx.save();
-    const cardW = 340;
-    const cardH = 190;
+    const cardW = Math.min(460, Math.max(400, w * 0.34));
+
+    const locName = this.getLocalizedLocName(loc);
+    const locChapter = this.getLocalizedChapter(loc);
+    const locDesc = this.getLocalizedDesc(loc);
+    const locObjective = this.getLocalizedObjective(loc);
+
+    // Measure narrative text height upfront to compute dynamic card height with guaranteed clearance
+    ctx.font = '12px "Outfit", "Inter", sans-serif';
+    const textH = this.measureWrappedTextHeight(ctx, locDesc, cardW - 44, 16.5, 6);
+
+    // Measure mandate objective height dynamically (handles 1 or 2 lines cleanly across all languages)
+    ctx.font = '500 11px "Outfit", "Inter", sans-serif';
+    const objH = this.measureWrappedTextHeight(ctx, locObjective, cardW - 60, 15, 0);
+    const boxH = Math.max(44, 25 + objH);
+    const btnH = 34;
+
+    // 60 (header & divider to narrative) + textH + 10 (margin) + boxH + 14 (margin) + btnH + 16 (bottom padding)
+    const cardH = Math.max(260, 60 + textH + 10 + boxH + 14 + btnH + 16);
 
     // Position card intelligently: prefer right of node, clamp inside canvas bounds
     let cardX = loc.px * w + loc.radius + 24;
-    if (cardX + cardW > w - 20) {
+    if (cardX + cardW > w - 24) {
       cardX = loc.px * w - loc.radius - cardW - 24;
     }
     // Strict boundary clamping so it NEVER clips off left or right
     cardX = Math.max(20, Math.min(w - cardW - 20, cardX));
 
     let cardY = loc.py * h - cardH * 0.5;
-    cardY = Math.max(75, Math.min(h - cardH - 35, cardY));
+    cardY = Math.max(70, Math.min(h - cardH - 16, cardY));
 
-    // Card drop shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.80)';
+    // Save hit test bounds for clicking / hovering the card
+    this.activeCardRect = { x: cardX, y: cardY, w: cardW, h: cardH, loc };
+
+    // 1. Deep Atmospheric Drop Shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.92)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+    ctx.fillStyle = 'rgba(10, 8, 7, 0.96)';
     ctx.beginPath();
-    ctx.roundRect(cardX + 6, cardY + 6, cardW, cardH, 10);
+    ctx.roundRect(cardX, cardY, cardW, cardH, 12);
     ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
 
-    // Card background slate
+    // 2. Card Background Slab: Multi-stop Obsidian Granite or Antique Parchment
     const cardGrad = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardH);
     if (isLight) {
-      cardGrad.addColorStop(0, '#fffbeb');
-      cardGrad.addColorStop(0.5, '#fef3c7');
-      cardGrad.addColorStop(1, '#fde68a');
+      cardGrad.addColorStop(0, '#fefce8');
+      cardGrad.addColorStop(0.3, '#fef3c7');
+      cardGrad.addColorStop(0.7, '#fde68a');
+      cardGrad.addColorStop(1, '#fed7aa');
     } else {
-      cardGrad.addColorStop(0, '#1c1917');
-      cardGrad.addColorStop(0.5, '#181412');
-      cardGrad.addColorStop(1, '#0c0a09');
+      cardGrad.addColorStop(0, '#1c1511');
+      cardGrad.addColorStop(0.25, '#16110e');
+      cardGrad.addColorStop(0.65, '#110d0a');
+      cardGrad.addColorStop(1, '#0c0907');
     }
     ctx.fillStyle = cardGrad;
     ctx.beginPath();
-    ctx.roundRect(cardX, cardY, cardW, cardH, 8);
+    ctx.roundRect(cardX, cardY, cardW, cardH, 12);
     ctx.fill();
 
-    // Ornate gold border with Nordic runic glow
+    // 2B. Subtle Cavern Vignette overlay inside card
+    const vignette = ctx.createRadialGradient(
+      cardX + cardW * 0.5, cardY + cardH * 0.45, cardW * 0.15,
+      cardX + cardW * 0.5, cardY + cardH * 0.45, cardW * 0.75
+    );
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, isLight ? 'rgba(180, 83, 9, 0.08)' : 'rgba(0, 0, 0, 0.55)');
+    ctx.fillStyle = vignette;
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, 12);
+    ctx.fill();
+
+    // 3. Ornate Double Gold Border with Nordic Runic Knotwork Glow
+    const borderColor = isLight ? '#b45309' : '#d4af37';
     ctx.lineWidth = 2;
-    ctx.strokeStyle = '#d4af37';
-    ctx.shadowColor = '#d4af37';
+    ctx.strokeStyle = borderColor;
+    ctx.shadowColor = loc.gemColor || borderColor;
     ctx.shadowBlur = 10;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Inner gold hairline border
+    // Inner fine filigree hairline border
     ctx.lineWidth = 0.8;
-    ctx.strokeStyle = isLight ? 'rgba(180, 83, 9, 0.4)' : 'rgba(212, 175, 55, 0.4)';
-    ctx.strokeRect(cardX + 5, cardY + 5, cardW - 10, cardH - 10);
+    ctx.strokeStyle = isLight ? 'rgba(180, 83, 9, 0.35)' : 'rgba(212, 175, 55, 0.35)';
+    ctx.strokeRect(cardX + 6, cardY + 6, cardW - 12, cardH - 12);
 
-    // Header: Rune Badge & Title
+    // Corner Runic Rivets & Nordic Brackets (ᛟ at four corners)
+    ctx.fillStyle = isLight ? '#92400e' : '#f59e0b';
+    ctx.font = '700 9px "Segoe UI Historic", "Segoe UI Symbol", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ᛟ', cardX + 13, cardY + 13);
+    ctx.fillText('ᛟ', cardX + cardW - 13, cardY + 13);
+    ctx.fillText('ᛟ', cardX + 13, cardY + cardH - 13);
+    ctx.fillText('ᛟ', cardX + cardW - 13, cardY + cardH - 13);
+
+    // 4. Single Clean Title Row (Title on left, Chapter tag on right)
     ctx.textAlign = 'left';
-    ctx.fillStyle = loc.gemColor;
-    ctx.font = 'bold 15px "Segoe UI Historic", "Segoe UI Symbol", "Outfit", sans-serif';
-    ctx.fillText(`[ ${loc.rune} ]`, cardX + 16, cardY + 28);
+    ctx.textBaseline = 'alphabetic';
 
-    ctx.fillStyle = isLight ? '#1c1917' : '#fef08a';
-    ctx.font = 'bold 16px "Outfit", "Inter", sans-serif';
-    ctx.fillText(loc.name, cardX + 70, cardY + 28);
+    ctx.fillStyle = isLight ? '#1c1917' : '#ffffff';
+    ctx.font = 'bold 21px "Cinzel", "Outfit", "Inter", serif';
+    ctx.shadowColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 5;
+    ctx.fillText(locName, cardX + 22, cardY + 34);
+    ctx.shadowBlur = 0;
 
-    // Subtitle & Role
-    ctx.fillStyle = isLight ? '#78350f' : '#d4af37';
-    ctx.font = '700 11px sans-serif';
-    ctx.fillText(loc.role, cardX + 16, cardY + 46);
+    // Chapter Tag on the right (eliminating redundant stacked titles)
+    ctx.textAlign = 'right';
+    ctx.fillStyle = isLight ? '#92400e' : '#f59e0b';
+    ctx.font = 'bold 11px "Cinzel", "Outfit", sans-serif';
+    const chapterTag = locChapter.toUpperCase();
+    ctx.fillText(`✦ ${chapterTag} ✦`, cardX + cardW - 22, cardY + 31);
 
-    // Decorative separator bar
-    ctx.strokeStyle = isLight ? '#d97706' : '#78350f';
+    // 5. Clean Gold Divider Line
+    const divY = cardY + 44;
+    const divGrad = ctx.createLinearGradient(cardX + 22, divY, cardX + cardW - 22, divY);
+    divGrad.addColorStop(0, 'rgba(212, 175, 55, 0.1)');
+    divGrad.addColorStop(0.5, isLight ? 'rgba(180, 83, 9, 0.65)' : 'rgba(212, 175, 55, 0.75)');
+    divGrad.addColorStop(1, 'rgba(212, 175, 55, 0.1)');
+    ctx.strokeStyle = divGrad;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(cardX + 16, cardY + 54);
-    ctx.lineTo(cardX + cardW - 16, cardY + 54);
+    ctx.moveTo(cardX + 22, divY);
+    ctx.lineTo(cardX + cardW - 22, divY);
     ctx.stroke();
 
-    // Lore Description
-    ctx.fillStyle = isLight ? '#451a03' : '#e7e5e4';
-    ctx.font = '11.5px sans-serif';
-    this.drawWrappedText(ctx, loc.desc, cardX + 16, cardY + 70, cardW - 32, 16);
+    // 6. Immersive Lore Narrative
+    ctx.textAlign = 'left';
+    ctx.fillStyle = isLight ? '#451a03' : '#fef3c7';
+    ctx.font = '12px "Outfit", "Inter", sans-serif';
+    const textEndY = this.drawWrappedText(ctx, locDesc, cardX + 22, cardY + 62, cardW - 44, 16.5, 6);
 
-    // Threat & Wave Defense Specs
-    const threatColors: Record<string, string> = {
-      Normal: '#22c55e',
-      Hard: '#f59e0b',
-      Extreme: '#f97316',
-      Nightmare: '#ef4444'
-    };
-    const tCol = threatColors[loc.threat] || '#f59e0b';
-    ctx.fillStyle = tCol;
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillText(`Threat: ${loc.threat} (Level ${loc.level}/7)`, cardX + 16, cardY + 134);
+    // 7. Carved Dwarven Mandate Plaque (Positioned strictly below narrative text)
+    const boxW = cardW - 36;
+    const boxX = cardX + 18;
+    const boxY = textEndY + 10;
 
-    ctx.fillStyle = isLight ? '#52525b' : '#a1a1aa';
-    ctx.font = '600 11px sans-serif';
-    ctx.fillText(`⚔️ ${loc.waves} Invasion Waves`, cardX + 184, cardY + 134);
+    // Slate backing for mandate
+    ctx.fillStyle = isLight ? 'rgba(217, 119, 6, 0.14)' : 'rgba(245, 158, 11, 0.09)';
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxH, 6);
+    ctx.fill();
 
-    // Action Inviting Call to Action / Locked Status Banner
-    if (loc.locked) {
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
-      ctx.beginPath();
-      ctx.roundRect(cardX + 8, cardY + cardH - 34, cardW - 16, 26, 4);
-      ctx.fill();
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
+    // Mandate border
+    ctx.strokeStyle = isLight ? 'rgba(180, 83, 9, 0.45)' : 'rgba(245, 158, 11, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#f87171';
-      ctx.font = 'bold 11px "Outfit", sans-serif';
-      ctx.fillText(`🔒 Locked — Complete Level ${loc.level - 1} to unlock 🔒`, cardX + cardW * 0.5, cardY + cardH - 17);
-    } else {
-      const pulse = Math.sin(time * 4) * 0.3 + 0.7;
-      ctx.fillStyle = isLight ? `rgba(180, 83, 9, ${0.15 + pulse * 0.1})` : `rgba(217, 119, 6, ${0.25 + pulse * 0.15})`;
-      ctx.beginPath();
-      ctx.roundRect(cardX + 8, cardY + cardH - 34, cardW - 16, 26, 4);
-      ctx.fill();
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = isLight ? '#92400e' : '#fde047';
-      ctx.font = 'bold 12px "Outfit", sans-serif';
-      ctx.fillText('▶ Click to deploy defenders ◀', cardX + cardW * 0.5, cardY + cardH - 17);
+    // Corner micro rivets on mandate
+    ctx.fillStyle = isLight ? '#b45309' : '#f59e0b';
+    for (const rx of [boxX + 5, boxX + boxW - 5]) {
+      for (const ry of [boxY + 5, boxY + boxH - 5]) {
+        ctx.beginPath();
+        ctx.arc(rx, ry, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
+
+    // Mandate Header Label
+    ctx.fillStyle = isLight ? '#92400e' : '#fde047';
+    ctx.font = 'bold 10px "Cinzel", "Outfit", sans-serif';
+    ctx.fillText(`ᛏ ${t('defense_mandate').toUpperCase()}`, boxX + 12, boxY + 16);
+
+    // Mandate Description (No wave counts, no enemy types, no tips!)
+    ctx.fillStyle = isLight ? '#292524' : '#e2e8f0';
+    ctx.font = '500 11px "Outfit", "Inter", sans-serif';
+    this.drawWrappedText(ctx, locObjective, boxX + 12, boxY + 31, boxW - 24, 14, 0);
+
+    // 8. Shortened, Majestic Call-to-Arms Action Button
+    const btnW = cardW - 36;
+    const btnX = cardX + 18;
+    const btnY = boxY + boxH + 14;
+    const pulse = Math.sin(time * 3.5) * 0.25 + 0.75;
+    const isBtnHovered = this.hoveredCard;
+
+    // Button Background: Deep Obsidian with warm ember gradient
+    const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
+    if (isLight) {
+      btnGrad.addColorStop(0, isBtnHovered ? '#f59e0b' : '#d97706');
+      btnGrad.addColorStop(1, isBtnHovered ? '#b45309' : '#92400e');
+    } else {
+      btnGrad.addColorStop(0, isBtnHovered ? 'rgba(217, 119, 6, 0.70)' : `rgba(180, 83, 9, ${0.30 + pulse * 0.12})`);
+      btnGrad.addColorStop(1, isBtnHovered ? 'rgba(120, 53, 15, 0.80)' : `rgba(69, 26, 3, ${0.40 + pulse * 0.14})`);
+    }
+    ctx.fillStyle = btnGrad;
+    ctx.beginPath();
+    ctx.roundRect(btnX, btnY, btnW, btnH, 6);
+    ctx.fill();
+
+    // Button Border: Burnished Gold with hover glow
+    ctx.strokeStyle = isBtnHovered ? '#fef08a' : '#d4af37';
+    ctx.lineWidth = isBtnHovered ? 2.0 : 1.4;
+    ctx.shadowColor = isBtnHovered ? '#fde047' : '#d4af37';
+    ctx.shadowBlur = isBtnHovered ? 12 : 5 * pulse;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Shortened Button Text
+    ctx.textAlign = 'center';
+    ctx.fillStyle = isLight ? '#ffffff' : (isBtnHovered ? '#ffffff' : '#fef08a');
+    ctx.font = 'bold 12.5px "Cinzel", "Outfit", sans-serif';
+    ctx.fillText(t('commence_defense').toUpperCase(), btnX + btnW * 0.5, btnY + 22);
 
     ctx.restore();
   }
 
-  drawWrappedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
-    const words = text.split(' ');
-    let line = '';
+  measureWrappedTextHeight(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, lineHeight: number, paragraphSpacing: number = 6): number {
+    const paragraphs = text.split('\n\n');
+    let totalH = 0;
+    for (let p = 0; p < paragraphs.length; p++) {
+      const words = paragraphs[p].replace(/\n/g, ' ').split(/\s+/);
+      let line = '';
+      let linesInParagraph = 0;
+      for (let n = 0; n < words.length; n++) {
+        if (!words[n]) continue;
+        const testLine = line ? `${line} ${words[n]}` : words[n];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && line) {
+          linesInParagraph++;
+          line = words[n];
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) linesInParagraph++;
+      totalH += linesInParagraph * lineHeight;
+      if (p < paragraphs.length - 1) totalH += paragraphSpacing;
+    }
+    return totalH;
+  }
+
+  drawWrappedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number, paragraphSpacing: number = 8): number {
+    const paragraphs = text.split('\n\n');
     let currY = y;
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + words[n] + ' ';
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && n > 0) {
+    for (let p = 0; p < paragraphs.length; p++) {
+      const words = paragraphs[p].replace(/\n/g, ' ').split(/\s+/);
+      let line = '';
+      for (let n = 0; n < words.length; n++) {
+        if (!words[n]) continue;
+        const testLine = line ? `${line} ${words[n]}` : words[n];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && line) {
+          ctx.fillText(line, x, currY);
+          line = words[n];
+          currY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) {
         ctx.fillText(line, x, currY);
-        line = words[n] + ' ';
         currY += lineHeight;
-      } else {
-        line = testLine;
+      }
+      if (p < paragraphs.length - 1) {
+        currY += paragraphSpacing;
       }
     }
-    ctx.fillText(line, x, currY);
+    return currY;
   }
 }

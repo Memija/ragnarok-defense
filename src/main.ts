@@ -3,7 +3,10 @@ import { Game } from './engine/Game';
 import { MainMenu } from './engine/MainMenu';
 import { MapMenu } from './engine/MapMenu';
 import { SoundManager } from './engine/SoundManager';
+import { DefenderSelectionModal } from './engine/DefenderSelectionModal';
+import { CITY_LEVELS } from './engine/DefenderRegistry';
 import { initUI } from './ui';
+import { t } from './i18n';
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d');
@@ -28,6 +31,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   const returnFromMapBtn = document.getElementById('return-from-map-btn');
   let game: Game | null = null;
   let mapMenu: MapMenu | null = null;
+  const defenderModal = new DefenderSelectionModal();
   
   let mainMenu: MainMenu;
 
@@ -57,9 +61,28 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
     }
   };
 
+  const openRosterForCurrentGame = () => {
+    if (!game) return;
+    defenderModal.open({
+      realm: game.realm,
+      city: game.city,
+      level: game.level,
+      initialSelected: game.selectedDefenders,
+      isMidGame: true,
+      onConfirm: (chosen) => {
+        if (game) {
+          game.updateLoadout(chosen);
+          if (game.gameState === 'victory') {
+            game.restartBattle();
+          }
+        }
+      }
+    });
+  };
+
   const startGame = (realm: string, city?: string) => {
     if (mainMenuDiv && gameContainer) {
-      document.body.className = `theme-${realm}`;
+      document.body.className = city ? `theme-${realm} location-${city}` : `theme-${realm}`;
       const realmNames: Record<string, { name: string; icon: string }> = {
         asgard:       { name: 'Asgard',       icon: '⚡' },
         alfheim:      { name: 'Alfheim',      icon: '✨' },
@@ -79,8 +102,13 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       // If a city is selected, we can append it to the realm name
       let displayName = info.name;
       if (city) {
-        const cityFormatted = city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
-        displayName = `${info.name} - ${cityFormatted}`;
+        const cityKey = `loc_${city.replace(/-/g, '_')}_name`;
+        const transCity = t(cityKey);
+        const cityFormatted = transCity !== cityKey ? transCity : city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const worldKey = `world_${realm}`;
+        const transWorld = t(worldKey);
+        const worldName = transWorld !== worldKey ? transWorld : info.name;
+        displayName = `${worldName} - ${cityFormatted}`;
       }
       
       if (realmNameEl) realmNameEl.textContent = displayName;
@@ -93,25 +121,54 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       mainMenuDiv.classList.remove('active');
       if (mapMenuDiv) mapMenuDiv.classList.add('hidden');
       gameContainer.classList.remove('hidden');
-      
-      setTimeout(() => {
-        const dpr = window.devicePixelRatio || 1;
-        const width = canvas.parentElement!.clientWidth;
-        const height = canvas.parentElement!.clientHeight - 80;
-        
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        ctx!.scale(dpr, dpr);
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
 
-        if (game) {
-          game.stop();
+      const targetLevel = city && CITY_LEVELS[city] ? CITY_LEVELS[city] : 1;
+      
+      // Offer defender selection before entering the battle based on level
+      defenderModal.open({
+        realm,
+        city,
+        level: targetLevel,
+        isMidGame: false,
+        onConfirm: (chosenDefenders) => {
+          setTimeout(() => {
+            const dpr = window.devicePixelRatio || 1;
+            const width = canvas.parentElement!.clientWidth;
+            const height = canvas.parentElement!.clientHeight - 80;
+            
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx!.scale(dpr, dpr);
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+
+            if (game) {
+              game.stop();
+            }
+            // Passing realm, city, chosenDefenders, targetLevel, and roster opener
+            game = new Game(canvas, ctx, realm, city, chosenDefenders, targetLevel, openRosterForCurrentGame);
+            game.start();
+          }, 50);
+        },
+        onCancel: () => {
+          // If cancelled on entry, return to previous menu
+          if (city && mapMenuDiv) {
+            gameContainer.classList.add('hidden');
+            mapMenuDiv.classList.remove('hidden');
+            resizeMenu();
+            if (mapMenu) mapMenu.start();
+          } else {
+            gameContainer.classList.add('hidden');
+            if (mainMenuDiv) {
+              mainMenuDiv.classList.remove('hidden');
+              mainMenuDiv.classList.add('active');
+              resizeMenu();
+              mainMenu.built = false;
+              mainMenu.start();
+            }
+          }
         }
-        // Passing both realm and city to game constructor
-        game = new Game(canvas, ctx, realm, city);
-        game.start();
-      }, 50);
+      });
     }
   };
 

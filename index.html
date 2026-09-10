@@ -86,6 +86,82 @@
         </div>
       </div>
 
+      <!-- Defender Selection Runic Modal -->
+      <div id="defender-modal" class="defender-modal hidden">
+        <div class="defender-modal-backdrop"></div>
+        <div class="defender-modal-content">
+          <button id="close-defender-btn" class="close-btn" aria-label="Cancel Selection" title="Cancel Selection">&times;</button>
+          
+          <div class="modal-header">
+            <div class="runic-tag">ᛟ ᚱ ᛟ ᛊ ᛏ ᛖ ᚱ ᛟ</div>
+            <div class="logo">
+              <span class="logo-title" data-i18n="chooseDefenders">Choose Your Defenders</span>
+            </div>
+            <p class="selection-subtitle" data-i18n="chooseDefendersSubtitle">Assemble your battle squad based on available level slots</p>
+            <div class="gold-divider"><span>✧ ᚱ ✧</span></div>
+          </div>
+
+          <!-- Capacity Bar & Slot Preview -->
+          <div class="selection-status-bar">
+            <div class="capacity-info">
+              <span class="capacity-label" data-i18n="squadCapacity">Squad Capacity:</span>
+              <span id="capacity-count" class="capacity-value">0 / 4</span>
+              <span class="capacity-level-badge" id="capacity-level-badge">Level 1</span>
+            </div>
+            <div class="equipped-slots" id="equipped-slots-preview">
+              <!-- Equipped defender tokens rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Category Filter Tabs -->
+          <div class="category-tabs" id="category-tabs">
+            <button class="cat-tab active" data-cat="all">
+              <span class="tab-icon">⚔️</span>
+              <span class="tab-label" data-i18n="catAll">All Roster</span>
+              <span class="tab-count">12</span>
+            </button>
+            <button class="cat-tab" data-cat="plants">
+              <span class="tab-icon">🌿</span>
+              <span class="tab-label" data-i18n="catPlants">Plants</span>
+              <span class="tab-count">4</span>
+            </button>
+            <button class="cat-tab" data-cat="towers">
+              <span class="tab-icon">🏰</span>
+              <span class="tab-label" data-i18n="catTowers">Towers</span>
+              <span class="tab-count">3</span>
+            </button>
+            <button class="cat-tab" data-cat="dwarves">
+              <span class="tab-icon">⚒️</span>
+              <span class="tab-label" data-i18n="catDwarves">Dwarves</span>
+              <span class="tab-count">3</span>
+            </button>
+            <button class="cat-tab" data-cat="allies">
+              <span class="tab-icon">✨</span>
+              <span class="tab-label" data-i18n="catAllies">Realm Helpers</span>
+              <span class="tab-count">2</span>
+            </button>
+          </div>
+
+          <!-- Roster Grid -->
+          <div class="defender-grid" id="defender-grid">
+            <!-- Rendered dynamically by DefenderRegistry -->
+          </div>
+
+          <!-- Modal Action Footer -->
+          <div class="selection-footer">
+            <div class="footer-aux-actions">
+              <button id="auto-pick-btn" class="aux-btn" data-i18n="balancedSquad">⚖️ Balanced Squad</button>
+              <button id="clear-roster-btn" class="aux-btn" data-i18n="clearRoster">✕ Clear</button>
+            </div>
+            <button id="confirm-defenders-btn" class="confirm-battle-btn">
+              <span class="btn-icon">⚔️</span>
+              <span class="btn-text" data-i18n="toBattle">To Battle ⚔️</span>
+              <span class="btn-slot-pill" id="confirm-slots-pill">4/4 Ready</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Main Menu (Yggdrasil World Tree) -->
       <div id="main-menu" class="active">
         <div class="main-menu-header">
@@ -123,6 +199,10 @@
         <aside id="sidebar">
           <div class="sidebar-header">
             <span class="sidebar-title">Defenders</span>
+            <button id="roster-btn" class="roster-toggle-btn" title="Change Defenders" data-i18n-title="roster">
+              <span class="roster-icon">⚔️</span>
+              <span class="roster-text" data-i18n="roster">Roster</span>
+            </button>
           </div>
           <div id="unit-selection">
             <div class="unit-card" data-unit="sunflower" data-cost="50" data-tooltip="Sunflower: Generates golden Sol energy over time">

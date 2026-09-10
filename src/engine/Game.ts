@@ -20,10 +20,14 @@ import { Valkyrie } from '../units/Valkyrie';
 import { Torchwood } from '../units/Torchwood';
 import { FirePea } from '../units/FirePea';
 import { KernelPult } from '../units/KernelPult';
+import { Einherjar } from '../units/Einherjar';
 import { Butter } from '../units/Butter';
 import { Troll } from '../units/Troll';
 import { SmallTroll } from '../units/SmallTroll';
 import { SoundManager } from './SoundManager';
+import { t } from '../i18n';
+import { DEFENDERS_MAP, getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS } from './DefenderRegistry';
+import { MapMenu } from './MapMenu';
 
 interface WeatherParticle {
   x: number; y: number; vx: number; vy: number;
@@ -55,6 +59,8 @@ export class Game {
   sun: number = 1000;
   level: number = 1;
   selectedUnit: string | null = null;
+  selectedDefenders: string[] = [];
+  onOpenRoster?: () => void;
   
   defenders: Defender[] = [];
   attackers: Attacker[] = [];
@@ -97,12 +103,32 @@ export class Game {
   zombieSpawnTimer: number = 0;
   zombieSpawnInterval: number = 5000;
   
-  constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, realm: string = 'midgard', city?: string) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    realm: string = 'midgard',
+    city?: string,
+    selectedDefenders?: string[],
+    level?: number,
+    onOpenRoster?: () => void
+  ) {
     this.canvas = canvas;
     this.ctx = ctx;
     this.realm = realm;
     this.city = city;
-    this.grid = new Grid(canvas.width, canvas.height, realm);
+    if (level !== undefined) {
+      this.level = level;
+    } else if (city && CITY_LEVELS[city]) {
+      this.level = CITY_LEVELS[city];
+    } else {
+      this.level = 1;
+    }
+    this.onOpenRoster = onOpenRoster;
+    this.selectedDefenders = selectedDefenders && selectedDefenders.length > 0
+      ? [...selectedDefenders]
+      : getSavedLoadout(this.level);
+
+    this.grid = new Grid(canvas.width, canvas.height, realm, city);
 
     this.fortressImg = new Image();
     this.fortressImg.src = '/asgard_fortress.png';
@@ -115,6 +141,7 @@ export class Game {
 
     this.initWeather();
     this.bindEvents();
+    this.renderSidebar();
     this.updateUI();
   }
 
@@ -165,6 +192,18 @@ export class Game {
         alpha: 0.2 + Math.random() * 0.4,
         angle: Math.random() * Math.PI * 2,
         vAngle: (Math.random() - 0.5) * 0.02
+      };
+    } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+      // Subterranean canal mist spray & drifting bioluminescent spores
+      return {
+        x: Math.random() * w,
+        y: randomY ? Math.random() * h : h + 10,
+        vx: (Math.random() - 0.5) * 1.8,
+        vy: -0.8 - Math.random() * 2.2,
+        size: 1.6 + Math.random() * 3.0,
+        alpha: 0.25 + Math.random() * 0.45,
+        angle: Math.random() * Math.PI * 2,
+        vAngle: (Math.random() - 0.5) * 0.04
       };
     } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
       // Burning embers or forge sparks
@@ -260,7 +299,7 @@ export class Game {
 
   handleKeyDown = (e: KeyboardEvent) => {
     const key = e.key.toUpperCase();
-    const unitCards = Array.from(document.querySelectorAll('.unit-card')) as HTMLElement[];
+    const unitCards = Array.from(document.querySelectorAll('.unit-card:not(.shovel-card)')) as HTMLElement[];
     
     // Numeric hotkeys 1-9, 0
     if (/^[1-9]$/.test(key)) {
@@ -274,11 +313,12 @@ export class Game {
       }
     } else if (key === 'D') {
       // Shovel hotkey
-      const shovelCard = unitCards.find(c => c.dataset.unit === 'shovel');
+      const shovelCard = document.querySelector('.shovel-card') as HTMLElement;
       if (shovelCard) shovelCard.click();
     } else if (key === 'ESCAPE') {
       // Deselect unit
-      unitCards.forEach(c => c.classList.remove('selected'));
+      const allCards = document.querySelectorAll('.unit-card');
+      allCards.forEach(c => c.classList.remove('selected'));
       this.selectedUnit = null;
     } else if (key === 'M') {
       // Mute hotkey
@@ -293,9 +333,53 @@ export class Game {
     }
   };
 
-  bindEvents() {
-    window.addEventListener('keydown', this.handleKeyDown);
+  renderSidebar() {
+    const container = document.getElementById('unit-selection');
+    if (!container) return;
+    container.innerHTML = '';
 
+    this.selectedDefenders.forEach((unitId, idx) => {
+      const info = DEFENDERS_MAP[unitId];
+      if (!info) return;
+      const hotkey = idx < 9 ? (idx + 1).toString() : idx === 9 ? '0' : '';
+      const card = document.createElement('div');
+      card.className = 'unit-card';
+      card.dataset.unit = info.id;
+      card.dataset.cost = info.cost.toString();
+      card.dataset.tooltip = info.tooltip;
+
+      card.innerHTML = `
+        <span class="hotkey-badge">${hotkey}</span>
+        <div class="card-art">
+          <span class="icon">${info.icon}</span>
+        </div>
+        <div class="unit-name">${info.name}</div>
+        <div class="cost"><span class="sun-icon">☀️</span> ${info.cost}</div>
+      `;
+      container.appendChild(card);
+    });
+
+    // Demolish / Dig shovel card always at the end
+    const shovelCard = document.createElement('div');
+    shovelCard.className = 'unit-card shovel-card';
+    shovelCard.dataset.unit = 'shovel';
+    shovelCard.dataset.cost = '0';
+    shovelCard.dataset.tooltip = 'Demolish: Clear a defender to free up battlefield space';
+    shovelCard.innerHTML = `
+      <span class="hotkey-badge">D</span>
+      <div class="card-art">
+        <span class="icon">⛏️</span>
+      </div>
+      <div class="unit-name" data-i18n="dig">${t('dig')}</div>
+      <div class="cost shovel-cost">Remove</div>
+    `;
+    container.appendChild(shovelCard);
+
+    this.bindUnitCardEvents();
+    this.updateUI();
+  }
+
+  bindUnitCardEvents() {
     const unitCards = document.querySelectorAll('.unit-card');
     unitCards.forEach(card => {
       card.addEventListener('click', (e) => {
@@ -313,6 +397,23 @@ export class Game {
         }
       });
     });
+  }
+
+  updateLoadout(defenders: string[]) {
+    this.selectedDefenders = [...defenders];
+    this.renderSidebar();
+  }
+
+  bindEvents() {
+    window.addEventListener('keydown', this.handleKeyDown);
+
+    const rosterBtn = document.getElementById('roster-btn');
+    if (rosterBtn) {
+      rosterBtn.addEventListener('click', () => {
+        SoundManager.getInstance().playClick();
+        this.onOpenRoster?.();
+      });
+    }
 
     this.canvas.addEventListener('mousemove', (e) => {
       const rect = this.canvas.getBoundingClientRect();
@@ -342,7 +443,14 @@ export class Game {
         if (x >= cx - 140 && x <= cx - 10 && y >= cy + 40 && y <= cy + 85) {
           SoundManager.getInstance().playClick();
           if (this.gameState === 'victory') {
+            if (this.city) {
+              MapMenu.unlockNextCity(this.city);
+            }
             this.level++;
+            if (this.onOpenRoster) {
+              this.onOpenRoster();
+              return;
+            }
           }
           this.restartBattle();
           return;
@@ -350,7 +458,7 @@ export class Game {
         // Return button bounds: cx + 10, cy + 40, w 130, h 45
         if (x >= cx + 10 && x <= cx + 140 && y >= cy + 40 && y <= cy + 85) {
           SoundManager.getInstance().playClick();
-          const returnBtn = document.getElementById('return-btn');
+          const returnBtn = document.getElementById('return-menu-btn');
           if (returnBtn) returnBtn.click();
           return;
         }
@@ -370,6 +478,11 @@ export class Game {
         SoundManager.getInstance().playClick();
         this.level++;
         this.zombiesTotal = 10 + this.level * 5;
+        const maxSlots = getDefenderSlotLimit(this.level);
+        if (this.selectedDefenders.length < maxSlots) {
+          this.selectedDefenders = getSavedLoadout(this.level);
+          this.renderSidebar();
+        }
         this.updateUI();
       });
     }
@@ -380,6 +493,11 @@ export class Game {
           SoundManager.getInstance().playClick();
           this.level--;
           this.zombiesTotal = 10 + this.level * 5;
+          const maxSlots = getDefenderSlotLimit(this.level);
+          if (this.selectedDefenders.length > maxSlots) {
+            this.selectedDefenders = this.selectedDefenders.slice(0, maxSlots);
+            this.renderSidebar();
+          }
           this.updateUI();
         }
       });
@@ -447,6 +565,8 @@ export class Game {
       unit = new Repeater(x, y, row, col);
     } else if (unitType === 'kernelpult' && this.sun >= 100) {
       unit = new KernelPult(x, y, row, col);
+    } else if (unitType === 'einherjar' && this.sun >= 225) {
+      unit = new Einherjar(x, y, row, col);
     } else if (unitType === 'jalapeno' && this.sun >= 125) {
       this.sun -= 125;
       this.updateUI();
@@ -720,6 +840,12 @@ export class Game {
       wallGrad.addColorStop(0, '#3a2d12');
       wallGrad.addColorStop(0.7, '#5c481e');
       wallGrad.addColorStop(1, '#8c6d2d');
+    } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+      // Althjof's Wheel: Damp subterranean dwarven river masonry
+      wallGrad.addColorStop(0, '#0c151a');
+      wallGrad.addColorStop(0.4, '#152229');
+      wallGrad.addColorStop(0.75, '#1c2d36');
+      wallGrad.addColorStop(1, '#243b47');
     } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
       // Nidavellir: rich dark stone — charcoal with warm amber seams
       wallGrad.addColorStop(0, '#1a1510');
@@ -758,7 +884,231 @@ export class Game {
     }
 
     // Realm-specific wall overlay / frost / icicles / runes
-    if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+    if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+      const time = Date.now() / 1000;
+      ctx.save();
+
+      // 1. Water Seepage & Damp Minerals on wet stone wall
+      const seepGrad = ctx.createLinearGradient(340, 0, 0, 0);
+      seepGrad.addColorStop(0, 'rgba(20, 184, 166, 0.22)');
+      seepGrad.addColorStop(0.5, 'rgba(13, 148, 136, 0.10)');
+      seepGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = seepGrad;
+      ctx.fillRect(0, 0, 350, this.canvas.height);
+
+      // 2. Heavy Dwarven Bronze Border Beam with Water-Ward Rivets
+      ctx.fillStyle = '#1c2a32';
+      ctx.fillRect(340, 0, 10, this.canvas.height);
+      ctx.fillStyle = '#14b8a6';
+      ctx.shadowColor = '#2dd4bf';
+      ctx.shadowBlur = 5;
+      for (let ri = 0; ri < Math.floor(this.canvas.height / 28); ri++) {
+        ctx.beginPath();
+        ctx.arc(345, 14 + ri * 28, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      // 3. Wall Torches & Lantern with Amber Flame
+      const torchY = this.canvas.height * 0.18;
+      const flicker = Math.sin(time * 6.5) * 0.25 + 0.75;
+      // Lantern bracket
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(285, torchY - 3, 30, 6);
+      ctx.fillRect(310, torchY - 15, 5, 15);
+      // Lantern Housing
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.roundRect(302, torchY - 26, 22, 22, 4);
+      ctx.fill();
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      // Glowing Core
+      ctx.fillStyle = `rgba(251, 191, 36, ${0.85 * flicker})`;
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 14 * flicker;
+      ctx.beginPath();
+      ctx.arc(313, torchY - 15, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // 4. Carved Dwarven Canal Water Runes: ᚨ ᛚ ᛏ (Althjof)
+      const aRunes = ['ᚨ', 'ᛚ', 'ᛏ', '·', 'ᚲ', 'ᚨ', 'ᚾ', 'ᚨ', 'ᛚ'];
+      ctx.font = 'bold 17px serif';
+      const runeGlow = 0.55 + Math.sin(time * 1.6) * 0.25;
+      ctx.fillStyle = `rgba(45, 212, 191, ${runeGlow})`;
+      ctx.shadowColor = '#14b8a6';
+      ctx.shadowBlur = 10;
+      for (let ri = 0; ri < aRunes.length; ri++) {
+        ctx.fillText(aRunes[ri], 258, 65 + ri * 55);
+      }
+      ctx.shadowBlur = 0;
+
+      // 5. River Gate Sluice Arch & Iron Portcullis
+      const gateTop = this.canvas.height * 0.38;
+      const gateH = this.canvas.height * 0.42;
+      const gateX = 135;
+      const gateW2 = 90;
+
+      // Sluice Arch surround
+      ctx.fillStyle = '#0f171d';
+      ctx.beginPath();
+      ctx.moveTo(gateX, gateTop + 30);
+      ctx.arc(gateX + gateW2 / 2, gateTop + 30, gateW2 / 2, Math.PI, 0);
+      ctx.lineTo(gateX + gateW2, gateTop + gateH);
+      ctx.lineTo(gateX, gateTop + gateH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Arch Stone Keystone
+      ctx.fillStyle = '#263b47';
+      ctx.beginPath();
+      ctx.moveTo(gateX + gateW2 / 2 - 12, gateTop);
+      ctx.lineTo(gateX + gateW2 / 2 + 12, gateTop);
+      ctx.lineTo(gateX + gateW2 / 2 + 8, gateTop + 24);
+      ctx.lineTo(gateX + gateW2 / 2 - 8, gateTop + 24);
+      ctx.closePath();
+      ctx.fill();
+
+      // Iron Portcullis Bars
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'square';
+      for (let bar = 0; bar < 4; bar++) {
+        const bx = gateX + 12 + bar * 22;
+        ctx.beginPath();
+        ctx.moveTo(bx, gateTop + 30);
+        ctx.lineTo(bx, gateTop + gateH);
+        ctx.stroke();
+      }
+      // Horizontal Iron Braces
+      ctx.lineWidth = 3;
+      for (let rail = 0; rail < 3; rail++) {
+        const ry2 = gateTop + 55 + rail * (gateH * 0.28);
+        ctx.beginPath();
+        ctx.moveTo(gateX + 4, ry2);
+        ctx.lineTo(gateX + gateW2 - 4, ry2);
+        ctx.stroke();
+      }
+
+      // Churning Water surging behind the gate
+      const gateWaterGrad = ctx.createLinearGradient(gateX, gateTop + gateH * 0.6, gateX, gateTop + gateH);
+      gateWaterGrad.addColorStop(0, 'rgba(45, 212, 191, 0.45)');
+      gateWaterGrad.addColorStop(0.6, 'rgba(14, 165, 233, 0.65)');
+      gateWaterGrad.addColorStop(1, 'rgba(224, 242, 254, 0.85)');
+      ctx.fillStyle = gateWaterGrad;
+      ctx.beginPath();
+      ctx.fillRect(gateX + 6, gateTop + gateH - 32, gateW2 - 12, 32);
+
+      // Water culvert pipe spilling out
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(gateX - 22, gateTop + gateH - 45, 24, 16);
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(gateX - 22, gateTop + gateH - 45, 24, 16);
+
+      // 6. DWARVEN RIVER WARDEN / MASTER ARTISAN on the battlement platform
+      const sentryX = 75;
+      const sentryY = 150;
+      ctx.save();
+      ctx.translate(sentryX, sentryY);
+
+      // Sentry shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.beginPath();
+      ctx.ellipse(0, 24, 22, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Stout Dwarven Boots
+      ctx.fillStyle = '#3e2723';
+      ctx.fillRect(-14, 14, 12, 12);
+      ctx.fillRect(2, 14, 12, 12);
+
+      // Chainmail hauberk & leather apron
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.roundRect(-16, -12, 32, 28, 4);
+      ctx.fill();
+
+      // Leather Blacksmith Apron
+      ctx.fillStyle = '#78350f';
+      ctx.beginPath();
+      ctx.roundRect(-10, -8, 20, 26, 3);
+      ctx.fill();
+
+      // Braided Red-Golden Dwarf Beard
+      ctx.fillStyle = '#b45309';
+      ctx.beginPath();
+      ctx.moveTo(-12, -10);
+      ctx.quadraticCurveTo(-14, 12, 0, 18);
+      ctx.quadraticCurveTo(14, 12, 12, -10);
+      ctx.closePath();
+      ctx.fill();
+      // Golden beard braid rings
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(-4, 8, 8, 3);
+      ctx.fillRect(-3, 14, 6, 2.5);
+
+      // Dwarf Face / Nose
+      ctx.fillStyle = '#fed7aa';
+      ctx.beginPath();
+      ctx.arc(0, -14, 10, 0, Math.PI * 2);
+      ctx.fill();
+      // Round dwarven nose
+      ctx.fillStyle = '#fdba74';
+      ctx.beginPath();
+      ctx.arc(0, -12, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Horned Dwarven Artisan Helmet
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.arc(0, -18, 11, Math.PI, 0);
+      ctx.fill();
+      // Polished bronze nasal guard
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(-2, -22, 4, 10);
+      // Small curved iron horns
+      ctx.fillStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.moveTo(-9, -20);
+      ctx.quadraticCurveTo(-18, -26, -14, -30);
+      ctx.quadraticCurveTo(-11, -26, -7, -22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(9, -20);
+      ctx.quadraticCurveTo(18, -26, 14, -30);
+      ctx.quadraticCurveTo(11, -26, 7, -22);
+      ctx.closePath();
+      ctx.fill();
+
+      // Heavy Dwarven Spanner / Forged Hammer in Hand
+      ctx.save();
+      ctx.translate(18, -2);
+      ctx.rotate(0.2 + Math.sin(time * 2.0) * 0.05);
+      // Wooden handle
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(-3, -28, 6, 38);
+      // Heavy bronze hammer head
+      ctx.fillStyle = '#d97706';
+      ctx.beginPath();
+      ctx.roundRect(-10, -38, 20, 12, 2);
+      ctx.fill();
+      // Runic teal glow on hammer head
+      ctx.fillStyle = '#2dd4bf';
+      ctx.shadowColor = '#14b8a6';
+      ctx.shadowBlur = 6;
+      ctx.font = 'bold 8px serif';
+      ctx.fillText('ᛏ', 0, -32);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      ctx.restore(); // Exit sentry
+
+      ctx.restore();
+    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
       const time = Date.now() / 1000;
       ctx.save();
 
@@ -955,7 +1305,7 @@ export class Game {
       }
     }
 
-    if (!(this.realm === 'svartalfheim' && this.city === 'nidavellir')) {
+    if (!(this.realm === 'svartalfheim' && (this.city === 'nidavellir' || this.city === 'althjofs-wheel'))) {
       // Outer Fortress Border Beam (non-Nidavellir)
       ctx.fillStyle = this.realm === 'jotunheim' ? '#00e5ff' : '#ffc107'; 
       ctx.fillRect(340, 0, 10, this.canvas.height);
@@ -1160,7 +1510,7 @@ export class Game {
       ctx.shadowBlur = 0;
       ctx.restore();
 
-    } else {
+    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
       // ══════════════════════════════════════════════
       // NIDAVELLIR: DWARVEN DEFENSIVE BATTLEMENTS
       // ══════════════════════════════════════════════
@@ -1194,7 +1544,6 @@ export class Game {
 
       // Draw 5 ballistae, one for each row
       for (let r = 0; r < 5; r++) {
-        // Assume grid has 5 rows, center of each row:
         const by = (h / 5) * (r + 0.5);
         
         // Base swivel
@@ -1237,6 +1586,112 @@ export class Game {
         ctx.moveTo(-2, -15); ctx.lineTo(2, -15); ctx.lineTo(0, -50); ctx.fill();
         ctx.restore();
       }
+    } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+      // ══════════════════════════════════════════════
+      // ALTHJOF'S WHEEL: HYDRAULIC DEFENSIVE CANAL SLUICES
+      // ══════════════════════════════════════════════
+      const time = Date.now() / 1000;
+      const h = this.canvas.height;
+      const rows = this.grid.rows;
+      
+      // Dwarven canal quay masonry along border (x = 285 to 340)
+      ctx.fillStyle = '#0a1419';
+      ctx.fillRect(285, 0, 55, h);
+
+      // Bronze canal rim border trim
+      const railG = ctx.createLinearGradient(285, 0, 340, 0);
+      railG.addColorStop(0, '#0d282e');
+      railG.addColorStop(0.5, '#14b8a6');
+      railG.addColorStop(1, '#0f766e');
+      ctx.fillStyle = railG;
+      ctx.fillRect(336, 0, 4, h);
+
+      // Row-aligned hydraulic defense turbines (lawnmower stations)
+      for (let r = 0; r < rows; r++) {
+        const by = (h / rows) * (r + 0.5);
+        const isReady = this.valkyrieAvailable[r];
+
+        // Sluice Culvert Arch Housing
+        ctx.fillStyle = '#060d11';
+        ctx.beginPath();
+        ctx.roundRect(292, by - 22, 42, 44, 6);
+        ctx.fill();
+        ctx.strokeStyle = isReady ? '#14b8a6' : '#1e293b';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        if (isReady) {
+          // Spinning Hydraulic Water Turbine Wheel
+          ctx.save();
+          ctx.translate(313, by);
+          const turbSpin = time * 4.5 + r * 1.2;
+          ctx.rotate(turbSpin);
+
+          // Bronze Turbine Outer Casing
+          ctx.strokeStyle = '#d97706';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, 13, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // 6 Curved Bronze Turbine Vanes
+          for (let vi = 0; vi < 6; vi++) {
+            const vAng = (vi * Math.PI * 2) / 6;
+            ctx.fillStyle = vi % 2 === 0 ? '#b45309' : '#f59e0b';
+            ctx.fillRect(Math.cos(vAng) * 3, Math.sin(vAng) * 3, 9, 2.5);
+          }
+
+          // Glowing Runic Core
+          ctx.fillStyle = '#2dd4bf';
+          ctx.beginPath();
+          ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          // High-pressure churning water foam in the sluice
+          const sFoam = ctx.createRadialGradient(334, by, 2, 334, by, 14);
+          sFoam.addColorStop(0, 'rgba(240, 253, 250, 0.9)');
+          sFoam.addColorStop(0.5, 'rgba(45, 212, 191, 0.6)');
+          sFoam.addColorStop(1, 'rgba(14, 165, 233, 0)');
+          ctx.fillStyle = sFoam;
+          ctx.beginPath();
+          ctx.ellipse(334, by, 8, 14, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Pressure Gauge with active needle
+          ctx.fillStyle = '#1c1917';
+          ctx.beginPath();
+          ctx.arc(297, by - 13, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          // Gauge needle
+          const needleAng = Math.PI * 0.75 + Math.sin(time * 6 + r) * 0.4;
+          ctx.strokeStyle = '#2dd4bf';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(297, by - 13);
+          ctx.lineTo(297 + Math.cos(needleAng) * 4, (by - 13) + Math.sin(needleAng) * 4);
+          ctx.stroke();
+
+        } else {
+          // Empty/Discharged Sluice: Water draining out
+          ctx.fillStyle = '#020608';
+          ctx.beginPath();
+          ctx.arc(313, by, 10, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Water drips
+          for (let di = 0; di < 2; di++) {
+            const dPhase = (time * 1.5 + di * 0.5 + r) % 1;
+            ctx.fillStyle = `rgba(45, 212, 191, ${(1 - dPhase) * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(313 + di * 4 - 2, by - 4 + dPhase * 16, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
     }
     ctx.restore();
   }
@@ -1248,8 +1703,343 @@ export class Game {
     const h = this.canvas.height;
     const time = Date.now() / 1000;
 
+    // === ALTHJOF'S WHEEL: SUBTERRANEAN DWARVEN WATERMILL & OUTER CANAL RAPIDS ===
+    if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+      ctx.save();
+
+      // ── 1. SKY / CAVERN GORGE AMBIENCE ──
+      const skyGrad = ctx.createLinearGradient(350, 0, w, h * 0.7);
+      skyGrad.addColorStop(0, '#0a161b');
+      skyGrad.addColorStop(0.35, '#071015');
+      skyGrad.addColorStop(0.75, '#04090c');
+      skyGrad.addColorStop(1, '#020507');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(350, 0, w - 350, h);
+
+      // ── 2. SUBTERRANEAN WATERWAY CANAL (Cascading rapids flowing behind grid) ──
+      const riverTopY = h * 0.28;
+      const riverBotY = h * 0.78;
+      const riverGrad = ctx.createLinearGradient(350, riverTopY, 350, riverBotY);
+      riverGrad.addColorStop(0, '#04171d');
+      riverGrad.addColorStop(0.3, '#0b323c');
+      riverGrad.addColorStop(0.65, '#07242c');
+      riverGrad.addColorStop(1, '#031116');
+      ctx.fillStyle = riverGrad;
+      ctx.fillRect(350, riverTopY, w - 350, riverBotY - riverTopY);
+
+      // Animated Water Torrents & Current Flow Lines
+      ctx.save();
+      for (let wi = 0; wi < 14; wi++) {
+        const streamT = ((time * 0.8 + wi * 0.23) % 1);
+        const wy = riverTopY + 16 + (wi * 22) % (riverBotY - riverTopY - 32);
+        const wxStart = 350 + streamT * (w - 350);
+        const wLen = 70 + (wi % 5) * 35;
+        const wGrad = ctx.createLinearGradient(wxStart, wy, wxStart + wLen, wy);
+        wGrad.addColorStop(0, 'rgba(20, 184, 166, 0)');
+        wGrad.addColorStop(0.4, `rgba(45, 212, 191, ${0.35 + (wi % 3) * 0.12})`);
+        wGrad.addColorStop(0.8, `rgba(56, 189, 248, ${0.45 + (wi % 3) * 0.15})`);
+        wGrad.addColorStop(1, 'rgba(20, 184, 166, 0)');
+        ctx.strokeStyle = wGrad;
+        ctx.lineWidth = 1.8 + (wi % 3) * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(wxStart, wy);
+        ctx.quadraticCurveTo(wxStart + wLen * 0.5, wy + Math.sin(time * 3 + wi) * 5, wxStart + wLen, wy);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // ── 3. CAVERN VAULT ROCK CEILING & STALACTITES ──
+      ctx.fillStyle = '#060d10';
+      ctx.beginPath();
+      ctx.moveTo(350, 0);
+      ctx.lineTo(350, h * 0.16);
+      ctx.quadraticCurveTo(w * 0.45, h * 0.22, w * 0.55, h * 0.14);
+      ctx.quadraticCurveTo(w * 0.68, h * 0.25, w * 0.82, h * 0.16);
+      ctx.quadraticCurveTo(w * 0.92, h * 0.20, w, h * 0.12);
+      ctx.lineTo(w, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Stalactites hanging from cavern ceiling with bioluminescent crystal tips
+      const stalactites = [
+        { x: w * 0.38, len: 45, w: 14, crystal: true },
+        { x: w * 0.44, len: 65, w: 18, crystal: true },
+        { x: w * 0.52, len: 38, w: 12, crystal: false },
+        { x: w * 0.61, len: 75, w: 20, crystal: true },
+        { x: w * 0.69, len: 50, w: 15, crystal: false },
+        { x: w * 0.80, len: 80, w: 22, crystal: true },
+        { x: w * 0.89, len: 42, w: 14, crystal: true },
+        { x: w * 0.96, len: 60, w: 16, crystal: true },
+      ];
+      for (let si = 0; si < stalactites.length; si++) {
+        const st = stalactites[si];
+        ctx.fillStyle = '#0a1317';
+        ctx.beginPath();
+        ctx.moveTo(st.x - st.w * 0.5, 0);
+        ctx.lineTo(st.x + st.w * 0.5, 0);
+        ctx.lineTo(st.x, st.len);
+        ctx.closePath();
+        ctx.fill();
+
+        if (st.crystal) {
+          const cPulse = Math.sin(time * 2.2 + si * 1.5) * 0.25 + 0.75;
+          // Crystal cluster
+          ctx.fillStyle = `rgba(45, 212, 191, ${0.75 * cPulse})`;
+          ctx.shadowColor = '#14b8a6';
+          ctx.shadowBlur = 10 * cPulse;
+          ctx.beginPath();
+          ctx.moveTo(st.x, st.len - 3);
+          ctx.lineTo(st.x + 4, st.len + 10);
+          ctx.lineTo(st.x, st.len + 16);
+          ctx.lineTo(st.x - 4, st.len + 10);
+          ctx.closePath();
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      // ── 4. DWARVEN AQUEDUCT BRIDGE & TIMBER CATWALK (Midground) ──
+      const bY = riverTopY - 14;
+      // Stone bridge beam
+      ctx.fillStyle = '#111b20';
+      ctx.fillRect(350, bY, w - 350, 18);
+      // Bronze rail
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(350, bY - 6);
+      ctx.lineTo(w, bY - 6);
+      ctx.stroke();
+
+      // Bridge support arch piers
+      for (let pi = 0; pi < 3; pi++) {
+        const px = w * (0.46 + pi * 0.20);
+        ctx.fillStyle = '#0a1216';
+        ctx.fillRect(px - 14, bY + 18, 28, riverBotY - bY - 18);
+        ctx.strokeStyle = '#1e293b';
+        ctx.strokeRect(px - 14, bY + 18, 28, riverBotY - bY - 18);
+
+        // Water culvert arch on pier
+        ctx.fillStyle = '#060d10';
+        ctx.beginPath();
+        ctx.arc(px, riverBotY - 30, 10, Math.PI, 0);
+        ctx.rect(px - 10, riverBotY - 30, 20, 30);
+        ctx.fill();
+
+        // Water foaming at pier base
+        const pFoamGrad = ctx.createRadialGradient(px, riverBotY - 2, 2, px, riverBotY - 2, 22);
+        pFoamGrad.addColorStop(0, 'rgba(224, 242, 254, 0.7)');
+        pFoamGrad.addColorStop(1, 'rgba(14, 165, 233, 0)');
+        ctx.fillStyle = pFoamGrad;
+        ctx.beginPath();
+        ctx.ellipse(px, riverBotY - 2, 24, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ── 5. THE COLOSSAL ROTATING GREAT WATERWHEEL OF ALTHJOF ──
+      const wheelX = w * 0.78;
+      const wheelY = riverTopY + (riverBotY - riverTopY) * 0.42;
+      const wheelR = Math.min(135, (riverBotY - riverTopY) * 0.72);
+      const wheelRot = time * 0.48; // Smooth continuous majestic rotation
+
+      // ── 4b. AQUEDUCT WATER CHUTE FEEDING THE GREAT WHEEL ──
+      const chuteX = wheelX - wheelR * 0.42;
+      const chuteY = bY + 12;
+      // Stone & Bronze water chute
+      ctx.fillStyle = '#0a1418';
+      ctx.fillRect(chuteX - 30, chuteY, 50, 16);
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(chuteX - 30, chuteY, 50, 16);
+
+      // Churning water torrent pouring from chute onto the top buckets
+      const pourGrad = ctx.createLinearGradient(chuteX + 15, chuteY, chuteX + 26, wheelY - wheelR * 0.72);
+      pourGrad.addColorStop(0, 'rgba(224, 242, 254, 0.95)');
+      pourGrad.addColorStop(0.4, 'rgba(45, 212, 191, 0.85)');
+      pourGrad.addColorStop(1, 'rgba(14, 165, 233, 0.75)');
+      ctx.fillStyle = pourGrad;
+      ctx.beginPath();
+      ctx.moveTo(chuteX + 18, chuteY + 12);
+      ctx.quadraticCurveTo(chuteX + 28, chuteY + 28, chuteX + 32, wheelY - wheelR * 0.70);
+      ctx.lineTo(chuteX + 18, wheelY - wheelR * 0.70);
+      ctx.quadraticCurveTo(chuteX + 16, chuteY + 28, chuteX + 8, chuteY + 12);
+      ctx.closePath();
+      ctx.fill();
+
+      // Spray droplets at chute pour impact
+      for (let si = 0; si < 5; si++) {
+        const sPhase = ((time * 3.8 + si * 0.25) % 1);
+        const spX = chuteX + 25 + Math.sin(si * 2.3) * 18 * sPhase;
+        const spY = wheelY - wheelR * 0.70 - sPhase * 16 + (sPhase * sPhase) * 20;
+        ctx.fillStyle = `rgba(240, 253, 250, ${(1 - sPhase) * 0.9})`;
+        ctx.beginPath();
+        ctx.arc(spX, spY, 2 + (1 - sPhase) * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.save();
+      ctx.translate(wheelX, wheelY);
+
+      // Wheel shadow on rear stone wall
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.beginPath();
+      ctx.arc(6, 6, wheelR + 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outer Bronze Rim
+      ctx.rotate(wheelRot);
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.arc(0, 0, wheelR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Polished Gold/Bronze Tread band with runes
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 3.5;
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Inner timber rim
+      ctx.strokeStyle = '#451a03';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(0, 0, wheelR - 12, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Runic inscriptions along the bronze rim
+      const rimRunes = ['ᚨ', 'ᛚ', 'ᛏ', 'ᛗ', 'ᚲ', 'ᚱ', 'ᚦ', 'ᛟ'];
+      ctx.font = 'bold 9px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let ri = 0; ri < 8; ri++) {
+        const rAng = (ri * Math.PI * 2) / 8;
+        const rx = Math.cos(rAng) * (wheelR - 6);
+        const ry = Math.sin(rAng) * (wheelR - 6);
+        ctx.fillStyle = '#2dd4bf';
+        ctx.shadowColor = '#14b8a6';
+        ctx.shadowBlur = 5;
+        ctx.fillText(rimRunes[ri], rx, ry);
+      }
+      ctx.shadowBlur = 0;
+
+      // 16 Bucket Paddles & Radial Spoke Beams
+      const numPaddles = 16;
+      for (let pIdx = 0; pIdx < numPaddles; pIdx++) {
+        const pAng = (pIdx * Math.PI * 2) / numPaddles;
+        ctx.save();
+        ctx.rotate(pAng);
+
+        // Heavy Oak Spoke
+        ctx.fillStyle = pIdx % 2 === 0 ? '#3e2723' : '#271810';
+        ctx.fillRect(-4, 0, 8, wheelR - 10);
+
+        // Bronze Spoke Reinforcement Ring
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(-6, wheelR * 0.55 - 3, 12, 6);
+
+        // Water Bucket Blade on the rim
+        ctx.fillStyle = '#78350f';
+        ctx.beginPath();
+        ctx.roundRect(wheelR - 14, -6, 26, 12, 3);
+        ctx.fill();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      // Central Bronze Axle Hub
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.arc(0, 0, 32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Center Gear Teeth (rotates with wheel)
+      for (let g = 0; g < 10; g++) {
+        const ga = (g * Math.PI * 2) / 10;
+        ctx.fillStyle = '#d97706';
+        ctx.fillRect(Math.cos(ga) * 28 - 4, Math.sin(ga) * 28 - 4, 8, 8);
+      }
+
+      // Center Core Cap
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#2dd4bf';
+      ctx.shadowColor = '#14b8a6';
+      ctx.shadowBlur = 8;
+      ctx.font = 'bold 12px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ᛱ', 0, 1);
+      ctx.shadowBlur = 0;
+
+      ctx.restore(); // Exit wheel rotation
+
+      // ── 6. WATER CASCADES & SPLASHING FOAM FROM THE GREAT WHEEL ──
+      // Churning whitewater basin at base of wheel
+      const foamBaseY = wheelY + wheelR - 4;
+      const foamGrad = ctx.createRadialGradient(wheelX, foamBaseY, 12, wheelX, foamBaseY, wheelR * 0.92);
+      foamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      foamGrad.addColorStop(0.3, 'rgba(153, 246, 228, 0.8)');
+      foamGrad.addColorStop(0.65, 'rgba(45, 212, 191, 0.4)');
+      foamGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = foamGrad;
+      ctx.beginPath();
+      ctx.ellipse(wheelX, foamBaseY, wheelR * 0.92, 30, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cascading water sheets falling off rising buckets
+      for (let wDrop = 0; wDrop < 9; wDrop++) {
+        const dropPhase = ((time * 2.2 + wDrop * 0.35) % 1);
+        const dropX = wheelX - wheelR * 0.55 + Math.sin(wDrop * 2) * 28;
+        const dropY = wheelY - wheelR * 0.2 + dropPhase * (wheelR * 0.98);
+        ctx.fillStyle = `rgba(224, 242, 254, ${(1 - dropPhase) * 0.85})`;
+        ctx.beginPath();
+        ctx.arc(dropX, dropY, 2.5 + dropPhase * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ── 7. COOL SUBTERRANEAN RIVER MIST & FOG BANKS ──
+      for (let f = 0; f < 3; f++) {
+        const fX = 350 + ((time * 22 + f * 260) % (w - 300));
+        const fY = riverBotY - 18 + f * 10;
+        const fogG = ctx.createRadialGradient(fX, fY, 0, fX, fY, 180);
+        fogG.addColorStop(0, 'rgba(45, 212, 191, 0.12)');
+        fogG.addColorStop(0.5, 'rgba(20, 184, 166, 0.05)');
+        fogG.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = fogG;
+        ctx.fillRect(fX - 180, fY - 60, 360, 120);
+      }
+
+      // ── 8. DRIFTING WATER SPRAY PARTICLES & GLOWING CAVE MOTES ──
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of this.weatherParticles) {
+        const pColor = (p.size > 2.6)
+          ? `rgba(165, 243, 252, ${p.alpha * 0.65})`
+          : `rgba(45, 212, 191, ${p.alpha * 0.85})`;
+        ctx.fillStyle = pColor;
+        ctx.shadowColor = '#14b8a6';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      ctx.globalCompositeOperation = 'source-over';
+
+      ctx.restore();
+
     // === NIDAVELLIR: UNDERGROUND CAVERN, FORGE GLOW, STALACTITES, EMBERS ===
-    if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
       ctx.save();
 
       // ── 1. SKY: cool dark gorge atmosphere ──
@@ -1669,8 +2459,8 @@ export class Game {
     const ctx = this.ctx;
     const w = this.canvas.width;
     const h = this.canvas.height;
-    const t = this.realmEntranceTimer;
-    const progress = (2.8 - t) / 2.8;
+    const entranceTimer = this.realmEntranceTimer;
+    const progress = (2.8 - entranceTimer) / 2.8;
 
     let alpha = 1.0;
     if (progress < 0.2) alpha = progress / 0.2;
@@ -1705,14 +2495,22 @@ export class Game {
     
     // Copy info to avoid mutating the shared object
     info = { ...info };
-    if (this.city === 'nidavellir') {
+    if (this.city === 'althjofs-wheel') {
+      const locName = t('loc_althjofs_wheel_name');
+      info.title    = locName !== 'loc_althjofs_wheel_name' ? locName : "Althjof's Wheel";
+      info.subtitle = `${t('prologue')} · Dwarven Watermill · Outer Canal`;
+      info.runes    = 'ᚨ ᛚ ᛏ   ·   ᚲ ᚨ ᚾ ᚨ ᛚ';
+      info.color    = '#14b8a6';
+    } else if (this.city === 'nidavellir') {
       info.title    = 'Niðavellir';
       info.subtitle = 'The Dwarven Capital · Svartalfheim';
       info.runes    = 'ᚾ ᛁ ᛞ ᚨ ᚹ ᛖ ᛚ ᛚ ᛁ ᚱ';
       info.color    = '#ffaa00';
     } else if (this.city) {
-      const cityFormatted = this.city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
-      info.title = `${info.title} · ${cityFormatted}`;
+      const locKey = `loc_${this.city.replace(/-/g, '_')}_name`;
+      const trans = t(locKey);
+      const cityName = trans !== locKey ? trans : this.city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+      info.title = `${info.title} · ${cityName}`;
     }
 
     ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
@@ -2201,6 +2999,10 @@ export class Game {
     } else if (this.realm === 'jotunheim') {
       bgGradient.addColorStop(0, '#0c2338');
       bgGradient.addColorStop(1, '#030b13');
+    } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+      bgGradient.addColorStop(0, '#0d191d');
+      bgGradient.addColorStop(0.5, '#081013');
+      bgGradient.addColorStop(1, '#030608');
     } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
       bgGradient.addColorStop(0, '#1a2218');
       bgGradient.addColorStop(0.6, '#101610');
