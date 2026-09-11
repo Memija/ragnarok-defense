@@ -8,15 +8,42 @@ export class Butter extends Projectile {
   draw(ctx: CanvasRenderingContext2D) {
     const cx = this.x + this.width / 2;
     const cy = this.y + this.height / 2;
-    
-    // Draw Butter
-    ctx.fillStyle = '#fff59d'; // Light yellow
-    ctx.fillRect(cx - 12, cy - 10, 24, 20);
-    ctx.fillStyle = '#fbc02d'; // Darker yellow shading
-    ctx.fillRect(cx - 12, cy, 24, 10);
-    
-    ctx.strokeStyle = '#f9a825';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cx - 12, cy - 10, 24, 20);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(this.x * 0.05);
+
+    // Glowing Amber Aura
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#f59e0b';
+
+    // Flask bulb body (round glass)
+    const bulbGrad = ctx.createRadialGradient(-3, -3, 2, 0, 0, 10);
+    bulbGrad.addColorStop(0, '#fef08a');
+    bulbGrad.addColorStop(0.5, '#f59e0b');
+    bulbGrad.addColorStop(1, '#b45309');
+    ctx.fillStyle = bulbGrad;
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.2;
+
+    ctx.beginPath();
+    ctx.arc(0, 2, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Flask neck & cork
+    ctx.fillStyle = '#92400e';
+    ctx.fillRect(-3, -11, 6, 5);
+    ctx.fillStyle = '#d97706';
+    ctx.fillRect(-4, -13, 8, 3);
+
+    // Iron reinforcement band
+    ctx.strokeStyle = '#44403c';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 9, 3, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
   }
 }

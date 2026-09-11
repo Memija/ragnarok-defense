@@ -257,4 +257,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       }
     });
   }
+
+  (window as any).__startGame = startGame;
+  (window as any).__getGame = () => game;
 }

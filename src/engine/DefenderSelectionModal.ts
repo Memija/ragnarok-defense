@@ -6,7 +6,9 @@ import {
   getDefenderSlotLimit,
   getRecommendedLoadout,
   getSavedLoadout,
-  saveLoadout
+  saveLoadout,
+  getLocalizedDefender,
+  getDefenderInfo
 } from './DefenderRegistry';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
@@ -35,6 +37,15 @@ export class DefenderSelectionModal {
   private confirmPillEl: HTMLElement | null;
   private tabsContainerEl: HTMLElement | null;
 
+  // Warning Modal Elements
+  private warningModalEl: HTMLElement | null;
+  private warningBackdropEl: HTMLElement | null;
+  private closeWarningBtn: HTMLElement | null;
+  private warningProceedBtn: HTMLElement | null;
+  private warningAdjustBtn: HTMLElement | null;
+  private warningDescEl: HTMLElement | null;
+  private warningSlotStripEl: HTMLElement | null;
+
   private currentOptions: SelectionModalOptions | null = null;
   private selected: string[] = [];
   private limit: number = 4;
@@ -53,6 +64,14 @@ export class DefenderSelectionModal {
     this.confirmBtn = document.getElementById('confirm-defenders-btn');
     this.confirmPillEl = document.getElementById('confirm-slots-pill');
     this.tabsContainerEl = document.getElementById('category-tabs');
+
+    this.warningModalEl = document.getElementById('squad-warning-modal');
+    this.warningBackdropEl = this.warningModalEl?.querySelector('.squad-warning-backdrop') || null;
+    this.closeWarningBtn = document.getElementById('close-warning-btn');
+    this.warningProceedBtn = document.getElementById('warning-proceed-btn');
+    this.warningAdjustBtn = document.getElementById('warning-adjust-btn');
+    this.warningDescEl = document.getElementById('squad-warning-desc');
+    this.warningSlotStripEl = document.getElementById('warning-slot-strip');
 
     this.bindEvents();
   }
@@ -85,11 +104,30 @@ export class DefenderSelectionModal {
 
     this.confirmBtn?.addEventListener('click', () => {
       if (this.selected.length === 0) return;
-      SoundManager.getInstance().playPlant();
-      saveLoadout(this.selected);
-      const chosen = [...this.selected];
-      this.close();
-      this.currentOptions?.onConfirm(chosen);
+      if (this.selected.length < this.limit) {
+        this.openWarningModal();
+      } else {
+        this.proceedToBattle();
+      }
+    });
+
+    this.closeWarningBtn?.addEventListener('click', () => {
+      SoundManager.getInstance().playClick();
+      this.closeWarningModal();
+    });
+
+    this.warningBackdropEl?.addEventListener('click', () => {
+      SoundManager.getInstance().playClick();
+      this.closeWarningModal();
+    });
+
+    this.warningAdjustBtn?.addEventListener('click', () => {
+      SoundManager.getInstance().playClick();
+      this.closeWarningModal();
+    });
+
+    this.warningProceedBtn?.addEventListener('click', () => {
+      this.proceedToBattle();
     });
 
     // Category Tabs Switching
@@ -109,11 +147,84 @@ export class DefenderSelectionModal {
     }
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.modalEl && !this.modalEl.classList.contains('hidden')) {
-        this.close();
-        this.currentOptions?.onCancel?.();
+      if (e.key === 'Escape') {
+        if (this.warningModalEl && !this.warningModalEl.classList.contains('hidden')) {
+          this.closeWarningModal();
+          return;
+        }
+        if (this.modalEl && !this.modalEl.classList.contains('hidden')) {
+          this.close();
+          this.currentOptions?.onCancel?.();
+        }
       }
     });
+
+    window.addEventListener('languagechange', () => {
+      this.updateTabCounts();
+      if (this.modalEl && !this.modalEl.classList.contains('hidden')) {
+        this.render();
+      }
+      if (this.warningModalEl && !this.warningModalEl.classList.contains('hidden')) {
+        this.updateWarningModalContent();
+      }
+    });
+  }
+
+  private openWarningModal() {
+    SoundManager.getInstance().playClick();
+    this.updateWarningModalContent();
+    this.warningModalEl?.classList.remove('hidden');
+  }
+
+  private updateWarningModalContent() {
+    if (this.warningDescEl) {
+      const template = t('squadIncompleteWarning') || 'Your squad only has {current} of {max} defenders selected. Are you sure you want to march into battle without a full roster?';
+      this.warningDescEl.innerHTML = template
+        .replace('{current}', `<strong class="hl-slot">${this.selected.length}</strong>`)
+        .replace('{max}', `<strong class="hl-slot">${this.limit}</strong>`);
+    }
+
+    if (this.warningSlotStripEl) {
+      this.warningSlotStripEl.innerHTML = '';
+      for (let i = 0; i < this.limit; i++) {
+        const pill = document.createElement('div');
+        const unitId = this.selected[i];
+        if (unitId && DEFENDERS_MAP[unitId]) {
+          const unit = getDefenderInfo(unitId) || DEFENDERS_MAP[unitId];
+          pill.className = 'slot-pill filled';
+          pill.innerHTML = `<span>${unit.icon}</span> <span>${unit.name}</span>`;
+        } else {
+          pill.className = 'slot-pill empty';
+          pill.innerHTML = `<span>⭕</span> <span>${t('slotEmpty')}</span>`;
+        }
+        this.warningSlotStripEl.appendChild(pill);
+      }
+    }
+  }
+
+  private closeWarningModal() {
+    this.warningModalEl?.classList.add('hidden');
+  }
+
+  private proceedToBattle() {
+    SoundManager.getInstance().playPlant();
+    saveLoadout(this.selected);
+    const chosen = [...this.selected];
+    this.closeWarningModal();
+    this.close();
+    this.currentOptions?.onConfirm(chosen);
+  }
+
+  private updateTabCounts() {
+    if (!this.tabsContainerEl) return;
+    const allCount = this.tabsContainerEl.querySelector('[data-cat="all"] .tab-count');
+    if (allCount) allCount.textContent = `${DEFENDERS_LIST.length}`;
+
+    const plantsCount = this.tabsContainerEl.querySelector('[data-cat="plants"] .tab-count');
+    if (plantsCount) plantsCount.textContent = `${DEFENDERS_LIST.filter(d => d.category === 'plants').length}`;
+
+    const towersCount = this.tabsContainerEl.querySelector('[data-cat="towers"] .tab-count');
+    if (towersCount) towersCount.textContent = `${DEFENDERS_LIST.filter(d => d.category === 'towers').length}`;
   }
 
   public open(options: SelectionModalOptions) {
@@ -144,6 +255,8 @@ export class DefenderSelectionModal {
       });
     }
 
+    this.updateTabCounts();
+
     // Update level badge
     if (this.levelBadgeEl) {
       this.levelBadgeEl.textContent = `${t('level')} ${options.level}`;
@@ -154,12 +267,29 @@ export class DefenderSelectionModal {
     if (this.modalEl) {
       this.modalEl.classList.remove('hidden');
     }
+
+    if (options.isMidGame) {
+      const game = (window as any).__getGame?.();
+      if (game && typeof game.pause === 'function') {
+        game.pause();
+      }
+    }
   }
 
   public close() {
     if (this.modalEl) {
       this.modalEl.classList.add('hidden');
     }
+    if (this.currentOptions?.isMidGame) {
+      const game = (window as any).__getGame?.();
+      if (game && typeof game.resume === 'function') {
+        game.resume();
+      }
+    }
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    document.body.focus();
   }
 
   private toggleDefender(id: string) {
@@ -209,9 +339,10 @@ export class DefenderSelectionModal {
       const token = document.createElement('div');
       const unitId = this.selected[i];
       if (unitId && DEFENDERS_MAP[unitId]) {
-        const unit = DEFENDERS_MAP[unitId];
+        const unit = getDefenderInfo(unitId) || DEFENDERS_MAP[unitId];
+        const categoryLabel = t(`cat_${unit.category}_title`) || (unit.category === 'plants' ? t('catPlants') : t('catTowers'));
         token.className = 'slot-token filled';
-        token.title = `${unit.name} (${unit.categoryName}) — Click to remove`;
+        token.title = `${unit.name} (${categoryLabel}) — ${t('clickToRemove')}`;
         token.innerHTML = `
           <span class="token-icon">${unit.icon}</span>
           <span class="slot-num">${i + 1}</span>
@@ -222,7 +353,7 @@ export class DefenderSelectionModal {
         });
       } else {
         token.className = 'slot-token empty';
-        token.title = `Slot ${i + 1} (Empty)`;
+        token.title = `${t('slot')} ${i + 1} (${t('slotEmpty')})`;
         token.innerHTML = `<span class="slot-num">${i + 1}</span>`;
       }
       this.slotsPreviewEl.appendChild(token);
@@ -236,7 +367,7 @@ export class DefenderSelectionModal {
 
     const categoriesToRender: DefenderCategory[] =
       this.activeCategory === 'all'
-        ? (['plants', 'towers', 'dwarves', 'allies'] as DefenderCategory[])
+        ? (['plants', 'towers'] as DefenderCategory[])
         : [this.activeCategory];
 
     categoriesToRender.forEach(catKey => {
@@ -268,7 +399,8 @@ export class DefenderSelectionModal {
       const cardsGrid = document.createElement('div');
       cardsGrid.className = 'section-cards-grid';
 
-      units.forEach(def => {
+      units.forEach(rawDef => {
+        const def = getLocalizedDefender(rawDef);
         const isSelected = this.selected.includes(def.id);
         const slotIdx = isSelected ? this.selected.indexOf(def.id) + 1 : 0;
         const isDisabled = !isSelected && isFull;

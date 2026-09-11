@@ -176,7 +176,15 @@ export class MainMenu {
     this.canvas.style.cursor = nearTree ? 'pointer' : 'default';
   }
 
-  onClick = () => {
+  onClick = (e?: MouseEvent) => {
+    if (this.transitioningRealm) return;
+
+    if (e) {
+      const rect = this.canvas.getBoundingClientRect();
+      this.mouseX = e.clientX - rect.left;
+      this.mouseY = e.clientY - rect.top;
+    }
+
     // Click Ratatoskr to cycle dialogue with a cheerful chirp
     const ratDist = Math.hypot(this.mouseX - this.ratatoskr.posX, this.mouseY - this.ratatoskr.posY);
     if (ratDist < 50) {
@@ -184,12 +192,30 @@ export class MainMenu {
       return;
     }
 
-    if (this.hoveredRealm && !this.transitioningRealm) {
+    const rect = this.canvas.getBoundingClientRect();
+    const nx = this.mouseX / rect.width;
+    const ny = this.mouseY / rect.height;
+
+    let targetRealm = this.hoveredRealm;
+    if (!targetRealm) {
+      for (const r of this.realms) {
+        if (Math.hypot(nx - r.x, ny - r.y) < r.radius * 1.35) {
+          targetRealm = r;
+          break;
+        }
+      }
+    }
+
+    if (targetRealm) {
+      if (targetRealm.locked) {
+        SoundManager.getInstance().playLocked();
+        return;
+      }
       SoundManager.getInstance().playClick();
-      this.transitioningRealm = this.hoveredRealm;
+      this.transitioningRealm = targetRealm;
       this.transitionTimer = 0;
     }
-  }
+  };
 
   qbz(p0: number, p1: number, p2: number, t: number) {
     const m = 1 - t;

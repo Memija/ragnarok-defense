@@ -26,7 +26,7 @@ import { Troll } from '../units/Troll';
 import { SmallTroll } from '../units/SmallTroll';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
-import { DEFENDERS_MAP, getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS } from './DefenderRegistry';
+import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo } from './DefenderRegistry';
 import { MapMenu } from './MapMenu';
 
 interface WeatherParticle {
@@ -55,6 +55,7 @@ export class Game {
   animationId: number = 0;
   realm: string = 'midgard';
   city?: string;
+  isPaused: boolean = false;
   
   sun: number = 1000;
   level: number = 1;
@@ -128,7 +129,9 @@ export class Game {
       ? [...selectedDefenders]
       : getSavedLoadout(this.level);
 
-    this.grid = new Grid(canvas.width, canvas.height, realm, city);
+    const cssW = canvas.clientWidth || (canvas.width / (window.devicePixelRatio || 1));
+    const cssH = canvas.clientHeight || (canvas.height / (window.devicePixelRatio || 1));
+    this.grid = new Grid(cssW, cssH, realm, city);
 
     this.fortressImg = new Image();
     this.fortressImg.src = '/asgard_fortress.png';
@@ -333,13 +336,22 @@ export class Game {
     }
   };
 
+  pause() {
+    this.isPaused = true;
+  }
+
+  resume() {
+    this.isPaused = false;
+    this.lastTime = performance.now();
+  }
+
   renderSidebar() {
     const container = document.getElementById('unit-selection');
     if (!container) return;
     container.innerHTML = '';
 
     this.selectedDefenders.forEach((unitId, idx) => {
-      const info = DEFENDERS_MAP[unitId];
+      const info = getDefenderInfo(unitId);
       if (!info) return;
       const hotkey = idx < 9 ? (idx + 1).toString() : idx === 9 ? '0' : '';
       const card = document.createElement('div');
@@ -364,14 +376,14 @@ export class Game {
     shovelCard.className = 'unit-card shovel-card';
     shovelCard.dataset.unit = 'shovel';
     shovelCard.dataset.cost = '0';
-    shovelCard.dataset.tooltip = 'Demolish: Clear a defender to free up battlefield space';
+    shovelCard.dataset.tooltip = t('demolish_tooltip') || 'Demolish: Clear a defender to free up battlefield space';
     shovelCard.innerHTML = `
       <span class="hotkey-badge">D</span>
       <div class="card-art">
         <span class="icon">⛏️</span>
       </div>
       <div class="unit-name" data-i18n="dig">${t('dig')}</div>
-      <div class="cost shovel-cost">Remove</div>
+      <div class="cost shovel-cost" data-i18n="remove">${t('remove')}</div>
     `;
     container.appendChild(shovelCard);
 
@@ -406,6 +418,7 @@ export class Game {
 
   bindEvents() {
     window.addEventListener('keydown', this.handleKeyDown);
+    window.addEventListener('languagechange', this.handleLanguageChange);
 
     const rosterBtn = document.getElementById('roster-btn');
     if (rosterBtn) {
@@ -502,6 +515,41 @@ export class Game {
         }
       });
     }
+  }
+
+  handleLanguageChange = () => {
+    this.renderSidebar();
+    this.updateRealmHeader();
+    this.updateUI();
+  };
+
+  updateRealmHeader() {
+    const realmNames: Record<string, { name: string; icon: string }> = {
+      asgard:       { name: 'Asgard',       icon: '⚡' },
+      alfheim:      { name: 'Alfheim',      icon: '✨' },
+      vanaheim:     { name: 'Vanaheim',     icon: '🌿' },
+      svartalfheim: { name: 'Svartalfheim', icon: '⚒️' },
+      midgard:      { name: 'Midgard',      icon: '🌱' },
+      jotunheim:    { name: 'Jötunheim',    icon: '❄️' },
+      niflheim:     { name: 'Niflheim',     icon: '🌫️' },
+      muspelheim:   { name: 'Muspelheim',   icon: '🔥' },
+      helheim:      { name: 'Helheim',      icon: '💀' }
+    };
+    const info = realmNames[this.realm] || realmNames.midgard;
+    const realmNameEl = document.getElementById('realm-name');
+    const realmIconEl = document.getElementById('realm-icon');
+    let displayName = info.name;
+    if (this.city) {
+      const cityKey = `loc_${this.city.replace(/-/g, '_')}_name`;
+      const transCity = t(cityKey);
+      const cityFormatted = transCity !== cityKey ? transCity : this.city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const worldKey = `world_${this.realm}`;
+      const transWorld = t(worldKey);
+      const worldName = transWorld !== worldKey ? transWorld : info.name;
+      displayName = `${worldName} - ${cityFormatted}`;
+    }
+    if (realmNameEl) realmNameEl.textContent = displayName;
+    if (realmIconEl) realmIconEl.textContent = info.icon;
   }
 
   restartBattle() {
@@ -2608,7 +2656,7 @@ export class Game {
         ctx.font = 'bold 10px "Outfit", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('⛏️ Demolish', cx + cellW / 2, cy - 3);
+        ctx.fillText(`⛏️ ${t('remove') || 'Demolish'}`, cx + cellW / 2, cy - 3);
       }
     } else if (isOccupied) {
       // Red Ward Barrier - Placement Blocked
@@ -2628,10 +2676,15 @@ export class Game {
       ctx.textBaseline = 'middle';
       ctx.fillText('⛔ Occupied', cx + cellW / 2, cy + cellH / 2);
     } else {
-      // Valid Placement: Glowing Norse Summoning Rune Circle
+      // Valid Placement: Glowing Norse Rune Circle (Cyan for Towers, Green for Plants)
+      const defenderInfo = getDefenderInfo(this.selectedUnit);
+      const isTower = defenderInfo?.category === 'towers';
       const pulse = (Math.sin(now * 4) + 1) / 2;
-      const ringColor = `rgba(129, 199, 132, ${0.6 + pulse * 0.4})`;
-      const glowColor = '#81c784';
+
+      const ringColor = isTower
+        ? `rgba(56, 189, 248, ${0.6 + pulse * 0.4})`
+        : `rgba(129, 199, 132, ${0.6 + pulse * 0.4})`;
+      const glowColor = isTower ? '#38bdf8' : '#81c784';
 
       ctx.shadowColor = glowColor;
       ctx.shadowBlur = 14 + pulse * 10;
@@ -2639,7 +2692,9 @@ export class Game {
       ctx.lineWidth = 2;
 
       // Outer tile highlight
-      ctx.fillStyle = `rgba(76, 175, 80, ${0.12 + pulse * 0.08})`;
+      ctx.fillStyle = isTower
+        ? `rgba(56, 189, 248, ${0.12 + pulse * 0.08})`
+        : `rgba(76, 175, 80, ${0.12 + pulse * 0.08})`;
       ctx.beginPath();
       ctx.roundRect(cx + 6, cy + 6, cellW - 12, cellH - 12, 10);
       ctx.fill();
@@ -2655,12 +2710,12 @@ export class Game {
       ctx.rotate(now * 0.8);
       ctx.beginPath();
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(212, 175, 55, 0.7)';
+      ctx.strokeStyle = isTower ? 'rgba(56, 189, 248, 0.75)' : 'rgba(212, 175, 55, 0.7)';
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
       // Elder Futhark compass runes
-      ctx.fillStyle = 'rgba(255, 215, 0, 0.85)';
+      ctx.fillStyle = isTower ? 'rgba(224, 242, 254, 0.9)' : 'rgba(255, 215, 0, 0.85)';
       ctx.font = 'bold 11px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -2675,7 +2730,7 @@ export class Game {
       // Attack Trajectory Guide Arrow down the row
       if (this.selectedUnit !== 'sunflower' && this.selectedUnit !== 'wallnut' && this.selectedUnit !== 'potatomine') {
         ctx.save();
-        ctx.strokeStyle = 'rgba(129, 199, 132, 0.35)';
+        ctx.strokeStyle = isTower ? 'rgba(56, 189, 248, 0.4)' : 'rgba(129, 199, 132, 0.35)';
         ctx.lineWidth = 2;
         ctx.setLineDash([8, 8]);
         ctx.beginPath();
@@ -2685,14 +2740,15 @@ export class Game {
         ctx.restore();
       }
 
-      // Ethereal Ghost Silhouette of Defender
-      ctx.globalAlpha = 0.55 + pulse * 0.2;
-      ctx.fillStyle = '#81c784';
+      // Ethereal Ghost Silhouette of Defender / Tower Name
+      ctx.globalAlpha = 0.7 + pulse * 0.25;
+      ctx.fillStyle = isTower ? '#38bdf8' : '#81c784';
       ctx.font = 'bold 12px "Outfit", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const unitDisplay = this.selectedUnit.charAt(0).toUpperCase() + this.selectedUnit.slice(1);
-      ctx.fillText(`✦ Summon ${unitDisplay} ✦`, centerX, cy + cellH - 12);
+      const unitName = defenderInfo ? defenderInfo.name : (this.selectedUnit.charAt(0).toUpperCase() + this.selectedUnit.slice(1));
+      const actionLabel = isTower ? `✦ Build ${unitName} ✦` : `✦ Plant ${unitName} ✦`;
+      ctx.fillText(actionLabel, centerX, cy + cellH - 12);
     }
 
     ctx.restore();
@@ -3052,7 +3108,9 @@ export class Game {
     const deltaTime = timestamp - this.lastTime;
     this.lastTime = timestamp;
 
-    this.update(Math.min(deltaTime, 100));
+    if (!this.isPaused) {
+      this.update(Math.min(deltaTime, 100));
+    }
     this.draw();
 
     this.animationId = requestAnimationFrame(this.loop);
@@ -3064,6 +3122,7 @@ export class Game {
   
   stop() {
     window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('languagechange', this.handleLanguageChange);
     cancelAnimationFrame(this.animationId);
   }
 }

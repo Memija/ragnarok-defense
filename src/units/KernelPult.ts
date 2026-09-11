@@ -44,47 +44,162 @@ export class KernelPult extends Defender {
     this.drawWithTransform(ctx, () => {
       const cx = this.x + this.width / 2;
       const cy = this.y + this.height / 2;
-      
-      // Draw corn body (yellow cob)
-      ctx.fillStyle = '#ffeb3b';
+
+      // --- Ground Shadow ---
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
       ctx.beginPath();
-      ctx.ellipse(cx, cy, 20, 30, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy + 36, 26, 8, 0, 0, Math.PI * 2);
       ctx.fill();
-      
-      // Draw corn kernels texture
-      ctx.strokeStyle = '#fbc02d';
-      ctx.lineWidth = 2;
+
+      // --- 1. Fortified Dwarven Stone Foundation Platform ---
+      const baseGrad = ctx.createLinearGradient(cx - 24, cy + 22, cx + 24, cy + 36);
+      baseGrad.addColorStop(0, '#292524');
+      baseGrad.addColorStop(0.5, '#44403c');
+      baseGrad.addColorStop(1, '#1c1917');
+      ctx.fillStyle = baseGrad;
+      ctx.strokeStyle = '#57534e';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(cx - 10, cy - 20); ctx.lineTo(cx - 10, cy + 20);
-      ctx.moveTo(cx, cy - 25); ctx.lineTo(cx, cy + 25);
-      ctx.moveTo(cx + 10, cy - 20); ctx.lineTo(cx + 10, cy + 20);
-      ctx.moveTo(cx - 15, cy - 10); ctx.lineTo(cx + 15, cy - 10);
-      ctx.moveTo(cx - 18, cy); ctx.lineTo(cx + 18, cy);
-      ctx.moveTo(cx - 15, cy + 10); ctx.lineTo(cx + 15, cy + 10);
+      ctx.roundRect(cx - 24, cy + 22, 48, 14, 3);
+      ctx.fill();
       ctx.stroke();
 
-      // Leaves (green husks)
-      ctx.fillStyle = '#8bc34a';
-      ctx.beginPath(); ctx.moveTo(cx - 20, cy); ctx.quadraticCurveTo(cx - 30, cy + 20, cx, cy + 35); ctx.quadraticCurveTo(cx - 10, cy + 20, cx - 15, cy); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(cx + 20, cy); ctx.quadraticCurveTo(cx + 30, cy + 20, cx, cy + 35); ctx.quadraticCurveTo(cx + 10, cy + 20, cx + 15, cy); ctx.fill();
+      // Base rivets & iron plating
+      ctx.fillStyle = '#94a3b8';
+      for (const ox of [-18, -6, 6, 18]) {
+        ctx.beginPath();
+        ctx.arc(cx + ox, cy + 29, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
-      // Catapult spoon (brown)
-      ctx.fillStyle = '#795548';
+      // --- 2. Fortified Timber & Iron A-Frame Tower Scaffolding ---
+      const timberGrad = ctx.createLinearGradient(cx - 20, cy - 10, cx + 20, cy + 22);
+      timberGrad.addColorStop(0, '#78350f');
+      timberGrad.addColorStop(0.5, '#92400e');
+      timberGrad.addColorStop(1, '#451a03');
+      ctx.fillStyle = timberGrad;
+      ctx.strokeStyle = '#292524';
+      ctx.lineWidth = 1.5;
+
+      // Left Strut
       ctx.beginPath();
-      ctx.moveTo(cx, cy - 10);
-      ctx.lineTo(cx + 25, cy - 25);
-      ctx.lineTo(cx + 20, cy - 30);
-      ctx.lineTo(cx - 5, cy - 15);
+      ctx.moveTo(cx - 20, cy + 22);
+      ctx.lineTo(cx - 6, cy - 8);
+      ctx.lineTo(cx - 1, cy - 8);
+      ctx.lineTo(cx - 14, cy + 22);
+      ctx.closePath();
       ctx.fill();
-      
-      // Spoon bucket
-      ctx.fillStyle = '#5d4037';
-      ctx.beginPath(); ctx.arc(cx + 22, cy - 28, 8, 0, Math.PI * 2); ctx.fill();
-      
-      // Eyes
-      ctx.fillStyle = '#000000';
-      ctx.beginPath(); ctx.arc(cx - 5, cy - 5, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx + 5, cy - 5, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.stroke();
+
+      // Right Strut
+      ctx.beginPath();
+      ctx.moveTo(cx + 20, cy + 22);
+      ctx.lineTo(cx + 6, cy - 8);
+      ctx.lineTo(cx + 1, cy - 8);
+      ctx.lineTo(cx + 14, cy + 22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Crossbeam brace
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(cx - 14, cy + 6, 28, 5);
+      ctx.strokeRect(cx - 14, cy + 6, 28, 5);
+
+      // --- 3. Large Brass Machinery Cogwheel & Winding Ratchet ---
+      const gearSpin = (this.animTimer * 0.05) % (Math.PI * 2);
+      ctx.save();
+      ctx.translate(cx - 9, cy + 2);
+      ctx.rotate(gearSpin);
+      ctx.fillStyle = '#d97706';
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // Gear teeth
+      for (let i = 0; i < 6; i++) {
+        const ang = (i * Math.PI) / 3;
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(Math.cos(ang) * 7 - 1.5, Math.sin(ang) * 7 - 1.5, 3, 3);
+      }
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.arc(0, 0, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // --- 4. Catapult Pivot Axle & Bronze Pivot Hub ---
+      ctx.fillStyle = '#f59e0b';
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 8, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // --- 5. Articulated Siege Catapult Throwing Arm ---
+      const isRecoil = this.recoilX < -2;
+      const armAngle = isRecoil ? -0.55 : 0.45; // Swing forward on recoil, rest back
+
+      ctx.save();
+      ctx.translate(cx, cy - 8);
+      ctx.rotate(armAngle);
+
+      // Wooden beam
+      ctx.fillStyle = '#78350f';
+      ctx.strokeStyle = '#451a03';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(-3, -28, 6, 36, 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Heavy Iron Counterweight (bottom)
+      ctx.fillStyle = '#334155';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.2;
+      ctx.fillRect(-6, 6, 12, 9);
+      ctx.strokeRect(-6, 6, 12, 9);
+
+      // Iron Throwing Basket / Cup (top)
+      ctx.fillStyle = '#475569';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, -28, 7, Math.PI, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Loaded payload in cup (Gleaming runic magma boulder)
+      if (!isRecoil) {
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(0, -31, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // --- 6. Front Dwarven Defense Mantlet / Runic Armor Plate ---
+      const plateGrad = ctx.createLinearGradient(cx - 16, cy + 8, cx + 16, cy + 22);
+      plateGrad.addColorStop(0, '#475569');
+      plateGrad.addColorStop(0.5, '#64748b');
+      plateGrad.addColorStop(1, '#334155');
+      ctx.fillStyle = plateGrad;
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(cx - 15, cy + 10, 30, 13, 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Carved Dwarven Anvil / Hammer Insignia
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.fillRect(cx - 4, cy + 13, 8, 3);
+      ctx.fillRect(cx - 2, cy + 16, 4, 4);
     });
   }
 }

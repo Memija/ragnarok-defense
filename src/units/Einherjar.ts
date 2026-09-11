@@ -65,51 +65,104 @@ export class Einherjar extends Defender {
       const cx = this.x + this.width / 2;
       const cy = this.y + this.height / 2;
 
-      // Golden aura
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = 'rgba(255, 215, 0, 0.6)';
+      // Ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 36, 26, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // --- 1. Asgardian White Marble Watchtower Pedestal ---
+      // Stepped Base
+      const baseGrad = ctx.createLinearGradient(cx - 24, cy + 24, cx + 24, cy + 35);
+      baseGrad.addColorStop(0, '#e2e8f0');
+      baseGrad.addColorStop(0.5, '#f8fafc');
+      baseGrad.addColorStop(1, '#cbd5e1');
+      ctx.fillStyle = baseGrad;
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(cx - 23, cy + 26, 46, 10, 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Watchtower Turret Balustrade / Column Shaft
+      const colGrad = ctx.createLinearGradient(cx - 18, cy + 10, cx + 18, cy + 26);
+      colGrad.addColorStop(0, '#cbd5e1');
+      colGrad.addColorStop(0.5, '#f1f5f9');
+      colGrad.addColorStop(1, '#94a3b8');
+      ctx.fillStyle = colGrad;
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(cx - 18, cy + 12, 36, 14, 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Golden fluting & Bifrost runes
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx - 11, cy + 13); ctx.lineTo(cx - 11, cy + 25);
+      ctx.moveTo(cx, cy + 13);      ctx.lineTo(cx, cy + 25);
+      ctx.moveTo(cx + 11, cy + 13); ctx.lineTo(cx + 11, cy + 25);
+      ctx.stroke();
+
+      // Golden Parapet Railing
+      ctx.fillStyle = '#fef08a';
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(cx - 20, cy + 8, 40, 5, 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // --- 2. Celestial Einherjar Standing Atop Watchtower ---
+      ctx.save();
+      const auraPulse = 0.8 + Math.sin(this.animTimer / 120) * 0.2;
+      ctx.shadowBlur = 18 * auraPulse;
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.7)';
 
       // Robe / Body
       ctx.fillStyle = '#1e3a8a';
-      ctx.fillRect(cx - 14, cy - 5, 28, 38);
+      ctx.fillRect(cx - 12, cy - 14, 24, 24);
 
       // Gold Cuirass armor plate
       ctx.fillStyle = '#d4af37';
       ctx.beginPath();
-      ctx.moveTo(cx - 12, cy - 4);
-      ctx.lineTo(cx + 12, cy - 4);
-      ctx.lineTo(cx + 8, cy + 18);
-      ctx.lineTo(cx - 8, cy + 18);
+      ctx.moveTo(cx - 10, cy - 13);
+      ctx.lineTo(cx + 10, cy - 13);
+      ctx.lineTo(cx + 6, cy + 4);
+      ctx.lineTo(cx - 6, cy + 4);
       ctx.closePath();
       ctx.fill();
 
       // Winged Helm
       ctx.fillStyle = '#f59e0b';
       ctx.beginPath();
-      ctx.arc(cx, cy - 14, 13, Math.PI, 0);
+      ctx.arc(cx, cy - 23, 11, Math.PI, 0);
       ctx.fill();
 
       // Face
       ctx.fillStyle = '#ffedd5';
       ctx.beginPath();
-      ctx.arc(cx, cy - 10, 8, 0, Math.PI * 2);
+      ctx.arc(cx, cy - 19, 7, 0, Math.PI * 2);
       ctx.fill();
 
       // Helmet Wings
       ctx.fillStyle = '#ffffff';
       // Left Wing
       ctx.beginPath();
-      ctx.moveTo(cx - 12, cy - 12);
-      ctx.lineTo(cx - 24, cy - 28);
-      ctx.lineTo(cx - 10, cy - 20);
+      ctx.moveTo(cx - 10, cy - 21);
+      ctx.lineTo(cx - 21, cy - 35);
+      ctx.lineTo(cx - 8, cy - 28);
       ctx.closePath();
       ctx.fill();
 
       // Right Wing
       ctx.beginPath();
-      ctx.moveTo(cx + 12, cy - 12);
-      ctx.lineTo(cx + 24, cy - 28);
-      ctx.lineTo(cx + 10, cy - 20);
+      ctx.moveTo(cx + 10, cy - 21);
+      ctx.lineTo(cx + 21, cy - 35);
+      ctx.lineTo(cx + 8, cy - 28);
       ctx.closePath();
       ctx.fill();
 
@@ -117,20 +170,20 @@ export class Einherjar extends Defender {
       ctx.strokeStyle = '#ffd54f';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(cx + 16, cy + 25);
-      ctx.lineTo(cx + 20, cy - 26);
+      ctx.moveTo(cx + 14, cy + 18);
+      ctx.lineTo(cx + 18, cy - 36);
       ctx.stroke();
 
-      // Spear tip
+      // Radiant Spear tip
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.moveTo(cx + 20, cy - 32);
-      ctx.lineTo(cx + 16, cy - 24);
-      ctx.lineTo(cx + 24, cy - 24);
+      ctx.moveTo(cx + 18, cy - 43);
+      ctx.lineTo(cx + 14, cy - 34);
+      ctx.lineTo(cx + 22, cy - 34);
       ctx.closePath();
       ctx.fill();
 
-      ctx.shadowBlur = 0;
+      ctx.restore();
     });
   }
 }

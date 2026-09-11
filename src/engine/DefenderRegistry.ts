@@ -1,4 +1,6 @@
-export type DefenderCategory = 'plants' | 'towers' | 'dwarves' | 'allies';
+import { t } from '../i18n';
+
+export type DefenderCategory = 'plants' | 'towers';
 
 export interface CategoryMeta {
   id: DefenderCategory;
@@ -22,30 +24,12 @@ export const CATEGORIES: Record<DefenderCategory, CategoryMeta> = {
   },
   towers: {
     id: 'towers',
-    name: 'Bastions & Towers',
+    name: 'Towers',
     icon: '🏰',
-    subtitle: 'Ancient runic fortifications, barriers and offensive spires',
+    subtitle: 'Ancient runic fortifications, artillery, spires, and bastions',
     color: '#38bdf8',
     badgeBg: 'rgba(56, 189, 248, 0.18)',
     badgeBorder: 'rgba(56, 189, 248, 0.45)'
-  },
-  dwarves: {
-    id: 'dwarves',
-    name: 'Dwarven Artificers',
-    icon: '⚒️',
-    subtitle: 'Svartalfheim siege engineering, catapults and black powder explosives',
-    color: '#ea580c',
-    badgeBg: 'rgba(234, 88, 12, 0.18)',
-    badgeBorder: 'rgba(234, 88, 12, 0.45)'
-  },
-  allies: {
-    id: 'allies',
-    name: 'Realm Helpers',
-    icon: '✨',
-    subtitle: 'Divine celestial champions and mystical spirits from across the Nine Realms',
-    color: '#a855f7',
-    badgeBg: 'rgba(168, 85, 247, 0.18)',
-    badgeBorder: 'rgba(168, 85, 247, 0.45)'
   }
 };
 
@@ -113,89 +97,11 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
     role: 'Burst Devour',
     origin: 'Helheim'
   },
-
-  // 🏰 Category: Bastions & Towers
-  {
-    id: 'wallnut',
-    name: 'Rune Bastion',
-    category: 'towers',
-    categoryName: 'Fortification',
-    cost: 50,
-    icon: '🛡️',
-    desc: 'Petrified runestone barrier with colossal vitality (4000 HP) that blocks advancing hordes.',
-    tooltip: 'Rune Bastion (Wall-nut): High-health defensive barricade to buy time for your line.',
-    role: 'Defensive Barricade',
-    origin: 'Jötunheim'
-  },
-  {
-    id: 'torchwood',
-    name: 'Fire Spire',
-    category: 'towers',
-    categoryName: 'Fortification',
-    cost: 175,
-    icon: '🔥',
-    desc: 'Blazing beacon tower that ignites passing projectiles into devastating fireballs dealing double damage.',
-    tooltip: 'Fire Spire (Torchwood): Ignites kinetic projectiles into blazing fireballs for massive bonus damage.',
-    role: 'Damage Amplifier',
-    origin: 'Muspelheim'
-  },
-  {
-    id: 'potatomine',
-    name: 'Rune Mine',
-    category: 'towers',
-    categoryName: 'Fortification',
-    cost: 25,
-    icon: '🥔',
-    desc: 'Subterranean glyph trap. Takes 14 seconds to prime, then detonates for 1800 contact damage.',
-    tooltip: 'Rune Mine: Low-cost explosive trap. Arms underground and eliminates the first enemy that steps on it.',
-    role: 'Ambush Trap',
-    origin: 'Svartalfheim'
-  },
-
-  // ⚒️ Category: Dwarven Artificers
-  {
-    id: 'kernelpult',
-    name: 'Dwarven Catapult',
-    category: 'dwarves',
-    categoryName: 'Dwarven Siege',
-    cost: 100,
-    icon: '🌽',
-    desc: 'Artisan dwarven trebuchet that lobs projectiles over barriers and hurls sticky butter that immobilizes foes.',
-    tooltip: 'Dwarven Catapult (Kernel-pult): Arcing siege weapon that damages and temporarily paralyzes targets.',
-    role: 'Lob & Paralyze',
-    origin: 'Svartalfheim'
-  },
-  {
-    id: 'cherrybomb',
-    name: 'Forge Blaster',
-    category: 'dwarves',
-    categoryName: 'Dwarven Siege',
-    cost: 150,
-    icon: '🍒',
-    desc: 'Concentrated dwarven black-powder charge that detonates instantly in a devastating 3x3 radius.',
-    tooltip: 'Forge Blaster (Cherry Bomb): Instant area-of-effect blast that clears tight clusters of monsters.',
-    role: 'Area Demolition',
-    origin: 'Svartalfheim'
-  },
-  {
-    id: 'jalapeno',
-    name: 'Forge Dragonfire',
-    category: 'dwarves',
-    categoryName: 'Dwarven Siege',
-    cost: 125,
-    icon: '🔥',
-    desc: 'Unleashes Nidavellir blast furnace dragonfire, incinerating all invaders across an entire lane for 1000 damage.',
-    tooltip: 'Forge Dragonfire: Instant row cleanser that obliterates every invader in the chosen lane.',
-    role: 'Lane Annihilation',
-    origin: 'Svartalfheim'
-  },
-
-  // ✨ Category: Realm Helpers
   {
     id: 'snowpea',
     name: 'Frost Sprite',
-    category: 'allies',
-    categoryName: 'Realm Helper',
+    category: 'plants',
+    categoryName: 'Sacred Flora',
     cost: 175,
     icon: '❄️',
     desc: 'Ethereal frost spirit from Niflheim whose icy shards pierce invaders and slow their movement by 50%.',
@@ -203,16 +109,90 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
     role: 'Frost & Slow',
     origin: 'Niflheim'
   },
+
+  // 🏰 Category: Towers
+  {
+    id: 'wallnut',
+    name: 'Rune Bastion',
+    category: 'towers',
+    categoryName: 'Tower',
+    cost: 50,
+    icon: '🏰',
+    desc: 'Fortified Norse stone bastion tower with colossal vitality (4000 HP) that blocks advancing hordes.',
+    tooltip: 'Rune Bastion: High-health fortress bastion tower to buy crucial time for your defense line.',
+    role: 'Defensive Bastion',
+    origin: 'Jötunheim'
+  },
+  {
+    id: 'torchwood',
+    name: 'Fire Spire',
+    category: 'towers',
+    categoryName: 'Tower',
+    cost: 175,
+    icon: '🗼',
+    desc: 'Blazing arcane beacon spire tower that ignites passing projectiles into devastating fireballs dealing double damage.',
+    tooltip: 'Fire Spire: Arcane beacon tower that ignites projectiles into blazing fireballs for massive bonus damage.',
+    role: 'Damage Amplifier',
+    origin: 'Muspelheim'
+  },
+  {
+    id: 'potatomine',
+    name: 'Rune Mine',
+    category: 'towers',
+    categoryName: 'Tower',
+    cost: 25,
+    icon: '🪨',
+    desc: 'Subterranean runic ward monolith tower. Takes 14 seconds to arm, then detonates for 1800 contact damage.',
+    tooltip: 'Rune Mine: Low-cost runic ward tower. Arms underground and eliminates the first enemy that steps on it.',
+    role: 'Ambush Ward',
+    origin: 'Svartalfheim'
+  },
+  {
+    id: 'kernelpult',
+    name: 'Dwarven Catapult',
+    category: 'towers',
+    categoryName: 'Tower',
+    cost: 100,
+    icon: '⚙️',
+    desc: 'Artisan dwarven siege catapult tower that lobs runic boulders and adhesive pitch flasks that immobilize foes.',
+    tooltip: 'Dwarven Catapult: Artillery siege tower that lobs heavy boulders and paralyzing adhesive pitch.',
+    role: 'Siege Artillery',
+    origin: 'Svartalfheim'
+  },
+  {
+    id: 'cherrybomb',
+    name: 'Forge Blaster',
+    category: 'towers',
+    categoryName: 'Tower',
+    cost: 150,
+    icon: '💣',
+    desc: 'Heavy dwarven magma blast ordnance turret that detonates instantly in a devastating 3x3 radius.',
+    tooltip: 'Forge Blaster: Instant area-of-effect blast ordnance turret that obliterates tight enemy clusters.',
+    role: 'Area Demolition',
+    origin: 'Svartalfheim'
+  },
+  {
+    id: 'jalapeno',
+    name: 'Forge Dragonfire',
+    category: 'towers',
+    categoryName: 'Tower',
+    cost: 125,
+    icon: '🔥',
+    desc: 'Unleashes Nidavellir blast furnace dragonfire, incinerating all invaders across an entire lane for 1000 damage.',
+    tooltip: 'Forge Dragonfire: Instant row cleanser that obliterates every invader in the chosen lane.',
+    role: 'Lane Annihilation',
+    origin: 'Svartalfheim'
+  },
   {
     id: 'einherjar',
     name: 'Asgard Einherjar',
-    category: 'allies',
-    categoryName: 'Realm Helper',
+    category: 'towers',
+    categoryName: 'Tower',
     cost: 225,
     icon: '⚡',
-    desc: 'Valhalla celestial champion hurled from Asgard, casting radiant light spears that deal 45 damage per strike.',
-    tooltip: 'Asgard Einherjar: Elite celestial champion with higher health and lethal radiant lances.',
-    role: 'Celestial Champion',
+    desc: 'Celestial Asgardian watchtower manned by an elite Einherjar champion casting radiant light spears.',
+    tooltip: 'Asgard Einherjar: Celestial watchtower with an elite Asgardian warrior casting lethal radiant lances.',
+    role: 'Celestial Watchtower',
     origin: 'Asgard'
   }
 ];
@@ -295,4 +275,48 @@ export function saveLoadout(defenders: string[]) {
   try {
     localStorage.setItem('ragnarok_selected_defenders', JSON.stringify(defenders));
   } catch (e) {}
+}
+
+export function getLocalizedDefender(def: DefenderInfo): DefenderInfo {
+  const nameKey = `def_${def.id}_name`;
+  const descKey = `def_${def.id}_desc`;
+  const tooltipKey = `def_${def.id}_tooltip`;
+  const roleKey = `def_${def.id}_role`;
+  const originKey = `world_${def.origin.toLowerCase()}`;
+  const catKey = `cat_${def.category}_title`;
+
+  const name = t(nameKey) !== nameKey ? t(nameKey) : def.name;
+  const desc = t(descKey) !== descKey ? t(descKey) : def.desc;
+  const tooltip = t(tooltipKey) !== tooltipKey ? t(tooltipKey) : def.tooltip;
+  const role = t(roleKey) !== roleKey ? t(roleKey) : def.role;
+  const origin = t(originKey) !== originKey ? t(originKey) : def.origin;
+  const categoryName = t(catKey) !== catKey ? t(catKey) : def.categoryName;
+
+  return {
+    ...def,
+    name,
+    desc,
+    tooltip,
+    role,
+    origin,
+    categoryName
+  };
+}
+
+export function getLocalizedDefendersList(): DefenderInfo[] {
+  return DEFENDERS_LIST.map(getLocalizedDefender);
+}
+
+export function getLocalizedDefendersMap(): Record<string, DefenderInfo> {
+  const map: Record<string, DefenderInfo> = {};
+  for (const def of DEFENDERS_LIST) {
+    map[def.id] = getLocalizedDefender(def);
+  }
+  return map;
+}
+
+export function getDefenderInfo(id: string): DefenderInfo | undefined {
+  const base = DEFENDERS_MAP[id];
+  if (!base) return undefined;
+  return getLocalizedDefender(base);
 }

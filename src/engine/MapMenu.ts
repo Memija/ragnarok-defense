@@ -385,15 +385,43 @@ export class MapMenu {
     this.lastHoveredCityId = this.hoveredCity ? this.hoveredCity.id : null;
   };
 
-  onClick = () => {
-    if (this.hoveredCity) {
-      if (this.hoveredCity.locked) {
+  onClick = (e?: MouseEvent) => {
+    let targetCity = this.hoveredCity;
+
+    if (!targetCity && e) {
+      const rect = this.canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const w = rect.width;
+      const h = rect.height;
+
+      for (const loc of this.locations) {
+        const lx = loc.px * w;
+        const ly = loc.py * h;
+        if (Math.hypot(mx - lx, my - ly) < loc.radius * 1.8) {
+          targetCity = loc;
+          break;
+        }
+      }
+
+      if (!targetCity && this.activeCardRect && !this.activeCardRect.loc.locked) {
+        const { x, y, w: cw, h: ch } = this.activeCardRect;
+        if (mx >= x && mx <= x + cw && my >= y && my <= y + ch) {
+          SoundManager.getInstance().playClick();
+          this.onSelectCity(this.activeCardRect.loc.id);
+          return;
+        }
+      }
+    }
+
+    if (targetCity) {
+      if (targetCity.locked) {
         SoundManager.getInstance().playLocked();
-        this.hoveredCity.shake = 12;
+        targetCity.shake = 12;
         return;
       }
       SoundManager.getInstance().playClick();
-      this.onSelectCity(this.hoveredCity.id);
+      this.onSelectCity(targetCity.id);
       return;
     }
 

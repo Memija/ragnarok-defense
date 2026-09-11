@@ -25,29 +25,58 @@ export function initUI() {
 
   const settingsBtn = document.getElementById('settings-btn');
   const closeSettingsBtn = document.getElementById('close-settings-btn');
+  const doneSettingsBtn = document.getElementById('done-settings-btn');
   const settingsModal = document.getElementById('settings-modal');
   const modalBackdrop = settingsModal?.querySelector('.settings-modal-backdrop');
 
   const openSettings = () => {
     soundManager.playClick();
+    const game = (window as any).__getGame?.();
+    if (game && typeof game.pause === 'function') {
+      game.pause();
+    }
     if (settingsModal) settingsModal.classList.remove('hidden');
   };
 
   const closeSettings = () => {
     soundManager.playClick();
     if (settingsModal) settingsModal.classList.add('hidden');
+    const game = (window as any).__getGame?.();
+    if (game && typeof game.resume === 'function') {
+      game.resume();
+    }
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    document.body.focus();
+  };
+
+  const toggleSettings = () => {
+    if (settingsModal && !settingsModal.classList.contains('hidden')) {
+      closeSettings();
+    } else {
+      openSettings();
+    }
   };
 
   if (settingsBtn) {
-    settingsBtn.addEventListener('click', openSettings);
+    settingsBtn.addEventListener('click', toggleSettings);
   }
 
   if (closeSettingsBtn) {
     closeSettingsBtn.addEventListener('click', closeSettings);
   }
 
-  if (modalBackdrop) {
-    modalBackdrop.addEventListener('click', closeSettings);
+  if (doneSettingsBtn) {
+    doneSettingsBtn.addEventListener('click', closeSettings);
+  }
+
+  if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal || e.target === modalBackdrop) {
+        closeSettings();
+      }
+    });
   }
 
   // Keyboard shortcut (Escape to close settings)
@@ -132,6 +161,8 @@ export function initUI() {
     if (themeToggleBtn) {
       updateThemeButtonText(themeToggleBtn, document.body.dataset.theme || 'system', dict);
     }
+
+    window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
   };
 
   if (themeToggleBtn) {
@@ -195,6 +226,11 @@ export function initUI() {
         itemsList.classList.add('select-hide');
         
         applyLanguage(lang);
+
+        // Smoothly close settings modal after choosing a language
+        setTimeout(() => {
+          closeSettings();
+        }, 180);
       });
     });
 

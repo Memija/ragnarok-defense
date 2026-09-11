@@ -79,6 +79,7 @@
           </div>
 
           <div class="settings-footer">
+            <button id="done-settings-btn" class="settings-done-btn" data-i18n="closeSettings">Close Settings</button>
             <div class="footer-badge">
               <span data-i18n="version">Version</span> <span class="ver-num">1.0.0</span>
             </div>
@@ -123,22 +124,12 @@
             <button class="cat-tab" data-cat="plants">
               <span class="tab-icon">🌿</span>
               <span class="tab-label" data-i18n="catPlants">Plants</span>
-              <span class="tab-count">4</span>
+              <span class="tab-count">5</span>
             </button>
             <button class="cat-tab" data-cat="towers">
               <span class="tab-icon">🏰</span>
               <span class="tab-label" data-i18n="catTowers">Towers</span>
-              <span class="tab-count">3</span>
-            </button>
-            <button class="cat-tab" data-cat="dwarves">
-              <span class="tab-icon">⚒️</span>
-              <span class="tab-label" data-i18n="catDwarves">Dwarves</span>
-              <span class="tab-count">3</span>
-            </button>
-            <button class="cat-tab" data-cat="allies">
-              <span class="tab-icon">✨</span>
-              <span class="tab-label" data-i18n="catAllies">Realm Helpers</span>
-              <span class="tab-count">2</span>
+              <span class="tab-count">7</span>
             </button>
           </div>
 
@@ -150,13 +141,39 @@
           <!-- Modal Action Footer -->
           <div class="selection-footer">
             <div class="footer-aux-actions">
-              <button id="auto-pick-btn" class="aux-btn" data-i18n="balancedSquad">⚖️ Balanced Squad</button>
-              <button id="clear-roster-btn" class="aux-btn" data-i18n="clearRoster">✕ Clear</button>
+              <button id="auto-pick-btn" class="aux-btn"><span class="btn-icon">⚖️</span> <span class="btn-text" data-i18n="balancedSquad">Balanced Squad</span></button>
+              <button id="clear-roster-btn" class="aux-btn"><span class="btn-icon">✕</span> <span class="btn-text" data-i18n="clearRoster">Clear</span></button>
             </div>
             <button id="confirm-defenders-btn" class="confirm-battle-btn">
               <span class="btn-icon">⚔️</span>
               <span class="btn-text" data-i18n="toBattle">To Battle ⚔️</span>
               <span class="btn-slot-pill" id="confirm-slots-pill">4/4 Ready</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incomplete Squad Warning Modal -->
+      <div id="squad-warning-modal" class="squad-warning-modal hidden">
+        <div class="squad-warning-backdrop"></div>
+        <div class="squad-warning-content">
+          <button id="close-warning-btn" class="close-btn" aria-label="Close Warning" title="Close Warning">&times;</button>
+          <div class="warning-rune-tag">⚠️ ᚲ ᚨ ᚢ ᛏ ᛁ ᛟ ᚾ ⚠️</div>
+          <h2 class="warning-title" data-i18n="squadIncompleteTitle">Incomplete Squad</h2>
+          <div class="gold-divider"><span>✧ ᚱ ✧</span></div>
+          <p id="squad-warning-desc" class="warning-desc">
+            Your squad only has <strong id="warning-current-slots" class="hl-slot">0</strong> of <strong id="warning-max-slots" class="hl-slot">4</strong> defenders selected. Are you sure you want to march into battle without a full roster?
+          </p>
+          <div class="warning-slot-strip" id="warning-slot-strip">
+            <!-- Rendered dynamically -->
+          </div>
+          <div class="warning-actions">
+            <button id="warning-adjust-btn" class="warning-btn btn-secondary">
+              <span class="btn-text" data-i18n="adjustSquad">Adjust Squad</span>
+            </button>
+            <button id="warning-proceed-btn" class="warning-btn btn-primary">
+              <span class="btn-icon">⚔️</span>
+              <span class="btn-text" data-i18n="proceedAnyway">Proceed Anyway ⚔️</span>
             </button>
           </div>
         </div>
@@ -198,7 +215,7 @@
       <main id="game-container" class="hidden">
         <aside id="sidebar">
           <div class="sidebar-header">
-            <span class="sidebar-title">Defenders</span>
+            <span class="sidebar-title" data-i18n="defenders">Defenders</span>
             <button id="roster-btn" class="roster-toggle-btn" title="Change Defenders" data-i18n-title="roster">
               <span class="roster-icon">⚔️</span>
               <span class="roster-text" data-i18n="roster">Roster</span>
@@ -241,21 +258,21 @@
               <div class="cost"><span class="sun-icon">☀️</span> 200</div>
             </div>
 
-            <div class="unit-card" data-unit="wallnut" data-cost="50" data-tooltip="Wall-nut: Sturdy barricade with high defensive vitality">
+            <div class="unit-card" data-unit="wallnut" data-cost="50" data-tooltip="Rune Bastion: Fortified stone bastion tower with high defensive vitality">
               <span class="hotkey-badge">5</span>
               <div class="card-art">
-                <span class="icon">🛡️</span>
+                <span class="icon">🏰</span>
               </div>
-              <div class="unit-name">Wall-nut</div>
+              <div class="unit-name">Rune Bastion</div>
               <div class="cost"><span class="sun-icon">☀️</span> 50</div>
             </div>
 
-            <div class="unit-card" data-unit="potatomine" data-cost="25" data-tooltip="Potato Mine: Arms underground and explodes on contact">
+            <div class="unit-card" data-unit="potatomine" data-cost="25" data-tooltip="Rune Mine: Subterranean runic ward tower that erupts on enemy contact">
               <span class="hotkey-badge">6</span>
               <div class="card-art">
-                <span class="icon">🥔</span>
+                <span class="icon">🪨</span>
               </div>
-              <div class="unit-name">Mine</div>
+              <div class="unit-name">Rune Mine</div>
               <div class="cost"><span class="sun-icon">☀️</span> 25</div>
             </div>
 
@@ -268,30 +285,30 @@
               <div class="cost"><span class="sun-icon">☀️</span> 150</div>
             </div>
 
-            <div class="unit-card" data-unit="cherrybomb" data-cost="150" data-tooltip="Cherry Bomb: Detonates instantly in a devastating 3x3 blast">
+            <div class="unit-card" data-unit="cherrybomb" data-cost="150" data-tooltip="Forge Blaster: High-yield magma explosive turret detonating in a 3x3 blast">
               <span class="hotkey-badge">8</span>
               <div class="card-art">
-                <span class="icon">🍒</span>
+                <span class="icon">💣</span>
               </div>
-              <div class="unit-name">Cherry Bomb</div>
+              <div class="unit-name">Forge Blaster</div>
               <div class="cost"><span class="sun-icon">☀️</span> 150</div>
             </div>
 
-            <div class="unit-card" data-unit="torchwood" data-cost="175" data-tooltip="Torchwood: Ignites passing projectiles into flaming fury">
+            <div class="unit-card" data-unit="torchwood" data-cost="175" data-tooltip="Fire Spire: Arcane fire spire amplifying and igniting passing projectiles">
               <span class="hotkey-badge">9</span>
               <div class="card-art">
-                <span class="icon">🔥</span>
+                <span class="icon">🗼</span>
               </div>
-              <div class="unit-name">Torchwood</div>
+              <div class="unit-name">Fire Spire</div>
               <div class="cost"><span class="sun-icon">☀️</span> 175</div>
             </div>
 
-            <div class="unit-card" data-unit="kernelpult" data-cost="100" data-tooltip="Kernel-pult: Lobs corn kernels and immobilizing butter">
+            <div class="unit-card" data-unit="kernelpult" data-cost="100" data-tooltip="Dwarven Catapult: Heavy dwarven siege engine hurling boulders and tar">
               <span class="hotkey-badge">0</span>
               <div class="card-art">
-                <span class="icon">🌽</span>
+                <span class="icon">⚙️</span>
               </div>
-              <div class="unit-name">Kernel-pult</div>
+              <div class="unit-name">Dwarven Catapult</div>
               <div class="cost"><span class="sun-icon">☀️</span> 100</div>
             </div>
 
@@ -301,7 +318,7 @@
                 <span class="icon">⛏️</span>
               </div>
               <div class="unit-name" data-i18n="dig">Dig</div>
-              <div class="cost shovel-cost">Remove</div>
+              <div class="cost shovel-cost" data-i18n="remove">Remove</div>
             </div>
           </div>
         </aside>
@@ -318,7 +335,7 @@
                 <span id="realm-icon">❄️</span>
               </div>
               <div class="realm-text-group">
-                <span class="realm-subtext">Current Realm</span>
+                <span class="realm-subtext" data-i18n="currentRealm">Current Realm</span>
                 <span id="realm-name">Jötunheim</span>
               </div>
             </div>
