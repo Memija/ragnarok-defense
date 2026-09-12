@@ -29,18 +29,40 @@ export function initUI() {
   const settingsModal = document.getElementById('settings-modal');
   const modalBackdrop = settingsModal?.querySelector('.settings-modal-backdrop');
 
+  let closeTimeout: number | null = null;
+
   const openSettings = () => {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout);
+      closeTimeout = null;
+    }
     soundManager.playClick();
     const game = (window as any).__getGame?.();
     if (game && typeof game.pause === 'function') {
       game.pause();
     }
-    if (settingsModal) settingsModal.classList.remove('hidden');
+    if (settingsModal) {
+      settingsModal.classList.remove('hidden');
+      settingsModal.style.pointerEvents = 'auto';
+      settingsModal.style.display = 'flex';
+      settingsModal.style.visibility = 'visible';
+      settingsModal.setAttribute('aria-hidden', 'false');
+    }
   };
 
   const closeSettings = () => {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout);
+      closeTimeout = null;
+    }
     soundManager.playClick();
-    if (settingsModal) settingsModal.classList.add('hidden');
+    if (settingsModal) {
+      settingsModal.classList.add('hidden');
+      settingsModal.style.pointerEvents = 'none';
+      settingsModal.style.display = 'none';
+      settingsModal.style.visibility = 'hidden';
+      settingsModal.setAttribute('aria-hidden', 'true');
+    }
     const game = (window as any).__getGame?.();
     if (game && typeof game.resume === 'function') {
       game.resume();
@@ -50,6 +72,8 @@ export function initUI() {
     }
     document.body.focus();
   };
+
+  (window as any).__closeSettings = closeSettings;
 
   const toggleSettings = () => {
     if (settingsModal && !settingsModal.classList.contains('hidden')) {
@@ -170,6 +194,11 @@ export function initUI() {
     updateThemeButtonText(themeToggleBtn, initTheme, getDict());
 
     themeToggleBtn.addEventListener('click', () => {
+      soundManager.playClick();
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
+      }
       const currentTheme = document.body.dataset.theme || 'system';
       
       // Cycle: dark -> system -> light -> dark
@@ -228,8 +257,12 @@ export function initUI() {
         applyLanguage(lang);
 
         // Smoothly close settings modal after choosing a language
-        setTimeout(() => {
+        if (closeTimeout) {
+          clearTimeout(closeTimeout);
+        }
+        closeTimeout = window.setTimeout(() => {
           closeSettings();
+          closeTimeout = null;
         }, 180);
       });
     });

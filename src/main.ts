@@ -217,6 +217,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
 
   if (returnFromMapBtn) {
     returnFromMapBtn.addEventListener('click', () => {
+      (window as any).__closeSettings?.();
       SoundManager.getInstance().playClick();
       if (mapMenu) {
         mapMenu.stop();

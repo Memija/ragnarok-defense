@@ -433,7 +433,12 @@ export class MapMenu {
     }
   };
 
-  start() { this.loop(); }
+  start() {
+    this.unbindEvents();
+    this.bindEvents();
+    cancelAnimationFrame(this.animationId);
+    this.loop();
+  }
   stop() { cancelAnimationFrame(this.animationId); this.unbindEvents(); }
   loop = () => { this.draw(); this.animationId = requestAnimationFrame(this.loop); };
 

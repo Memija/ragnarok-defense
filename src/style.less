@@ -803,6 +803,16 @@ body.theme-muspelheim {
     align-items: center;
     justify-content: center;
 
+    &.hidden {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      opacity: 0 !important;
+    }
+    &.hidden * {
+      pointer-events: none !important;
+    }
+
     .settings-modal-backdrop {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -2110,7 +2120,7 @@ body.theme-muspelheim {
       position: absolute;
       top: 16px;
       left: 18px;
-      z-index: 15;
+      z-index: 50;
       display: inline-flex;
       align-items: center;
       gap: 7px;
