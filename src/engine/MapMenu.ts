@@ -616,15 +616,15 @@ export class MapMenu {
 
     // ── 8. MAJESTIC DWARVEN REALM TITLE BANNER ──
     ctx.save();
-    const bannerW = Math.min(460, Math.max(280, w - 280));
+    const bannerW = Math.min(440, Math.max(280, w - 340));
     const bannerH = 48;
     const bannerX = (w - bannerW) / 2;
-    const bannerY = 16;
+    const bannerY = 12;
 
     // Banner slate backing
-    ctx.fillStyle = isLight ? 'rgba(255, 251, 235, 0.94)' : 'rgba(15, 12, 10, 0.92)';
+    ctx.fillStyle = isLight ? 'rgba(255, 251, 235, 0.95)' : 'rgba(18, 15, 12, 0.95)';
     ctx.beginPath();
-    ctx.roundRect(bannerX, bannerY, bannerW, bannerH, 8);
+    ctx.roundRect(bannerX, bannerY, bannerW, bannerH, 10);
     ctx.fill();
 
     // Gold filigree border
@@ -638,13 +638,13 @@ export class MapMenu {
     // Header Runic Text
     ctx.textAlign = 'center';
     ctx.fillStyle = isLight ? '#92400e' : '#f59e0b';
-    ctx.font = '700 10px "Segoe UI Historic", "Segoe UI Symbol", sans-serif';
-    ctx.fillText(`ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ · ${t('realm_svartalfheim')} · ᛊ ᚹ ᚨ ᚱ ᛏ ᚨ ᛚ ᚠ`, w / 2, bannerY + 16);
+    ctx.font = '700 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif';
+    ctx.fillText(`ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ · ${t('realm_svartalfheim')} · ᛊ ᚹ ᚨ ᚱ ᛏ ᚨ ᛚ ᚠ`, w / 2, bannerY + 17);
 
     // Realm Title
     ctx.fillStyle = isLight ? '#1c1917' : '#fef08a';
     ctx.font = 'bold 15px "Outfit", "Inter", sans-serif';
-    ctx.fillText(t('world_svartalfheim'), w / 2, bannerY + 35);
+    ctx.fillText(t('world_svartalfheim'), w / 2, bannerY + 36);
     ctx.restore();
   }
 

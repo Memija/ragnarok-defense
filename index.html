@@ -214,13 +214,6 @@
       <!-- Game Container & Battle HUD -->
       <main id="game-container" class="hidden">
         <aside id="sidebar">
-          <div class="sidebar-header">
-            <span class="sidebar-title" data-i18n="defenders">Defenders</span>
-            <button id="roster-btn" class="roster-toggle-btn" title="Change Defenders" data-i18n-title="roster">
-              <span class="roster-icon">⚔️</span>
-              <span class="roster-text" data-i18n="roster">Roster</span>
-            </button>
-          </div>
           <div id="unit-selection">
             <div class="unit-card" data-unit="sunflower" data-cost="50" data-tooltip="Sunflower: Generates golden Sol energy over time">
               <span class="hotkey-badge">1</span>
@@ -311,7 +304,8 @@
               <div class="unit-name">Dwarven Catapult</div>
               <div class="cost"><span class="sun-icon">☀️</span> 100</div>
             </div>
-
+          </div>
+          <div id="sidebar-shovel-dock">
             <div class="unit-card shovel-card" data-unit="shovel" data-cost="0" data-tooltip="Demolish: Clear a defender to free up battlefield space">
               <span class="hotkey-badge">D</span>
               <div class="card-art">
@@ -325,12 +319,33 @@
 
         <div id="game-content">
           <header id="ui-top-bar">
-            <button id="return-menu-btn" class="return-btn" title="Return to Realm Selection" aria-label="Return to Realm Selection" data-i18n-title="returnToRealms" data-i18n-aria="returnToRealms">
-              <span class="btn-icon">«</span>
-              <span class="btn-text" data-i18n="realms">Realms</span>
-            </button>
+            <div class="top-bar-left">
+              <button id="return-menu-btn" class="return-btn tree-return-btn" title="Return to Realm Selection" aria-label="Return to Realm Selection" data-i18n-title="returnToRealms" data-i18n-aria="returnToRealms">
+                <span class="btn-corner-rune tl">ᛟ</span>
+                <span class="btn-corner-rune br">ᛟ</span>
 
-            <div id="active-realm-badge" class="realm-badge">
+                <div class="tree-portal-glyph">
+                  <span class="glyph-arrow">‹</span>
+                  <div class="tree-icon-frame">
+                    <svg viewBox="0 0 24 24" class="yggdrasil-tree-svg" fill="none" stroke="currentColor">
+                      <path d="M12 22V13M12 13C12 13 8 10 5 11M12 13C12 13 16 10 19 11M12 9C12 9 8 7 6 4M12 9C12 9 16 7 18 4M12 13V4.5M12 4.5C10 2.5 8 1.5 12 1.5C16 1.5 14 2.5 12 4.5M12 22C10 22 7 21 5.5 18M12 22C14 22 17 21 18.5 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <span class="btn-text" data-i18n="realms">Realms</span>
+                <span class="return-btn-flourish">✧</span>
+                <div class="btn-shimmer-sweep"></div>
+              </button>
+
+              <button id="roster-btn" class="roster-topbar-btn" title="Change Defenders Roster" aria-label="Change Defenders" data-i18n-title="roster">
+                <span class="roster-icon">⚔️</span>
+                <span class="roster-text" data-i18n="roster">Roster</span>
+              </button>
+            </div>
+
+            <!-- Majestic Center Realm Tablet -->
+            <div id="active-realm-badge" class="realm-badge center-realm-tablet">
               <div class="realm-crest">
                 <span id="realm-icon">❄️</span>
               </div>
@@ -342,26 +357,31 @@
 
             <div class="top-bar-spacer"></div>
 
-            <div id="resource-counter" class="hud-stat-box">
-              <div class="sol-talisman">
-                <span class="sol-ray"></span>
-                <span class="sol-icon">☀️</span>
-              </div>
-              <div class="stat-info">
-                <span class="stat-label" data-i18n="sun">Sol Energy</span>
-                <span id="sun-count" class="stat-value">50</span>
-              </div>
-            </div>
-
-            <div id="level-counter" class="hud-stat-box">
-              <div class="stat-info">
-                <span class="stat-label" data-i18n="level">Level</span>
-                <div class="level-btn-group">
-                  <button id="level-down" class="lvl-btn" aria-label="Decrease Level">−</button>
-                  <span id="level-display" class="stat-value">1</span>
-                  <button id="level-up" class="lvl-btn" aria-label="Increase Level">+</button>
+            <div class="top-bar-right">
+              <div id="resource-counter" class="hud-stat-box">
+                <div class="sol-talisman">
+                  <span class="sol-ray"></span>
+                  <span class="sol-icon">☀️</span>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label" data-i18n="sun">Sol Energy</span>
+                  <span id="sun-count" class="stat-value">50</span>
                 </div>
               </div>
+
+              <div id="level-counter" class="hud-stat-box">
+                <div class="stat-info">
+                  <span class="stat-label" data-i18n="level">Level</span>
+                  <div class="level-btn-group">
+                    <button id="level-down" class="lvl-btn" aria-label="Decrease Level">−</button>
+                    <span id="level-display" class="stat-value">1</span>
+                    <button id="level-up" class="lvl-btn" aria-label="Increase Level">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dedicated non-overlapping slot for the top action buttons -->
+              <div class="top-bar-actions-slot"></div>
             </div>
           </header>
 

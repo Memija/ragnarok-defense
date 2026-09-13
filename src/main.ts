@@ -4,7 +4,7 @@ import { MainMenu } from './engine/MainMenu';
 import { MapMenu } from './engine/MapMenu';
 import { SoundManager } from './engine/SoundManager';
 import { DefenderSelectionModal } from './engine/DefenderSelectionModal';
-import { CITY_LEVELS } from './engine/DefenderRegistry';
+import { CITY_LEVELS, getSavedLoadout } from './engine/DefenderRegistry';
 import { initUI } from './ui';
 import { t } from './i18n';
 
@@ -58,6 +58,17 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       mapCtx!.scale(dpr, dpr);
       mapCanvas.style.width = `${rect.width}px`;
       mapCanvas.style.height = `${rect.height}px`;
+    }
+    if (game && gameContainer && !gameContainer.classList.contains('hidden') && canvas.parentElement) {
+      const parentW = canvas.parentElement.clientWidth;
+      const parentH = canvas.parentElement.clientHeight;
+      canvas.width = parentW * dpr;
+      canvas.height = parentH * dpr;
+      ctx!.setTransform(1, 0, 0, 1, 0, 0);
+      ctx!.scale(dpr, dpr);
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      game.resize(parentW, parentH);
     }
   };
 
@@ -123,52 +134,26 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       gameContainer.classList.remove('hidden');
 
       const targetLevel = city && CITY_LEVELS[city] ? CITY_LEVELS[city] : 1;
+      const chosenDefenders = getSavedLoadout(targetLevel);
       
-      // Offer defender selection before entering the battle based on level
-      defenderModal.open({
-        realm,
-        city,
-        level: targetLevel,
-        isMidGame: false,
-        onConfirm: (chosenDefenders) => {
-          setTimeout(() => {
-            const dpr = window.devicePixelRatio || 1;
-            const width = canvas.parentElement!.clientWidth;
-            const height = canvas.parentElement!.clientHeight - 80;
-            
-            canvas.width = width * dpr;
-            canvas.height = height * dpr;
-            ctx!.scale(dpr, dpr);
-            canvas.style.width = `${width}px`;
-            canvas.style.height = `${height}px`;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      const width = rect && rect.width > 0 ? rect.width : (window.innerWidth - 120);
+      const height = rect && rect.height > 0 ? rect.height : (window.innerHeight - 72);
+      
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx!.setTransform(1, 0, 0, 1, 0, 0);
+      ctx!.scale(dpr, dpr);
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
 
-            if (game) {
-              game.stop();
-            }
-            // Passing realm, city, chosenDefenders, targetLevel, and roster opener
-            game = new Game(canvas, ctx, realm, city, chosenDefenders, targetLevel, openRosterForCurrentGame);
-            game.start();
-          }, 50);
-        },
-        onCancel: () => {
-          // If cancelled on entry, return to previous menu
-          if (city && mapMenuDiv) {
-            gameContainer.classList.add('hidden');
-            mapMenuDiv.classList.remove('hidden');
-            resizeMenu();
-            if (mapMenu) mapMenu.start();
-          } else {
-            gameContainer.classList.add('hidden');
-            if (mainMenuDiv) {
-              mainMenuDiv.classList.remove('hidden');
-              mainMenuDiv.classList.add('active');
-              resizeMenu();
-              mainMenu.built = false;
-              mainMenu.start();
-            }
-          }
-        }
-      });
+      if (game) {
+        game.stop();
+      }
+      // Passing realm, city, chosenDefenders, targetLevel, and roster opener
+      game = new Game(canvas, ctx, realm, city, chosenDefenders, targetLevel, openRosterForCurrentGame);
+      game.start();
     }
   };
 

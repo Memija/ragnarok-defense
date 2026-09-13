@@ -237,6 +237,10 @@ export class DefenderSelectionModal {
       this.selected = getSavedLoadout(options.level);
     }
 
+    if (this.selected.length === 0) {
+      this.selected = getRecommendedLoadout(options.level);
+    }
+
     // Ensure we don't exceed the limit
     if (this.selected.length > this.limit) {
       this.selected = this.selected.slice(0, this.limit);

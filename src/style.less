@@ -253,8 +253,10 @@ body[data-active-theme="light"],
   background-color: #f7f2e8;
   color: #1e293b;
 
-  /* Return to Yggdrasil Button */
-  #return-from-map-btn {
+  /* Universal Runic Return Buttons (Light Mode) */
+  .return-btn,
+  #return-from-map-btn,
+  #return-menu-btn {
     background: linear-gradient(135deg, rgba(255, 253, 245, 0.98) 0%, rgba(254, 243, 199, 0.98) 50%, rgba(240, 253, 244, 0.98) 100%);
     border-color: #ca8a04;
     box-shadow: 
@@ -300,6 +302,20 @@ body[data-active-theme="light"],
       .btn-text {
         color: #78350f;
       }
+    }
+  }
+
+  /* Roster Toggle Button (Light Mode) */
+  .roster-topbar-btn {
+    background: linear-gradient(135deg, rgba(255, 253, 245, 0.98) 0%, rgba(254, 243, 199, 0.98) 50%, rgba(240, 253, 244, 0.98) 100%);
+    border-color: #ca8a04;
+    color: #78350f;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12), 0 0 8px rgba(202, 138, 4, 0.2);
+
+    &:hover {
+      background: linear-gradient(135deg, #ffffff 0%, #fef3c7 50%, #dcfce7 100%);
+      border-color: #a16207;
+      color: #451a03;
     }
   }
 
@@ -540,8 +556,8 @@ body[data-active-theme="light"],
   /* In-Game Battle Container */
   #game-container {
     background: linear-gradient(180deg, #fdfbf7 0%, #f6f0e4 100%);
-    border-color: #ca8a04;
-    box-shadow: 0 12px 36px rgba(120, 53, 15, 0.15), 0 0 20px rgba(202, 138, 4, 0.2);
+    border: none;
+    box-shadow: none;
 
     #sidebar {
       background: linear-gradient(180deg, #fefdfa 0%, #f7f1e5 100%);
@@ -570,7 +586,8 @@ body[data-active-theme="light"],
         }
       }
 
-      #unit-selection {
+      #unit-selection,
+      #sidebar-shovel-dock {
         .unit-card {
           &.unavailable {
             opacity: 0.42;
@@ -673,6 +690,23 @@ body[data-active-theme="light"],
     background: #e0f2fe !important;
     border-color: #7dd3fc !important;
   }
+
+  /* Center Realm Tablet (Light Mode) */
+  .realm-badge.center-realm-tablet {
+    background: rgba(255, 251, 235, 0.95);
+    border-color: #d4af37;
+    box-shadow: 0 4px 16px rgba(120, 53, 15, 0.15), 0 0 10px rgba(212, 175, 55, 0.25);
+
+    .realm-text-group {
+      .realm-subtext {
+        color: #92400e;
+      }
+      #realm-name {
+        color: #1c1917;
+        text-shadow: 0 1px 4px rgba(255, 255, 255, 0.8);
+      }
+    }
+  }
 }
 
 /* Reset and Global Viewport */
@@ -738,11 +772,11 @@ body.theme-muspelheim {
   /* Ornate Floating Action Buttons (Sound & Settings) */
   .top-action-buttons {
     position: absolute;
-    top: 18px;
-    right: 22px;
+    top: 13px;
+    right: 20px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     z-index: 400;
 
     .settings-btn, .sound-toggle-btn {
@@ -1206,12 +1240,12 @@ body.theme-muspelheim {
 
       .close-btn {
         position: absolute;
-        top: 16px;
-        right: 20px;
+        top: 14px;
+        right: 18px;
         background: transparent;
         border: none;
         color: var(--close-btn-color);
-        font-size: 2.2rem;
+        font-size: 2rem;
         line-height: 1;
         cursor: pointer;
         transition: all 0.25s ease;
@@ -1850,20 +1884,21 @@ body.theme-muspelheim {
       .close-btn {
         position: absolute;
         top: 14px;
-        right: 16px;
+        right: 18px;
         background: transparent;
         border: none;
         color: var(--close-btn-color);
-        font-size: 1.9rem;
+        font-size: 2rem;
         line-height: 1;
         cursor: pointer;
-        transition: all 0.2s ease;
-        padding: 2px 6px;
-        border-radius: 6px;
+        transition: all 0.25s ease;
+        padding: 4px 8px;
+        border-radius: 8px;
 
         &:hover {
           color: #ef4444;
-          transform: rotate(90deg) scale(1.1);
+          text-shadow: 0 0 12px #ef4444;
+          transform: rotate(90deg) scale(1.15);
         }
       }
 
@@ -2023,75 +2058,69 @@ body.theme-muspelheim {
       top: 12px;
       left: 50%;
       transform: translateX(-50%);
+      width: 440px;
+      max-width: calc(100vw - 340px);
+      height: 48px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
       z-index: 10;
       pointer-events: none;
       user-select: none;
-      padding: 6px 24px;
-      border-radius: 20px;
-      background: radial-gradient(ellipse at center, rgba(6, 11, 24, 0.75) 0%, rgba(6, 11, 24, 0) 80%);
+      padding: 0 16px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(20, 26, 34, 0.95) 0%, rgba(28, 20, 16, 0.97) 50%, rgba(14, 30, 26, 0.95) 100%);
+      border: 1.8px solid #d4af37;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 12px rgba(212, 175, 55, 0.35);
+      backdrop-filter: blur(10px);
 
       .runic-banner {
         font-family: var(--font-subheading);
-        font-size: 0.8rem;
-        letter-spacing: 10px;
-        color: #fbbf24;
+        font-size: 0.62rem;
+        letter-spacing: 5px;
+        color: #f59e0b;
         opacity: 0.9;
-        text-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+        text-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
         margin-bottom: 2px;
+        line-height: 1;
       }
 
       .main-title {
         margin: 0;
         font-family: var(--font-heading);
-        font-size: 2.1rem;
-        font-weight: 900;
-        letter-spacing: 1.5px;
-        background: linear-gradient(180deg, #ffffff 0%, #fde047 45%, #ca8a04 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 20px rgba(234, 179, 8, 0.6));
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        color: #fef08a;
+        line-height: 1.1;
+        text-shadow: 0 0 12px rgba(253, 224, 71, 0.5);
       }
 
       .main-subtitle {
-        margin: 2px 0 0 0;
-        font-family: var(--font-subheading);
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 1px;
-        color: rgba(224, 242, 254, 0.85);
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
-
-        .ornament {
-          color: #fbbf24;
-          font-size: 0.8rem;
-        }
+        display: none;
       }
     }
 
     body[data-active-theme="light"] & {
       .main-menu-header {
-        background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 80%);
+        background: rgba(255, 251, 235, 0.95);
+        border-color: #d4af37;
+        box-shadow: 0 4px 16px rgba(120, 53, 15, 0.15), 0 0 10px rgba(212, 175, 55, 0.25);
 
         .runic-banner {
-          color: #b45309;
-          text-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+          color: #92400e;
+          text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
         }
 
         .main-title {
-          background: linear-gradient(180deg, #92400e 0%, #b45309 45%, #78350f 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 16px rgba(251, 191, 36, 0.5));
-        }
-
-        .main-subtitle {
-          color: #334155;
-          text-shadow: 0 1px 4px rgba(255, 255, 255, 0.9);
-
-          .ornament {
-            color: #d97706;
-          }
+          background: none;
+          -webkit-text-fill-color: initial;
+          color: #1c1917;
+          text-shadow: 0 1px 4px rgba(255, 255, 255, 0.8);
+          filter: none;
         }
       }
     }
@@ -2118,222 +2147,188 @@ body.theme-muspelheim {
 
     #return-from-map-btn {
       position: absolute;
-      top: 16px;
-      left: 18px;
+      top: 15px;
+      left: 20px;
       z-index: 50;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 5px 13px 5px 9px;
-      border-radius: 7px;
-      cursor: pointer;
-      overflow: hidden;
-      
-      /* Ancient Nordic Obsidian & Ironwood Tablet with Emerald Nebula undertones */
-      background: linear-gradient(135deg, rgba(20, 26, 34, 0.96) 0%, rgba(28, 20, 16, 0.98) 50%, rgba(14, 30, 26, 0.96) 100%);
-      border: 1.4px solid #d4af37;
-      box-shadow: 
-        0 4px 14px rgba(0, 0, 0, 0.7),
-        0 0 10px rgba(74, 222, 128, 0.2),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25),
-        inset 0 -1px 3px rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(10px);
-      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-
-      /* Corner Runes */
-      .btn-corner-rune {
-        position: absolute;
-        font-size: 0.5rem;
-        line-height: 1;
-        color: rgba(212, 175, 55, 0.5);
-        pointer-events: none;
-        transition: all 0.25s ease;
-
-        &.tl { top: 2px; left: 3px; }
-        &.br { bottom: 2px; right: 3px; }
-      }
-
-      /* Portal Glyph Wrap */
-      .tree-portal-glyph {
-        display: flex;
-        align-items: center;
-        gap: 3px;
-
-        .glyph-arrow {
-          font-family: var(--font-heading);
-          font-size: 1.05rem;
-          font-weight: 900;
-          color: #fde047;
-          line-height: 1;
-          text-shadow: 0 0 8px rgba(253, 224, 71, 0.6);
-          transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .tree-icon-frame {
-          position: relative;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(74, 222, 128, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%);
-          border: 1.2px solid #4ade80;
-          box-shadow: 0 0 8px rgba(74, 222, 128, 0.35);
-
-          .yggdrasil-tree-svg {
-            width: 12px;
-            height: 12px;
-            color: #86efac;
-            filter: drop-shadow(0 0 3px rgba(74, 222, 128, 0.65));
-            transition: transform 0.25s ease;
-          }
-        }
-      }
-
-      /* Single-line Main Label */
-      .btn-text {
-        font-family: var(--font-heading);
-        font-size: 0.76rem;
-        font-weight: 700;
-        letter-spacing: 1.2px;
-        color: #fef08a;
-        text-shadow: 
-          0 1px 3px rgba(0, 0, 0, 0.9),
-          0 0 10px rgba(253, 224, 71, 0.45);
-        line-height: 1;
-        white-space: nowrap;
-      }
-
-      /* Gem Flourish */
-      .return-btn-flourish {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 2px;
-        color: #ffd700;
-        font-size: 0.72rem;
-        opacity: 0.85;
-        text-shadow: 0 0 6px rgba(255, 215, 0, 0.7);
-        transition: transform 0.25s ease, color 0.25s ease;
-      }
-
-      /* Shimmer Sweep */
-      .btn-shimmer-sweep {
-        position: absolute;
-        top: -50%;
-        left: -120%;
-        width: 50%;
-        height: 200%;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(255, 255, 255, 0.15) 30%,
-          rgba(254, 240, 138, 0.35) 50%,
-          rgba(255, 255, 255, 0.15) 70%,
-          transparent
-        );
-        transform: rotate(25deg);
-        pointer-events: none;
-      }
-
-      &:hover {
-        background: linear-gradient(135deg, rgba(28, 38, 50, 0.98) 0%, rgba(42, 28, 22, 0.98) 50%, rgba(18, 44, 38, 0.98) 100%);
-        border-color: #fde047;
-        box-shadow: 
-          0 5px 18px rgba(0, 0, 0, 0.8),
-          0 0 14px rgba(74, 222, 128, 0.35),
-          0 0 10px rgba(253, 224, 71, 0.45),
-          inset 0 1px 2px rgba(255, 255, 255, 0.3);
-        transform: translateY(-1.5px);
-
-        .btn-corner-rune {
-          color: #fde047;
-        }
-
-        .tree-portal-glyph {
-          .glyph-arrow {
-            transform: translateX(-2.5px);
-            color: #ffffff;
-            text-shadow: 0 0 10px #ffffff;
-          }
-
-          .tree-icon-frame {
-            border-color: #86efac;
-            box-shadow: 0 0 10px rgba(74, 222, 128, 0.6);
-
-            .yggdrasil-tree-svg {
-              transform: scale(1.1);
-              color: #ffffff;
-            }
-          }
-        }
-
-        .btn-text {
-          color: #ffffff;
-          text-shadow: 
-            0 1px 3px rgba(0, 0, 0, 0.9),
-            0 0 12px rgba(253, 224, 71, 0.7);
-        }
-
-        .return-btn-flourish {
-          transform: rotate(90deg) scale(1.15);
-          color: #ffffff;
-        }
-
-        .btn-shimmer-sweep {
-          left: 160%;
-          transition: left 0.75s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-      }
-
-      &:active {
-        transform: translateY(1px) scale(0.98);
-        box-shadow: 
-          0 2px 8px rgba(0, 0, 0, 0.7),
-          0 0 6px rgba(74, 222, 128, 0.25);
-      }
     }
   }
 
-  /* Universal Runic Return Button */
+  /* Universal Runic Return Button (Shared across Map Menu & Battle Screen) */
   .return-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: linear-gradient(180deg, rgba(198, 40, 40, 0.92) 0%, rgba(136, 14, 14, 0.95) 100%);
-    border: 1.5px solid #ff7961;
-    color: #fff;
-    padding: 9px 20px;
+    gap: 7px;
+    height: 42px;
+    box-sizing: border-box;
+    padding: 0 14px 0 10px;
     border-radius: 8px;
     cursor: pointer;
-    font-family: var(--font-subheading);
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 12px rgba(211, 47, 47, 0.4);
+    overflow: hidden;
+    position: relative;
+    
+    /* Ancient Nordic Obsidian & Ironwood Tablet with Emerald Nebula undertones */
+    background: linear-gradient(135deg, rgba(20, 26, 34, 0.96) 0%, rgba(28, 20, 16, 0.98) 50%, rgba(14, 30, 26, 0.96) 100%);
+    border: 1.5px solid #d4af37;
+    box-shadow: 
+      0 4px 14px rgba(0, 0, 0, 0.7),
+      0 0 10px rgba(74, 222, 128, 0.2),
+      inset 0 1px 1px rgba(255, 255, 255, 0.25),
+      inset 0 -1px 3px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
     transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-    backdrop-filter: blur(8px);
 
-    .btn-icon {
-      font-size: 1.2rem;
+    /* Corner Runes */
+    .btn-corner-rune {
+      position: absolute;
+      font-size: 0.5rem;
       line-height: 1;
-      transition: transform 0.2s ease;
+      color: rgba(212, 175, 55, 0.5);
+      pointer-events: none;
+      transition: all 0.25s ease;
+
+      &.tl { top: 2px; left: 3px; }
+      &.br { bottom: 2px; right: 3px; }
+    }
+
+    /* Portal Glyph Wrap */
+    .tree-portal-glyph {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+
+      .glyph-arrow {
+        font-family: var(--font-heading);
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: #fde047;
+        line-height: 1;
+        text-shadow: 0 0 8px rgba(253, 224, 71, 0.6);
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      .tree-icon-frame {
+        position: relative;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(74, 222, 128, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1.2px solid #4ade80;
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.35);
+
+        .yggdrasil-tree-svg {
+          width: 12px;
+          height: 12px;
+          color: #86efac;
+          filter: drop-shadow(0 0 3px rgba(74, 222, 128, 0.65));
+          transition: transform 0.25s ease;
+        }
+      }
+    }
+
+    /* Single-line Main Label */
+    .btn-text {
+      font-family: var(--font-heading);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: #fef08a;
+      text-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.9),
+        0 0 10px rgba(253, 224, 71, 0.45);
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    /* Gem Flourish */
+    .return-btn-flourish {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 2px;
+      color: #ffd700;
+      font-size: 0.72rem;
+      opacity: 0.85;
+      text-shadow: 0 0 6px rgba(255, 215, 0, 0.7);
+      transition: transform 0.25s ease, color 0.25s ease;
+    }
+
+    /* Shimmer Sweep */
+    .btn-shimmer-sweep {
+      position: absolute;
+      top: -50%;
+      left: -120%;
+      width: 50%;
+      height: 200%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.15) 30%,
+        rgba(254, 240, 138, 0.35) 50%,
+        rgba(255, 255, 255, 0.15) 70%,
+        transparent
+      );
+      transform: rotate(25deg);
+      pointer-events: none;
     }
 
     &:hover {
-      background: linear-gradient(180deg, rgba(229, 57, 53, 0.95) 0%, rgba(183, 28, 28, 0.98) 100%);
-      border-color: #ff8a80;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 20px rgba(239, 83, 80, 0.7);
-      transform: translateY(-2px);
+      background: linear-gradient(135deg, rgba(28, 38, 50, 0.98) 0%, rgba(42, 28, 22, 0.98) 50%, rgba(18, 44, 38, 0.98) 100%);
+      border-color: #fde047;
+      box-shadow: 
+        0 5px 18px rgba(0, 0, 0, 0.8),
+        0 0 14px rgba(74, 222, 128, 0.35),
+        0 0 10px rgba(253, 224, 71, 0.45),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+      transform: translateY(-1.5px);
 
-      .btn-icon {
-        transform: translateX(-3px);
+      .btn-corner-rune {
+        color: #fde047;
+      }
+
+      .tree-portal-glyph {
+        .glyph-arrow {
+          transform: translateX(-2.5px);
+          color: #ffffff;
+          text-shadow: 0 0 10px #ffffff;
+        }
+
+        .tree-icon-frame {
+          border-color: #86efac;
+          box-shadow: 0 0 10px rgba(74, 222, 128, 0.6);
+
+          .yggdrasil-tree-svg {
+            transform: scale(1.1);
+            color: #ffffff;
+          }
+        }
+      }
+
+      .btn-text {
+        color: #ffffff;
+        text-shadow: 
+          0 1px 3px rgba(0, 0, 0, 0.9),
+          0 0 12px rgba(253, 224, 71, 0.7);
+      }
+
+      .return-btn-flourish {
+        transform: rotate(90deg) scale(1.15);
+        color: #ffffff;
+      }
+
+      .btn-shimmer-sweep {
+        left: 160%;
+        transition: left 0.75s cubic-bezier(0.2, 0.8, 0.2, 1);
       }
     }
 
     &:active {
-      transform: translateY(0);
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.7),
+        0 0 6px rgba(74, 222, 128, 0.25);
     }
   }
 
@@ -2344,17 +2339,17 @@ body.theme-muspelheim {
     flex-grow: 1;
     min-height: 0;
     overflow: hidden;
-    width: calc(100vw - 28px);
-    height: calc(100vh - 20px);
-    margin: 10px auto;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
     background: var(--panel-bg);
-    border: 2px solid var(--panel-border);
-    border-radius: 16px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 25px var(--panel-border-glow);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
 
-    /* Left Sidebar: Defenders Selector */
+    /* Left Sidebar: Defenders & Shovel Only */
     #sidebar {
       width: 120px;
       height: 100%;
@@ -2364,51 +2359,6 @@ body.theme-muspelheim {
       display: flex;
       flex-direction: column;
       padding: 10px 8px;
-
-      .sidebar-header {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 5px;
-        padding-bottom: 8px;
-        margin-bottom: 8px;
-        border-bottom: 1px solid var(--panel-border-glow);
-
-        .sidebar-title {
-          font-family: var(--font-subheading);
-          font-size: 0.7rem;
-          font-weight: 800;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          text-align: center;
-          color: var(--text-gold);
-          text-shadow: 0 0 8px rgba(255, 213, 79, 0.5);
-        }
-
-        .roster-toggle-btn {
-          background: var(--sidebar-roster-btn-bg);
-          border: 1px solid var(--sidebar-roster-btn-border);
-          color: var(--sidebar-roster-btn-color);
-          font-family: var(--font-ui);
-          font-size: 0.68rem;
-          font-weight: 700;
-          padding: 4px 6px;
-          border-radius: 6px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          transition: all 0.2s ease;
-
-          &:hover {
-            background: rgba(212, 175, 55, 0.35);
-            border-color: #ffd54f;
-            box-shadow: 0 0 10px rgba(255, 213, 79, 0.4);
-            transform: translateY(-1px);
-          }
-        }
-      }
 
       #unit-selection {
         display: flex;
@@ -2430,7 +2380,10 @@ body.theme-muspelheim {
           background: var(--panel-border);
           border-radius: 2px;
         }
+      }
 
+      #unit-selection,
+      #sidebar-shovel-dock {
         .unit-card {
           position: relative;
           padding: 6px 4px;
@@ -2574,6 +2527,21 @@ body.theme-muspelheim {
           }
         }
       }
+
+      /* Fixed Shovel Demolish Dock at Bottom */
+      #sidebar-shovel-dock {
+        flex-shrink: 0;
+        padding-top: 6px;
+        border-top: 1px solid var(--panel-border-glow);
+        display: flex;
+        flex-direction: column;
+
+        .unit-card.shovel-card {
+          margin-top: 0;
+          width: 100%;
+          box-sizing: border-box;
+        }
+      }
     }
 
     /* Right Battle Area */
@@ -2589,46 +2557,120 @@ body.theme-muspelheim {
         display: flex;
         align-items: center;
         height: 72px;
-        padding: 0 24px;
+        padding: 0 20px;
         background: var(--top-bar-bg);
         border-bottom: 2px solid var(--panel-border);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
         box-sizing: border-box;
-        gap: 16px;
+        gap: 14px;
 
-        .realm-badge {
+        .top-bar-left {
           display: flex;
           align-items: center;
+          gap: 10px;
+          flex-shrink: 0;
+          z-index: 25;
+
+          .roster-topbar-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 42px;
+            box-sizing: border-box;
+            padding: 0 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, rgba(20, 26, 34, 0.96) 0%, rgba(28, 20, 16, 0.98) 50%, rgba(14, 30, 26, 0.96) 100%);
+            border: 1.5px solid #d4af37;
+            color: #fef08a;
+            font-family: var(--font-heading);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 10px rgba(212, 175, 55, 0.2);
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            backdrop-filter: blur(10px);
+
+            .roster-icon {
+              font-size: 1rem;
+              line-height: 1;
+            }
+
+            .roster-text {
+              line-height: 1;
+              white-space: nowrap;
+            }
+
+            &:hover {
+              background: linear-gradient(135deg, rgba(28, 38, 50, 0.98) 0%, rgba(42, 28, 22, 0.98) 50%, rgba(18, 44, 38, 0.98) 100%);
+              border-color: #fde047;
+              box-shadow: 0 5px 18px rgba(0, 0, 0, 0.8), 0 0 14px rgba(212, 175, 55, 0.45);
+              color: #ffffff;
+              transform: translateY(-1.5px);
+            }
+
+            &:active {
+              transform: translateY(1px) scale(0.98);
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(212, 175, 55, 0.25);
+            }
+          }
+        }
+
+        .realm-badge.center-realm-tablet {
+          position: absolute;
+          left: 50%;
+          top: 12px;
+          transform: translateX(-50%);
+          height: 48px;
+          width: 440px;
+          max-width: calc(100vw - 440px);
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           gap: 12px;
-          padding: 6px 18px;
-          background: var(--topbar-box-bg);
-          border: 1.5px solid var(--topbar-box-border);
-          border-radius: 12px;
-          box-shadow: var(--topbar-box-shadow);
+          padding: 0 16px;
+          background: linear-gradient(135deg, rgba(20, 26, 34, 0.95) 0%, rgba(28, 20, 16, 0.97) 50%, rgba(14, 30, 26, 0.95) 100%);
+          border: 1.8px solid #d4af37;
+          border-radius: 10px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 12px rgba(212, 175, 55, 0.35);
+          backdrop-filter: blur(10px);
+          z-index: 20;
 
           .realm-crest {
-            font-size: 1.3rem;
-            filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6));
+            font-size: 1.35rem;
+            line-height: 1;
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
           }
 
           .realm-text-group {
             display: flex;
             flex-direction: column;
+            align-items: center;
+            text-align: center;
 
             .realm-subtext {
-              font-size: 0.65rem;
+              font-size: 0.62rem;
               font-weight: 700;
-              letter-spacing: 1px;
-              color: var(--topbar-subtext-color);
+              letter-spacing: 2.5px;
+              color: #f59e0b;
+              text-transform: uppercase;
+              line-height: 1;
+              margin-bottom: 2px;
             }
 
             #realm-name {
-              font-family: var(--font-subheading);
-              font-size: 0.95rem;
+              font-family: var(--font-heading);
+              font-size: 1.05rem;
               font-weight: 800;
               letter-spacing: 1px;
-              color: var(--topbar-val-color);
-              text-shadow: var(--topbar-val-shadow);
+              color: #fef08a;
+              text-shadow: 0 0 10px rgba(253, 224, 71, 0.5);
+              line-height: 1.1;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              max-width: 320px;
             }
           }
         }
@@ -2637,12 +2679,28 @@ body.theme-muspelheim {
           flex-grow: 1;
         }
 
+        .top-bar-right {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-shrink: 0;
+          z-index: 25;
+
+          .top-bar-actions-slot {
+            width: 104px;
+            height: 46px;
+            flex-shrink: 0;
+          }
+        }
+
         /* Generic HUD Stat Boxes */
         .hud-stat-box {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 6px 16px;
+          height: 46px;
+          box-sizing: border-box;
+          padding: 0 16px;
           background: var(--topbar-box-bg);
           border: 1.5px solid var(--topbar-box-border);
           border-radius: 12px;
@@ -2741,13 +2799,14 @@ body.theme-muspelheim {
       .canvas-wrapper {
         flex-grow: 1;
         position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
 
         #game-canvas {
           display: block;
+          width: 100%;
+          height: 100%;
           cursor: crosshair;
         }
       }

@@ -57,6 +57,14 @@ export class Game {
   city?: string;
   isPaused: boolean = false;
   
+  get width(): number {
+    return this.grid ? this.grid.width : (this.canvas.clientWidth || 900);
+  }
+
+  get height(): number {
+    return this.grid ? this.grid.height : (this.canvas.clientHeight || 500);
+  }
+  
   sun: number = 1000;
   level: number = 1;
   selectedUnit: string | null = null;
@@ -157,8 +165,8 @@ export class Game {
   }
 
   createWeatherParticle(randomY = false): WeatherParticle {
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.width;
+    const h = this.height;
     
     if (this.realm === 'jotunheim' || this.realm === 'niflheim') {
       // Blizzard/Ice mist: Snowflakes & ice crystals drifting rapidly
@@ -371,7 +379,7 @@ export class Game {
       container.appendChild(card);
     });
 
-    // Demolish / Dig shovel card always at the end
+    // Demolish / Dig shovel card docked at bottom
     const shovelCard = document.createElement('div');
     shovelCard.className = 'unit-card shovel-card';
     shovelCard.dataset.unit = 'shovel';
@@ -385,7 +393,14 @@ export class Game {
       <div class="unit-name" data-i18n="dig">${t('dig')}</div>
       <div class="cost shovel-cost" data-i18n="remove">${t('remove')}</div>
     `;
-    container.appendChild(shovelCard);
+
+    const shovelDock = document.getElementById('sidebar-shovel-dock');
+    if (shovelDock) {
+      shovelDock.innerHTML = '';
+      shovelDock.appendChild(shovelCard);
+    } else {
+      container.appendChild(shovelCard);
+    }
 
     this.bindUnitCardEvents();
     this.updateUI();
@@ -450,8 +465,8 @@ export class Game {
 
       // Handle Victory / Defeat Button Clicks
       if (this.gameState === 'defeat' || this.gameState === 'victory') {
-        const cx = this.canvas.width / 2;
-        const cy = this.canvas.height / 2;
+        const cx = this.width / 2;
+        const cy = this.height / 2;
         // Retry / Next button bounds: cx - 140, cy + 40, w 130, h 45
         if (x >= cx - 140 && x <= cx - 10 && y >= cy + 40 && y <= cy + 85) {
           SoundManager.getInstance().playClick();
@@ -590,8 +605,8 @@ export class Game {
     if (isOccupied) return;
 
     let unit: Defender | null = null;
-    const x = 350 + col * this.grid.cellSize + 20; 
-    const y = row * this.grid.cellSize + 10;
+    const x = this.grid.startX + col * this.grid.cellWidth + (this.grid.cellWidth - 60) / 2;
+    const y = row * this.grid.cellHeight + (this.grid.cellHeight - 80) / 2;
 
     if (unitType === 'peashooter' && this.sun >= 100) {
       unit = new PeaShooter(x, y, row, col);
@@ -626,7 +641,7 @@ export class Game {
           this.addFloatingText(z.x + z.width/2, z.y, '-1000 🔥', '#ff5722', true);
         }
       }
-      for (let i = 0; i < this.canvas.width; i += 40) {
+      for (let i = 0; i < this.width; i += 40) {
         this.particles.emit(i, y + 20, '#ff5722', 15, 6, 5, 500);
         this.particles.emit(i, y + 20, '#ffeb3b', 10, 4, 3, 400);
       }
@@ -686,14 +701,14 @@ export class Game {
       let isEating = false;
 
       // Fortress breach defense check
-      if (zombie.x < 350) {
+      if (zombie.x < this.grid.startX) {
         if (this.valkyrieAvailable[zombie.row]) {
           this.valkyrieAvailable[zombie.row] = false;
-          this.valkyries.push(new Valkyrie(300, zombie.row * this.grid.cellSize + 10, zombie.row));
+          this.valkyries.push(new Valkyrie(this.grid.startX - 50, (zombie.row + 0.5) * this.grid.cellHeight - 40, zombie.row));
           this.odinCommandTimer = 1000;
           this.triggerScreenShake(300, 6);
           SoundManager.getInstance().playWave();
-        } else if (zombie.x < 260 && this.gameState === 'playing') {
+        } else if (zombie.x < this.grid.startX - 70 && this.gameState === 'playing') {
           // Fortress breached!
           this.gameState = 'defeat';
           this.triggerScreenShake(1000, 15);
@@ -784,8 +799,8 @@ export class Game {
     }
 
     // Update dynamic weather particles
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.width;
+    const h = this.height;
     for (let i = 0; i < this.weatherParticles.length; i++) {
       const p = this.weatherParticles[i];
       p.x += p.vx;
@@ -814,26 +829,29 @@ export class Game {
         const randomRow = Math.floor(Math.random() * this.grid.rows);
         const rand = Math.random();
         
+        const spawnY = (randomRow + 0.5) * this.grid.cellHeight - 45;
+        const spawnX = this.width + 10;
+
         // Thematic enemy spawns in Jotunheim (more frost trolls & giants)
         if (this.realm === 'jotunheim') {
           if (rand > 0.55) {
-            this.attackers.push(new Troll(this.canvas.width, randomRow * this.grid.cellSize, randomRow));
+            this.attackers.push(new Troll(spawnX, spawnY - 10, randomRow));
           } else if (rand > 0.25) {
-            this.attackers.push(new SmallTroll(this.canvas.width, randomRow * this.grid.cellSize, randomRow));
+            this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
           } else {
-            this.attackers.push(new ConeheadZombie(this.canvas.width, randomRow * this.grid.cellSize, randomRow));
+            this.attackers.push(new ConeheadZombie(spawnX, spawnY, randomRow));
           }
         } else {
           if (this.level >= 2 && rand > 0.75) {
-            this.attackers.push(new Troll(this.canvas.width, randomRow * this.grid.cellSize, randomRow));
+            this.attackers.push(new Troll(spawnX, spawnY - 10, randomRow));
           } else if (this.level >= 3 && rand > 0.6) {
-            this.attackers.push(new BucketheadZombie(this.canvas.width, randomRow * this.grid.cellSize, randomRow));
+            this.attackers.push(new BucketheadZombie(spawnX, spawnY, randomRow));
           } else if (this.level >= 2 && rand > 0.45) {
-            this.attackers.push(new ConeheadZombie(this.canvas.width, randomRow * this.grid.cellSize, randomRow));
+            this.attackers.push(new ConeheadZombie(spawnX, spawnY, randomRow));
           } else if (this.level >= 1 && rand > 0.3) {
-            this.attackers.push(new SmallTroll(this.canvas.width, randomRow * this.grid.cellSize, randomRow));
+            this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
           } else {
-            this.attackers.push(new BasicZombie(this.canvas.width, randomRow * this.grid.cellSize, randomRow));
+            this.attackers.push(new BasicZombie(spawnX, spawnY, randomRow));
           }
         }
       }
@@ -878,8 +896,9 @@ export class Game {
     const ctx = this.ctx;
     ctx.save();
     
+    const wallW = this.grid.startX;
     // Procedural stone masonry fortification wall
-    const wallGrad = ctx.createLinearGradient(0, 0, 350, 0);
+    const wallGrad = ctx.createLinearGradient(0, 0, wallW, 0);
     if (this.realm === 'jotunheim' || this.realm === 'niflheim' || this.realm === 'helheim') {
       wallGrad.addColorStop(0, '#102030');
       wallGrad.addColorStop(0.7, '#1b334a');
@@ -910,20 +929,20 @@ export class Game {
       wallGrad.addColorStop(1, '#455a64');
     }
     ctx.fillStyle = wallGrad;
-    ctx.fillRect(0, 0, 350, this.canvas.height);
+    ctx.fillRect(0, 0, wallW, this.height);
 
     // Stone brick patterns
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
     ctx.lineWidth = 1.5;
     const brickH = 32;
-    for (let y = 0; y < this.canvas.height; y += brickH) {
+    for (let y = 0; y < this.height; y += brickH) {
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(350, y);
+      ctx.lineTo(wallW, y);
       ctx.stroke();
       const rowIdx = Math.floor(y / brickH);
       const shift = (rowIdx % 2) * 35;
-      for (let x = shift; x < 350; x += 70) {
+      for (let x = shift; x < wallW; x += 70) {
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x, y + brickH);
@@ -937,28 +956,28 @@ export class Game {
       ctx.save();
 
       // 1. Water Seepage & Damp Minerals on wet stone wall
-      const seepGrad = ctx.createLinearGradient(340, 0, 0, 0);
+      const seepGrad = ctx.createLinearGradient(wallW - 10, 0, 0, 0);
       seepGrad.addColorStop(0, 'rgba(20, 184, 166, 0.22)');
       seepGrad.addColorStop(0.5, 'rgba(13, 148, 136, 0.10)');
       seepGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = seepGrad;
-      ctx.fillRect(0, 0, 350, this.canvas.height);
+      ctx.fillRect(0, 0, wallW, this.height);
 
       // 2. Heavy Dwarven Bronze Border Beam with Water-Ward Rivets
       ctx.fillStyle = '#1c2a32';
-      ctx.fillRect(340, 0, 10, this.canvas.height);
+      ctx.fillRect(wallW - 10, 0, 10, this.height);
       ctx.fillStyle = '#14b8a6';
       ctx.shadowColor = '#2dd4bf';
       ctx.shadowBlur = 5;
-      for (let ri = 0; ri < Math.floor(this.canvas.height / 28); ri++) {
+      for (let ri = 0; ri < Math.floor(this.height / 28); ri++) {
         ctx.beginPath();
-        ctx.arc(345, 14 + ri * 28, 3.5, 0, Math.PI * 2);
+        ctx.arc(wallW - 5, 14 + ri * 28, 3.5, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.shadowBlur = 0;
 
       // 3. Wall Torches & Lantern with Amber Flame
-      const torchY = this.canvas.height * 0.18;
+      const torchY = this.height * 0.18;
       const flicker = Math.sin(time * 6.5) * 0.25 + 0.75;
       // Lantern bracket
       ctx.fillStyle = '#334155';
@@ -994,8 +1013,8 @@ export class Game {
       ctx.shadowBlur = 0;
 
       // 5. River Gate Sluice Arch & Iron Portcullis
-      const gateTop = this.canvas.height * 0.38;
-      const gateH = this.canvas.height * 0.42;
+      const gateTop = this.height * 0.38;
+      const gateH = this.height * 0.42;
       const gateX = 135;
       const gateW2 = 90;
 
@@ -1161,29 +1180,30 @@ export class Game {
       ctx.save();
 
       // ── Warm amber forge-glow seeping through the stone ──
-      const forgeSeep = ctx.createLinearGradient(340, 0, 0, 0);
+      const forgeSeep = ctx.createLinearGradient(wallW - 10, 0, 0, 0);
       forgeSeep.addColorStop(0, 'rgba(200,120,20,0.22)');
       forgeSeep.addColorStop(0.4, 'rgba(160,90,10,0.10)');
       forgeSeep.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = forgeSeep;
-      ctx.fillRect(0, 0, 350, this.canvas.height);
+      ctx.fillRect(0, 0, wallW, this.height);
 
       // ── Dwarven iron-riveted border beam ──
       ctx.fillStyle = '#2a2218';
-      ctx.fillRect(340, 0, 10, this.canvas.height);
+      ctx.fillRect(wallW - 10, 0, 10, this.height);
       // Rivet dots
       ctx.fillStyle = '#c8a050';
       ctx.shadowColor = '#ffa000';
       ctx.shadowBlur = 4;
-      for (let ri = 0; ri < Math.floor(this.canvas.height / 28); ri++) {
+      for (let ri = 0; ri < Math.floor(this.height / 28); ri++) {
         ctx.beginPath();
-        ctx.arc(345, 14 + ri * 28, 3.5, 0, Math.PI * 2);
+        ctx.arc(wallW - 5, 14 + ri * 28, 3.5, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.shadowBlur = 0;
 
       // ── Wall torches with animated flicker ──
-      const torchPositions = [50, this.canvas.height * 0.28, this.canvas.height * 0.54, this.canvas.height * 0.80];
+      const torchX = wallW - 30;
+      const torchPositions = [50, this.height * 0.28, this.height * 0.54, this.height * 0.80];
       for (let ti = 0; ti < torchPositions.length; ti++) {
         const ty = torchPositions[ti];
         const flicker = Math.sin(time * 7.0 + ti * 2.3) * 0.3 + 0.7;
@@ -1191,22 +1211,22 @@ export class Game {
 
         // Torch bracket
         ctx.fillStyle = '#3a3028';
-        ctx.fillRect(290, ty - 4, 30, 8);
-        ctx.fillRect(315, ty - 16, 6, 16);
+        ctx.fillRect(torchX - 30, ty - 4, 30, 8);
+        ctx.fillRect(torchX - 5, ty - 16, 6, 16);
 
-        // Torch glow halo (large, bleeds onto battlefield)
-        const haloGrad = ctx.createRadialGradient(320, ty - 20, 0, 320, ty - 20, 55 * flicker);
+        // Torch glow halo
+        const haloGrad = ctx.createRadialGradient(torchX, ty - 20, 0, torchX, ty - 20, 55 * flicker);
         haloGrad.addColorStop(0, `rgba(255,160,30,${0.45 * flicker * flicker2})`);
         haloGrad.addColorStop(0.5, `rgba(200,100,10,${0.18 * flicker})`);
         haloGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.beginPath();
-        ctx.arc(320, ty - 20, 55 * flicker, 0, Math.PI * 2);
+        ctx.arc(torchX, ty - 20, 55 * flicker, 0, Math.PI * 2);
         ctx.fillStyle = haloGrad;
         ctx.fill();
 
         // Flame body
         ctx.save();
-        ctx.translate(320, ty - 20);
+        ctx.translate(torchX, ty - 20);
         const flameGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 10 * flicker);
         flameGrad.addColorStop(0, `rgba(255,240,160,${0.95 * flicker2})`);
         flameGrad.addColorStop(0.4, `rgba(255,140,20,${0.80 * flicker})`);
@@ -1231,13 +1251,13 @@ export class Game {
       ctx.shadowColor = '#ffaa00';
       ctx.shadowBlur = 10;
       for (let ri = 0; ri < nRunes.length; ri++) {
-        ctx.fillText(nRunes[ri], 258, 55 + ri * 58);
+        ctx.fillText(nRunes[ri], wallW - 85, 55 + ri * 58);
       }
       ctx.shadowBlur = 0;
 
       // ── Portcullis gate (heavy iron bars) ──
-      const gateTop = this.canvas.height * 0.30;
-      const gateH   = this.canvas.height * 0.40;
+      const gateTop = this.height * 0.30;
+      const gateH   = this.height * 0.40;
       const gateX   = 150;
       const gateW2  = 80;
       // Gate arch surround
@@ -1308,22 +1328,23 @@ export class Game {
     } else if (this.realm === 'jotunheim') {
       ctx.save();
       // Frost glaze on wall
-      const frostGrad = ctx.createLinearGradient(0, 0, 350, 0);
+      const frostGrad = ctx.createLinearGradient(0, 0, wallW, 0);
       frostGrad.addColorStop(0, 'rgba(0, 229, 255, 0.15)');
       frostGrad.addColorStop(1, 'rgba(129, 212, 250, 0.40)');
       ctx.fillStyle = frostGrad;
-      ctx.fillRect(0, 0, 350, this.canvas.height);
+      ctx.fillRect(0, 0, wallW, this.height);
 
       // Large hanging icicles along the battlement
       ctx.fillStyle = 'rgba(224, 247, 250, 0.90)';
       ctx.shadowColor = '#00e5ff';
       ctx.shadowBlur = 10;
-      for (let i = 0; i < 14; i++) {
-        const ix = 25 + i * 24;
-        const iLen = 25 + (i % 5) * 16;
+      const icicleCount = Math.max(3, Math.floor((wallW - 30) / 20));
+      for (let i = 0; i < icicleCount; i++) {
+        const ix = 15 + i * 20;
+        const iLen = 22 + (i % 5) * 14;
         ctx.beginPath();
-        ctx.moveTo(ix - 8, 0);
-        ctx.lineTo(ix + 8, 0);
+        ctx.moveTo(ix - 7, 0);
+        ctx.lineTo(ix + 7, 0);
         ctx.lineTo(ix, iLen);
         ctx.closePath();
         ctx.fill();
@@ -1331,45 +1352,49 @@ export class Game {
 
       // Glowing Frost Runes carved into the stone
       const jRunes = ['ᛃ', 'ᛟ', 'ᛏ', 'ᚢ', 'ᚾ', 'ᚺ', 'ᛖ'];
-      ctx.font = 'bold 22px serif';
+      ctx.font = 'bold 20px serif';
       ctx.fillStyle = '#e0f7fa';
       ctx.shadowColor = '#00e5ff';
       ctx.shadowBlur = 14;
       for (let i = 0; i < jRunes.length; i++) {
-        ctx.fillText(jRunes[i], 310, 60 + i * 65);
+        ctx.fillText(jRunes[i], wallW - 28, 60 + i * 65);
       }
       ctx.restore();
     } else if (this.realm === 'asgard') {
       // Golden Valhalla trim & Aesir runes
       ctx.fillStyle = 'rgba(255, 215, 0, 0.18)';
-      ctx.fillRect(0, 0, 350, this.canvas.height);
+      ctx.fillRect(0, 0, wallW, this.height);
       const aRunes = ['ᚨ', 'ᛊ', 'ᚷ', 'ᚨ', 'ᚱ', 'ᛞ'];
-      ctx.font = 'bold 22px serif';
+      ctx.font = 'bold 20px serif';
       ctx.fillStyle = '#fff9c4';
       ctx.shadowColor = '#ffd54f';
       ctx.shadowBlur = 14;
       for (let i = 0; i < aRunes.length; i++) {
-        ctx.fillText(aRunes[i], 310, 70 + i * 70);
+        ctx.fillText(aRunes[i], wallW - 28, 70 + i * 70);
       }
     }
 
     if (!(this.realm === 'svartalfheim' && (this.city === 'nidavellir' || this.city === 'althjofs-wheel'))) {
-      // Outer Fortress Border Beam (non-Nidavellir)
+      // Outer Fortress Border Beam (aligned with wall edge)
       ctx.fillStyle = this.realm === 'jotunheim' ? '#00e5ff' : '#ffc107'; 
-      ctx.fillRect(340, 0, 10, this.canvas.height);
+      ctx.fillRect(wallW - 8, 0, 8, this.height);
+      ctx.fillStyle = this.realm === 'jotunheim' ? '#e0f7fa' : '#ffe082';
+      ctx.fillRect(wallW - 3, 0, 3, this.height);
 
-      // Watchtower Window
+      // Watchtower Window (centered on rampart)
+      const winW = Math.min(130, Math.max(80, wallW - 40));
+      const winX = (wallW - 8 - winW) / 2;
       ctx.fillStyle = '#1c2529'; 
-      ctx.fillRect(20, 30, 140, 200);
+      ctx.fillRect(winX, 30, winW, 190);
       ctx.fillStyle = '#ffb74d'; 
-      ctx.shadowBlur = 30;
+      ctx.shadowBlur = 24;
       ctx.shadowColor = '#ffb74d';
-      ctx.fillRect(40, 50, 100, 150);
+      ctx.fillRect(winX + 15, 45, winW - 30, 150);
       ctx.shadowBlur = 0;
 
       // --- DRAW THOR ---
       ctx.save();
-      ctx.translate(20, 0); 
+      ctx.translate(winX - 15, 0); 
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.beginPath(); ctx.ellipse(70, 160, 25, 8, 0, 0, Math.PI*2); ctx.fill();
 
@@ -1443,7 +1468,7 @@ export class Game {
 
       // --- DRAW ATREUS ---
       ctx.save();
-      ctx.translate(20, 0);
+      ctx.translate(winX - 15, 0);
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.beginPath(); ctx.ellipse(45, 160, 15, 5, 0, 0, Math.PI*2); ctx.fill();
 
@@ -1486,24 +1511,35 @@ export class Game {
       ctx.beginPath(); ctx.moveTo(45, 125); ctx.lineTo(30, 135); ctx.stroke();
       ctx.restore();
 
-      // --- ODIN'S BALCONY ---
-      ctx.fillStyle = '#37474f';
+      // --- ODIN'S COMMAND BALCONY (Centered within ramparts) ---
+      const balW = Math.min(145, Math.max(90, wallW - 24));
+      const balX = (wallW - 8 - balW) / 2;
+      ctx.fillStyle = '#263238';
       ctx.beginPath();
-      ctx.moveTo(180, 250); ctx.lineTo(360, 250); ctx.lineTo(320, 450); ctx.lineTo(180, 450); ctx.fill();
+      ctx.moveTo(balX, 250); 
+      ctx.lineTo(balX + balW, 250); 
+      ctx.lineTo(balX + balW - 10, 450); 
+      ctx.lineTo(balX + 10, 450); 
+      ctx.closePath();
+      ctx.fill();
+      // Gold Balcony Trim
       ctx.fillStyle = '#ffc107'; 
-      ctx.fillRect(180, 230, 180, 20);
+      ctx.fillRect(balX, 245, balW, 8);
 
-      // --- DRAW ODIN ---
+      // --- DRAW ODIN (Centered on balcony) ---
       ctx.save();
+      const odinShift = (balX + balW / 2) - 245;
+      ctx.translate(odinShift, 0);
+
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.beginPath(); ctx.ellipse(250, 410, 35, 12, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(245, 410, 30, 10, 0, 0, Math.PI*2); ctx.fill();
       
       const odinCape = ctx.createLinearGradient(200, 300, 250, 420);
       odinCape.addColorStop(0, '#b71c1c');
       odinCape.addColorStop(1, '#4a148c'); 
       ctx.fillStyle = odinCape;
       ctx.beginPath();
-      ctx.moveTo(250, 290); ctx.quadraticCurveTo(180, 350, 190, 420); ctx.lineTo(270, 420); ctx.fill();
+      ctx.moveTo(245, 290); ctx.quadraticCurveTo(195, 350, 205, 420); ctx.lineTo(270, 420); ctx.fill();
 
       const odinArmor = ctx.createLinearGradient(220, 300, 260, 380);
       odinArmor.addColorStop(0, '#ffe082');
@@ -1533,8 +1569,8 @@ export class Game {
       ctx.beginPath(); ctx.arc(245, 270, 17, Math.PI, 0); ctx.fill();
       ctx.fillStyle = '#ffffff'; 
       ctx.shadowBlur = 5; ctx.shadowColor = '#fff';
-      ctx.beginPath(); ctx.moveTo(228, 265); ctx.quadraticCurveTo(190, 240, 195, 210); ctx.quadraticCurveTo(220, 230, 235, 255); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(262, 265); ctx.quadraticCurveTo(300, 240, 295, 210); ctx.quadraticCurveTo(270, 230, 255, 255); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(228, 265); ctx.quadraticCurveTo(205, 240, 210, 210); ctx.quadraticCurveTo(224, 230, 235, 255); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(262, 265); ctx.quadraticCurveTo(285, 240, 280, 210); ctx.quadraticCurveTo(266, 230, 255, 255); ctx.fill();
       ctx.shadowBlur = 0;
       
       ctx.strokeStyle = '#5d4037';
@@ -1543,17 +1579,17 @@ export class Game {
       
       ctx.beginPath();
       if (this.odinCommandTimer > 0) {
-        ctx.moveTo(260, 340); ctx.lineTo(340, 200); ctx.stroke();
+        ctx.moveTo(255, 330); ctx.lineTo(295, 190); ctx.stroke();
         ctx.fillStyle = '#e0f7fa'; 
-        ctx.shadowBlur = 30; ctx.shadowColor = '#00e5ff';
-        ctx.beginPath(); ctx.moveTo(330, 210); ctx.lineTo(360, 160); ctx.lineTo(350, 220); ctx.fill();
-        ctx.strokeStyle = '#ffca28'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(255,300); ctx.lineTo(290, 270); ctx.stroke();
+        ctx.shadowBlur = 25; ctx.shadowColor = '#00e5ff';
+        ctx.beginPath(); ctx.moveTo(290, 200); ctx.lineTo(310, 150); ctx.lineTo(300, 210); ctx.fill();
+        ctx.strokeStyle = '#ffca28'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(250,290); ctx.lineTo(275, 260); ctx.stroke();
       } else {
-        ctx.moveTo(270, 250); ctx.lineTo(270, 420); ctx.stroke();
+        ctx.moveTo(262, 250); ctx.lineTo(262, 410); ctx.stroke();
         ctx.fillStyle = '#e0f7fa'; 
         ctx.shadowBlur = 15; ctx.shadowColor = '#00e5ff';
-        ctx.beginPath(); ctx.moveTo(262, 250); ctx.lineTo(270, 200); ctx.lineTo(278, 250); ctx.fill();
-        ctx.strokeStyle = '#ffca28'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(255,300); ctx.lineTo(270, 330); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(256, 250); ctx.lineTo(262, 200); ctx.lineTo(268, 250); ctx.fill();
+        ctx.strokeStyle = '#ffca28'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(250,290); ctx.lineTo(262, 320); ctx.stroke();
       }
       ctx.shadowBlur = 0;
       ctx.restore();
@@ -1563,43 +1599,44 @@ export class Game {
       // NIDAVELLIR: DWARVEN DEFENSIVE BATTLEMENTS
       // ══════════════════════════════════════════════
       const time = Date.now() / 1000;
-      const h = this.canvas.height;
+      const h = this.height;
       
-      // Stone battlement wall (narrower, covering the left edge up to x=330)
-      ctx.fillStyle = '#1e241c'; // Cool dark stone to match new palette
+      const wallX = this.grid.startX;
+      // Stone battlement wall (aligned with wall border)
+      ctx.fillStyle = '#1e241c';
       ctx.beginPath();
-      ctx.moveTo(270, 0); ctx.lineTo(330, 0); 
-      ctx.lineTo(330, h); ctx.lineTo(270, h); 
+      ctx.moveTo(wallX - 60, 0); ctx.lineTo(wallX, 0); 
+      ctx.lineTo(wallX, h); ctx.lineTo(wallX - 60, h); 
       ctx.fill();
       
       // Bronze trim along battlement edge
-      const railGrad = ctx.createLinearGradient(270, 0, 330, 0);
+      const railGrad = ctx.createLinearGradient(wallX - 60, 0, wallX, 0);
       railGrad.addColorStop(0, '#3a4a35');
       railGrad.addColorStop(0.5, '#6a7860');
       railGrad.addColorStop(1, '#2a3525');
       ctx.fillStyle = railGrad;
-      ctx.fillRect(270, 0, 60, h);
+      ctx.fillRect(wallX - 60, 0, 60, h);
       
       // Crenellations (teeth on the wall) vertically distributed
       ctx.fillStyle = '#1e241c';
       for (let y = 0; y < h; y += 45) {
-        ctx.fillRect(290, y, 40, 20);
+        ctx.fillRect(wallX - 40, y, 40, 20);
         // Bronze cap on each crenellation
         ctx.fillStyle = '#4a5545';
-        ctx.fillRect(287, y, 43, 6);
+        ctx.fillRect(wallX - 43, y, 43, 6);
         ctx.fillStyle = '#1e241c';
       }
 
       // Draw 5 ballistae, one for each row
       for (let r = 0; r < 5; r++) {
-        const by = (h / 5) * (r + 0.5);
+        const by = (r + 0.5) * this.grid.cellHeight;
         
         // Base swivel
         ctx.fillStyle = '#2c3528';
-        ctx.beginPath(); ctx.ellipse(305, by + 15, 20, 10, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(wallX - 25, by + 15, 20, 10, 0, 0, Math.PI*2); ctx.fill();
         
         ctx.save();
-        ctx.translate(305, by);
+        ctx.translate(wallX - 25, by);
         // Idle tracking rotation varying per row
         ctx.rotate(Math.sin(time * 0.8 + r) * 0.15);
         
@@ -1639,30 +1676,31 @@ export class Game {
       // ALTHJOF'S WHEEL: HYDRAULIC DEFENSIVE CANAL SLUICES
       // ══════════════════════════════════════════════
       const time = Date.now() / 1000;
-      const h = this.canvas.height;
+      const h = this.height;
       const rows = this.grid.rows;
       
-      // Dwarven canal quay masonry along border (x = 285 to 340)
+      const wallX = this.grid.startX;
+      // Dwarven canal quay masonry along border
       ctx.fillStyle = '#0a1419';
-      ctx.fillRect(285, 0, 55, h);
+      ctx.fillRect(wallX - 55, 0, 55, h);
 
       // Bronze canal rim border trim
-      const railG = ctx.createLinearGradient(285, 0, 340, 0);
+      const railG = ctx.createLinearGradient(wallX - 55, 0, wallX, 0);
       railG.addColorStop(0, '#0d282e');
       railG.addColorStop(0.5, '#14b8a6');
       railG.addColorStop(1, '#0f766e');
       ctx.fillStyle = railG;
-      ctx.fillRect(336, 0, 4, h);
+      ctx.fillRect(wallX - 4, 0, 4, h);
 
       // Row-aligned hydraulic defense turbines (lawnmower stations)
       for (let r = 0; r < rows; r++) {
-        const by = (h / rows) * (r + 0.5);
+        const by = (r + 0.5) * this.grid.cellHeight;
         const isReady = this.valkyrieAvailable[r];
 
         // Sluice Culvert Arch Housing
         ctx.fillStyle = '#060d11';
         ctx.beginPath();
-        ctx.roundRect(292, by - 22, 42, 44, 6);
+        ctx.roundRect(wallX - 48, by - 22, 42, 44, 6);
         ctx.fill();
         ctx.strokeStyle = isReady ? '#14b8a6' : '#1e293b';
         ctx.lineWidth = 1.8;
@@ -1671,7 +1709,7 @@ export class Game {
         if (isReady) {
           // Spinning Hydraulic Water Turbine Wheel
           ctx.save();
-          ctx.translate(313, by);
+          ctx.translate(wallX - 27, by);
           const turbSpin = time * 4.5 + r * 1.2;
           ctx.rotate(turbSpin);
 
@@ -1697,19 +1735,19 @@ export class Game {
           ctx.restore();
 
           // High-pressure churning water foam in the sluice
-          const sFoam = ctx.createRadialGradient(334, by, 2, 334, by, 14);
+          const sFoam = ctx.createRadialGradient(wallX - 6, by, 2, wallX - 6, by, 14);
           sFoam.addColorStop(0, 'rgba(240, 253, 250, 0.9)');
           sFoam.addColorStop(0.5, 'rgba(45, 212, 191, 0.6)');
           sFoam.addColorStop(1, 'rgba(14, 165, 233, 0)');
           ctx.fillStyle = sFoam;
           ctx.beginPath();
-          ctx.ellipse(334, by, 8, 14, 0, 0, Math.PI * 2);
+          ctx.ellipse(wallX - 6, by, 8, 14, 0, 0, Math.PI * 2);
           ctx.fill();
 
           // Pressure Gauge with active needle
           ctx.fillStyle = '#1c1917';
           ctx.beginPath();
-          ctx.arc(297, by - 13, 5, 0, Math.PI * 2);
+          ctx.arc(wallX - 43, by - 13, 5, 0, Math.PI * 2);
           ctx.fill();
           ctx.strokeStyle = '#f59e0b';
           ctx.lineWidth = 1;
@@ -1719,15 +1757,15 @@ export class Game {
           ctx.strokeStyle = '#2dd4bf';
           ctx.lineWidth = 1.2;
           ctx.beginPath();
-          ctx.moveTo(297, by - 13);
-          ctx.lineTo(297 + Math.cos(needleAng) * 4, (by - 13) + Math.sin(needleAng) * 4);
+          ctx.moveTo(wallX - 43, by - 13);
+          ctx.lineTo((wallX - 43) + Math.cos(needleAng) * 4, (by - 13) + Math.sin(needleAng) * 4);
           ctx.stroke();
 
         } else {
           // Empty/Discharged Sluice: Water draining out
           ctx.fillStyle = '#020608';
           ctx.beginPath();
-          ctx.arc(313, by, 10, 0, Math.PI * 2);
+          ctx.arc(wallX - 27, by, 10, 0, Math.PI * 2);
           ctx.fill();
 
           // Water drips
@@ -1735,7 +1773,7 @@ export class Game {
             const dPhase = (time * 1.5 + di * 0.5 + r) % 1;
             ctx.fillStyle = `rgba(45, 212, 191, ${(1 - dPhase) * 0.5})`;
             ctx.beginPath();
-            ctx.arc(313 + di * 4 - 2, by - 4 + dPhase * 16, 1.5, 0, Math.PI * 2);
+            ctx.arc(wallX - 27 + di * 4 - 2, by - 4 + dPhase * 16, 1.5, 0, Math.PI * 2);
             ctx.fill();
           }
         }
@@ -1747,40 +1785,41 @@ export class Game {
   // Draw 100% Procedural Animated Living Realm Environments
   drawAtmosphere() {
     const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.width;
+    const h = this.height;
     const time = Date.now() / 1000;
+    const gridX = this.grid.startX;
 
     // === ALTHJOF'S WHEEL: SUBTERRANEAN DWARVEN WATERMILL & OUTER CANAL RAPIDS ===
     if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
       ctx.save();
 
       // ── 1. SKY / CAVERN GORGE AMBIENCE ──
-      const skyGrad = ctx.createLinearGradient(350, 0, w, h * 0.7);
+      const skyGrad = ctx.createLinearGradient(gridX, 0, w, h * 0.7);
       skyGrad.addColorStop(0, '#0a161b');
       skyGrad.addColorStop(0.35, '#071015');
       skyGrad.addColorStop(0.75, '#04090c');
       skyGrad.addColorStop(1, '#020507');
       ctx.fillStyle = skyGrad;
-      ctx.fillRect(350, 0, w - 350, h);
+      ctx.fillRect(gridX, 0, w - gridX, h);
 
       // ── 2. SUBTERRANEAN WATERWAY CANAL (Cascading rapids flowing behind grid) ──
       const riverTopY = h * 0.28;
       const riverBotY = h * 0.78;
-      const riverGrad = ctx.createLinearGradient(350, riverTopY, 350, riverBotY);
+      const riverGrad = ctx.createLinearGradient(gridX, riverTopY, gridX, riverBotY);
       riverGrad.addColorStop(0, '#04171d');
       riverGrad.addColorStop(0.3, '#0b323c');
       riverGrad.addColorStop(0.65, '#07242c');
       riverGrad.addColorStop(1, '#031116');
       ctx.fillStyle = riverGrad;
-      ctx.fillRect(350, riverTopY, w - 350, riverBotY - riverTopY);
+      ctx.fillRect(gridX, riverTopY, w - gridX, riverBotY - riverTopY);
 
       // Animated Water Torrents & Current Flow Lines
       ctx.save();
       for (let wi = 0; wi < 14; wi++) {
         const streamT = ((time * 0.8 + wi * 0.23) % 1);
         const wy = riverTopY + 16 + (wi * 22) % (riverBotY - riverTopY - 32);
-        const wxStart = 350 + streamT * (w - 350);
+        const wxStart = gridX + streamT * (w - gridX);
         const wLen = 70 + (wi % 5) * 35;
         const wGrad = ctx.createLinearGradient(wxStart, wy, wxStart + wLen, wy);
         wGrad.addColorStop(0, 'rgba(20, 184, 166, 0)');
@@ -1799,8 +1838,8 @@ export class Game {
       // ── 3. CAVERN VAULT ROCK CEILING & STALACTITES ──
       ctx.fillStyle = '#060d10';
       ctx.beginPath();
-      ctx.moveTo(350, 0);
-      ctx.lineTo(350, h * 0.16);
+      ctx.moveTo(gridX, 0);
+      ctx.lineTo(gridX, h * 0.16);
       ctx.quadraticCurveTo(w * 0.45, h * 0.22, w * 0.55, h * 0.14);
       ctx.quadraticCurveTo(w * 0.68, h * 0.25, w * 0.82, h * 0.16);
       ctx.quadraticCurveTo(w * 0.92, h * 0.20, w, h * 0.12);
@@ -1850,14 +1889,10 @@ export class Game {
       const bY = riverTopY - 14;
       // Stone bridge beam
       ctx.fillStyle = '#111b20';
-      ctx.fillRect(350, bY, w - 350, 18);
-      // Bronze rail
-      ctx.strokeStyle = '#92400e';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(350, bY - 6);
-      ctx.lineTo(w, bY - 6);
-      ctx.stroke();
+      ctx.fillRect(this.grid.startX, bY, w - this.grid.startX, 14);
+      // Soft ambient rail shadow
+      ctx.fillStyle = 'rgba(146, 64, 14, 0.2)';
+      ctx.fillRect(this.grid.startX, bY - 2, w - this.grid.startX, 2);
 
       // Bridge support arch piers
       for (let pi = 0; pi < 3; pi++) {
@@ -1884,11 +1919,13 @@ export class Game {
         ctx.fill();
       }
 
-      // ── 5. THE COLOSSAL ROTATING GREAT WATERWHEEL OF ALTHJOF ──
-      const wheelX = w * 0.78;
+      // ── 5. THE ROTATING GREAT WATERWHEEL OF ALTHJOF (Distant Backdrop) ──
+      const wheelX = w * 0.91;
       const wheelY = riverTopY + (riverBotY - riverTopY) * 0.42;
-      const wheelR = Math.min(135, (riverBotY - riverTopY) * 0.72);
+      const wheelR = Math.min(85, (riverBotY - riverTopY) * 0.50);
       const wheelRot = time * 0.48; // Smooth continuous majestic rotation
+      ctx.save();
+      ctx.globalAlpha = 0.32; // Soft atmospheric depth so combat lanes remain crisp
 
       // ── 4b. AQUEDUCT WATER CHUTE FEEDING THE GREAT WHEEL ──
       const chuteX = wheelX - wheelR * 0.42;
@@ -2055,10 +2092,11 @@ export class Game {
         ctx.arc(dropX, dropY, 2.5 + dropPhase * 3, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore(); // Exit distant waterwheel alpha
 
       // ── 7. COOL SUBTERRANEAN RIVER MIST & FOG BANKS ──
       for (let f = 0; f < 3; f++) {
-        const fX = 350 + ((time * 22 + f * 260) % (w - 300));
+        const fX = gridX + ((time * 22 + f * 260) % (w - gridX));
         const fY = riverBotY - 18 + f * 10;
         const fogG = ctx.createRadialGradient(fX, fY, 0, fX, fY, 180);
         fogG.addColorStop(0, 'rgba(45, 212, 191, 0.12)');
@@ -2091,24 +2129,24 @@ export class Game {
       ctx.save();
 
       // ── 1. SKY: cool dark gorge atmosphere ──
-      const skyGrad = ctx.createLinearGradient(350, 0, w, h * 0.55);
+      const skyGrad = ctx.createLinearGradient(gridX, 0, w, h * 0.55);
       skyGrad.addColorStop(0,   '#202e20');
       skyGrad.addColorStop(0.4, '#131c13');
       skyGrad.addColorStop(1,   '#080c08');
       ctx.fillStyle = skyGrad;
-      ctx.fillRect(350, 0, w - 350, h);
+      ctx.fillRect(gridX, 0, w - gridX, h);
 
       // ── 2. SUBTLE GOD RAYS — 2 soft golden shafts only ──
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       for (let ri = 0; ri < 2; ri++) {
         const rayPulse = 0.018 + Math.sin(time * 0.35 + ri * 2.0) * 0.008;
-        const rayGrad = ctx.createLinearGradient(350, 0, w, h);
+        const rayGrad = ctx.createLinearGradient(gridX, 0, w, h);
         rayGrad.addColorStop(0,   `rgba(230,210,150,${rayPulse})`);
         rayGrad.addColorStop(0.6, `rgba(180,160,100,${rayPulse * 0.3})`);
         rayGrad.addColorStop(1,   'rgba(0,0,0,0)');
         ctx.fillStyle = rayGrad;
-        const rx0 = 380 + ri * 220;
+        const rx0 = gridX + 30 + ri * 220;
         const rw2 = 55 + ri * 30;
         ctx.beginPath();
         ctx.moveTo(rx0 - rw2, 0);
@@ -2175,8 +2213,8 @@ export class Game {
       // Layer 3 — most distant
       ctx.fillStyle = '#1a2218';
       ctx.beginPath();
-      ctx.moveTo(350, h);
-      ctx.lineTo(350, h * 0.55);
+      ctx.moveTo(gridX, h);
+      ctx.lineTo(gridX, h * 0.55);
       ctx.quadraticCurveTo(w * 0.42, h * 0.38, w * 0.55, h * 0.48);
       ctx.quadraticCurveTo(w * 0.65, h * 0.34, w * 0.75, h * 0.42);
       ctx.quadraticCurveTo(w * 0.85, h * 0.28, w, h * 0.36);
@@ -2186,8 +2224,8 @@ export class Game {
       // Layer 2 — mid-distance
       ctx.fillStyle = '#121810';
       ctx.beginPath();
-      ctx.moveTo(350, h);
-      ctx.lineTo(350, h * 0.62);
+      ctx.moveTo(gridX, h);
+      ctx.lineTo(gridX, h * 0.62);
       ctx.quadraticCurveTo(w * 0.38, h * 0.44, w * 0.48, h * 0.54);
       ctx.quadraticCurveTo(w * 0.58, h * 0.38, w * 0.68, h * 0.50);
       ctx.quadraticCurveTo(w * 0.80, h * 0.30, w * 0.90, h * 0.44);
@@ -2198,8 +2236,8 @@ export class Game {
       // Layer 1 — closest
       ctx.fillStyle = '#0b100a';
       ctx.beginPath();
-      ctx.moveTo(350, h);
-      ctx.lineTo(350, h * 0.72);
+      ctx.moveTo(gridX, h);
+      ctx.lineTo(gridX, h * 0.72);
       ctx.quadraticCurveTo(w * 0.36, h * 0.58, w * 0.44, h * 0.66);
       ctx.quadraticCurveTo(w * 0.53, h * 0.50, w * 0.62, h * 0.62);
       ctx.quadraticCurveTo(w * 0.74, h * 0.44, w * 0.84, h * 0.58);
@@ -2315,12 +2353,12 @@ export class Game {
       }
 
       // ── 8. GROUND FOG at the base of the gorge — cool blue-grey ──
-      const fogGrad = ctx.createLinearGradient(350, h * 0.80, 350, h);
+      const fogGrad = ctx.createLinearGradient(gridX, h * 0.80, gridX, h);
       fogGrad.addColorStop(0,   'rgba(0,0,0,0)');
       fogGrad.addColorStop(0.4, 'rgba(100,130,120,0.10)');
       fogGrad.addColorStop(1,   'rgba(80,115,110,0.28)');
       ctx.fillStyle = fogGrad;
-      ctx.fillRect(350, h * 0.80, w - 350, h * 0.20);
+      ctx.fillRect(gridX, h * 0.80, w - gridX, h * 0.20);
 
       // ── 9. FORGE CAVE EMBER SPARKS — subtle, not dominant ──
       ctx.globalCompositeOperation = 'lighter';
@@ -2345,15 +2383,15 @@ export class Game {
       // 1. Dynamic Aurora Borealis (Waving polar lights)
       ctx.globalCompositeOperation = 'lighter';
       for (let a = 0; a < 3; a++) {
-        const aGrad = ctx.createLinearGradient(350, 0, w, h * 0.5);
+        const aGrad = ctx.createLinearGradient(gridX, 0, w, h * 0.5);
         const aAlpha = 0.18 + Math.sin(time * 0.6 + a * 1.8) * 0.08;
         aGrad.addColorStop(0, `rgba(0, 229, 255, ${aAlpha})`);
         aGrad.addColorStop(0.5, `rgba(105, 240, 174, ${aAlpha * 0.8})`);
         aGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = aGrad;
         ctx.beginPath();
-        ctx.moveTo(350, 0);
-        for (let x = 350; x <= w; x += 30) {
+        ctx.moveTo(gridX, 0);
+        for (let x = gridX; x <= w; x += 30) {
           const waveY = h * 0.15 + Math.sin(time * 1.2 + x * 0.008 + a) * 45 + Math.cos(time * 0.8 + x * 0.015) * 20;
           ctx.lineTo(x, waveY);
         }
@@ -2366,12 +2404,12 @@ export class Game {
       // 2. Far Mountain Range (Deep dark icy peaks)
       ctx.fillStyle = '#081829';
       ctx.beginPath();
-      ctx.moveTo(350, h);
-      ctx.lineTo(400, h * 0.40);
-      ctx.lineTo(520, h * 0.65);
-      ctx.lineTo(660, h * 0.28);
-      ctx.lineTo(820, h * 0.55);
-      ctx.lineTo(950, h * 0.20);
+      ctx.moveTo(gridX, h);
+      ctx.lineTo(gridX + 50, h * 0.40);
+      ctx.lineTo(gridX + 170, h * 0.65);
+      ctx.lineTo(gridX + 310, h * 0.28);
+      ctx.lineTo(gridX + 470, h * 0.55);
+      ctx.lineTo(gridX + 600, h * 0.20);
       ctx.lineTo(w, h * 0.45);
       ctx.lineTo(w, h);
       ctx.closePath();
@@ -2380,11 +2418,11 @@ export class Game {
       // 3. Mid Mountain Range (Snow-capped glaciers)
       ctx.fillStyle = '#10273f';
       ctx.beginPath();
-      ctx.moveTo(350, h);
-      ctx.lineTo(460, h * 0.48);
-      ctx.lineTo(580, h * 0.72);
-      ctx.lineTo(740, h * 0.38);
-      ctx.lineTo(890, h * 0.65);
+      ctx.moveTo(gridX, h);
+      ctx.lineTo(gridX + 110, h * 0.48);
+      ctx.lineTo(gridX + 230, h * 0.72);
+      ctx.lineTo(gridX + 390, h * 0.38);
+      ctx.lineTo(gridX + 540, h * 0.65);
       ctx.lineTo(w, h * 0.42);
       ctx.lineTo(w, h);
       ctx.closePath();
@@ -2393,22 +2431,22 @@ export class Game {
       // Snow Glaciers on Peaks
       ctx.fillStyle = 'rgba(224, 247, 250, 0.75)';
       ctx.beginPath();
-      ctx.moveTo(740, h * 0.38);
-      ctx.lineTo(710, h * 0.50);
-      ctx.lineTo(770, h * 0.50);
+      ctx.moveTo(gridX + 390, h * 0.38);
+      ctx.lineTo(gridX + 360, h * 0.50);
+      ctx.lineTo(gridX + 420, h * 0.50);
       ctx.closePath();
       ctx.fill();
 
       ctx.beginPath();
-      ctx.moveTo(460, h * 0.48);
-      ctx.lineTo(440, h * 0.56);
-      ctx.lineTo(480, h * 0.56);
+      ctx.moveTo(gridX + 110, h * 0.48);
+      ctx.lineTo(gridX + 90, h * 0.56);
+      ctx.lineTo(gridX + 130, h * 0.56);
       ctx.closePath();
       ctx.fill();
 
       // 4. Rolling Frost Mist Banks across the battlefield
       for (let i = 0; i < 3; i++) {
-        const fogX = 350 + ((time * 35 + i * 260) % (w - 300));
+        const fogX = gridX + ((time * 35 + i * 260) % (w - gridX));
         const fogY = h * (0.35 + i * 0.22);
         const fGrad = ctx.createRadialGradient(fogX, fogY, 0, fogX, fogY, 200);
         fGrad.addColorStop(0, 'rgba(178, 235, 242, 0.16)');
@@ -2505,8 +2543,8 @@ export class Game {
     if (this.realmEntranceTimer <= 0) return;
 
     const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.width;
+    const h = this.height;
     const entranceTimer = this.realmEntranceTimer;
     const progress = (2.8 - entranceTimer) / 2.8;
 
@@ -2605,9 +2643,9 @@ export class Game {
     if (!this.selectedUnit || !this.hoverCell) return;
     const ctx = this.ctx;
     const { row, col } = this.hoverCell;
-    const cellW = this.grid.cellSize;
-    const cellH = this.grid.cellSize;
-    const cx = 350 + col * cellW;
+    const cellW = this.grid.cellWidth;
+    const cellH = this.grid.cellHeight;
+    const cx = this.grid.startX + col * cellW;
     const cy = row * cellH;
 
     const occupant = this.defenders.find(d => d.row === row && d.col === col);
@@ -2735,7 +2773,7 @@ export class Game {
         ctx.setLineDash([8, 8]);
         ctx.beginPath();
         ctx.moveTo(centerX + 30, centerY);
-        ctx.lineTo(this.canvas.width - 20, centerY);
+        ctx.lineTo(this.width - 20, centerY);
         ctx.stroke();
         ctx.restore();
       }
@@ -2848,8 +2886,8 @@ export class Game {
   drawWaveBanner() {
     if (this.waveBannerTimer <= 0) return;
     const ctx = this.ctx;
-    const w = this.canvas.width;
-    const cx = w / 2 + 100;
+    const w = this.width;
+    const cx = this.grid ? (this.grid.startX + (this.width - this.grid.startX) / 2) : (w / 2);
     const cy = 120;
     const alpha = Math.min(1, this.waveBannerTimer * 1.5);
 
@@ -2888,8 +2926,8 @@ export class Game {
   drawVictoryDefeatOverlays() {
     if (this.gameState === 'playing') return;
     const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.width;
+    const h = this.height;
     const cx = w / 2;
     const cy = h / 2;
 
@@ -3040,8 +3078,8 @@ export class Game {
 
     // Dynamic realm base backdrop
     const bgGradient = ctx.createRadialGradient(
-      this.canvas.width / 2, this.canvas.height / 2, 0,
-      this.canvas.width / 2, this.canvas.height / 2, this.canvas.width
+      this.width / 2, this.height / 2, 0,
+      this.width / 2, this.height / 2, this.width
     );
     if (this.realm === 'asgard') {
       bgGradient.addColorStop(0, '#2e2410');
@@ -3069,7 +3107,7 @@ export class Game {
     }
     
     ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillRect(0, 0, this.width, this.height);
     
     // Draw living realm weather, mountains, and atmospheric lighting
     this.drawAtmosphere();
@@ -3118,6 +3156,10 @@ export class Game {
 
   start() {
     this.animationId = requestAnimationFrame(this.loop);
+  }
+  
+  resize(width: number, height: number) {
+    this.grid = new Grid(width, height, this.realm, this.city);
   }
   
   stop() {
