@@ -23,6 +23,14 @@
   --accent-color: #d32f2f;
   --accent-gold: #e6b800;
   --accent-cyan: #00e5ff;
+
+  .unit-svg-icon {
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+    overflow: hidden;
+  }
   
   --modal-bg: linear-gradient(145deg, rgba(26, 34, 48, 0.98) 0%, rgba(12, 16, 24, 0.99) 100%);
   --modal-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(212, 175, 55, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -589,6 +597,15 @@ body[data-active-theme="light"],
       #unit-selection,
       #sidebar-shovel-dock {
         .unit-card {
+          border-color: rgba(202, 138, 4, 0.4);
+
+          &:hover:not(.unavailable) {
+            background: #fef9c3;
+            border-color: #b45309;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(180, 83, 9, 0.22), 0 0 10px rgba(202, 138, 4, 0.35);
+          }
+
           &.unavailable {
             opacity: 0.42;
             background: #f1f5f9;
@@ -598,6 +615,22 @@ body[data-active-theme="light"],
           &.shovel-card {
             background: #fef2f2;
             border-color: #f87171;
+            padding: 8px 4px 6px;
+            gap: 5px;
+
+            .card-art {
+              width: 36px;
+              height: 36px;
+              background: radial-gradient(circle, #fee2e2 0%, #fecaca 100%);
+              border-color: #f87171;
+              box-shadow: inset 0 1px 2px #ffffff, 0 2px 6px rgba(220, 38, 38, 0.2);
+
+              .icon {
+                width: 28px;
+                height: 28px;
+                filter: drop-shadow(0 1px 3px rgba(185, 28, 28, 0.4));
+              }
+            }
 
             .unit-name {
               color: #991b1b;
@@ -607,16 +640,34 @@ body[data-active-theme="light"],
               background: #fee2e2;
               border-color: #f87171;
               color: #b91c1c;
+              margin-top: 1px;
             }
 
             &:hover:not(.unavailable) {
               background: #fee2e2;
               border-color: #ef4444;
+              transform: translateY(-2px);
+
+              .card-art {
+                border-color: #ef4444;
+                box-shadow: 0 0 12px rgba(239, 68, 68, 0.45);
+                transform: translateY(-1px);
+              }
+
+              .icon {
+                transform: scale(1.06) rotate(-3deg);
+              }
             }
 
             &.selected {
               background: #fecaca;
               border-color: #dc2626;
+              transform: translateY(-2px);
+
+              .card-art {
+                border-color: #dc2626;
+                box-shadow: 0 0 16px rgba(220, 38, 38, 0.55);
+              }
             }
           }
         }
@@ -628,19 +679,6 @@ body[data-active-theme="light"],
         background: linear-gradient(180deg, #fefdfa 0%, #f7f1e5 100%);
         border-bottom-color: #ca8a04;
         box-shadow: 0 4px 14px rgba(120, 53, 15, 0.08);
-
-        .return-btn {
-          background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
-          border: 1.5px solid #ca8a04;
-          color: #78350f;
-          box-shadow: 0 2px 8px rgba(120, 53, 15, 0.1);
-
-          &:hover {
-            background: linear-gradient(135deg, #fef9c3 0%, #fde047 100%);
-            border-color: #b45309;
-            color: #451a03;
-          }
-        }
       }
     }
   }
@@ -1385,6 +1423,14 @@ body.theme-muspelheim {
             cursor: default;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
+            .token-icon {
+              width: 28px;
+              height: 28px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+
             &.filled {
               cursor: pointer;
               border-style: solid;
@@ -1524,6 +1570,11 @@ body.theme-muspelheim {
 
               .section-icon {
                 font-size: 1.5rem;
+                width: 28px;
+                height: 28px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
               }
 
               .section-title {
@@ -1667,6 +1718,11 @@ body.theme-muspelheim {
               flex-shrink: 0;
 
               .card-icon {
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 font-size: 28px;
                 line-height: 1;
                 filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
@@ -1978,6 +2034,14 @@ body.theme-muspelheim {
           font-size: 0.82rem;
           font-family: var(--font-ui);
           font-weight: 600;
+
+          span:first-child {
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
 
           &.filled {
             background: rgba(56, 189, 248, 0.18);
@@ -2351,7 +2415,7 @@ body.theme-muspelheim {
 
     /* Left Sidebar: Defenders & Shovel Only */
     #sidebar {
-      width: 120px;
+      width: 126px;
       height: 100%;
       background: var(--sidebar-bg);
       border-right: 2px solid var(--panel-border);
@@ -2366,7 +2430,9 @@ body.theme-muspelheim {
         gap: 8px;
         flex-grow: 1;
         overflow-y: auto;
-        padding-right: 2px;
+        overflow-x: hidden;
+        padding: 4px 4px;
+        box-sizing: border-box;
 
         /* Custom Sleek Scrollbar */
         &::-webkit-scrollbar {
@@ -2386,7 +2452,9 @@ body.theme-muspelheim {
       #sidebar-shovel-dock {
         .unit-card {
           position: relative;
-          padding: 6px 4px;
+          box-sizing: border-box;
+          width: 100%;
+          padding: 6px 7px;
           background: var(--sidebar-card-bg);
           border: 1.5px solid var(--sidebar-card-border);
           border-radius: 10px;
@@ -2425,24 +2493,40 @@ body.theme-muspelheim {
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.09) 0%, rgba(0, 0, 0, 0.28) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 2px 5px rgba(0, 0, 0, 0.35);
 
             .icon {
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
               font-size: 26px;
               line-height: 1;
               filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
-              transition: transform 0.2s ease;
+              transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
             }
           }
 
           .unit-name {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 700;
             color: var(--sidebar-card-name);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 95px;
-            letter-spacing: 0.5px;
+            width: 100%;
+            max-width: calc(100% - 8px);
+            box-sizing: border-box;
+            padding: 0 2px;
+            text-align: center;
+            letter-spacing: 0.15px;
+            line-height: 1.2;
           }
 
           .cost {
@@ -2467,11 +2551,16 @@ body.theme-muspelheim {
           &:hover:not(.unavailable) {
             background: rgba(255, 255, 255, 0.14);
             border-color: #ffd54f;
-            transform: translateY(-2px) scale(1.02);
+            transform: translateY(-2px);
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 213, 79, 0.35);
 
+            .card-art {
+              border-color: rgba(255, 213, 79, 0.5);
+              box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 0 10px rgba(255, 213, 79, 0.4);
+            }
+
             .icon {
-              transform: scale(1.1);
+              transform: scale(1.08);
             }
           }
 
@@ -2480,7 +2569,12 @@ body.theme-muspelheim {
             border-color: #ffd54f;
             background: linear-gradient(180deg, rgba(212, 175, 55, 0.35) 0%, rgba(183, 28, 28, 0.45) 100%);
             box-shadow: 0 0 20px rgba(255, 213, 79, 0.6), inset 0 0 10px rgba(255, 213, 79, 0.3);
-            transform: scale(1.04);
+            transform: translateY(-2px);
+
+            .card-art {
+              border-color: #ffd54f;
+              box-shadow: 0 0 12px rgba(255, 213, 79, 0.6);
+            }
 
             .cost {
               background: rgba(255, 213, 79, 0.3);
@@ -2500,8 +2594,24 @@ body.theme-muspelheim {
           /* Shovel / Demolish Card Special Style */
           &.shovel-card {
             margin-top: auto;
+            padding: 8px 4px 6px;
+            gap: 5px;
             border-color: rgba(244, 67, 54, 0.6);
             background: linear-gradient(180deg, rgba(244, 67, 54, 0.15) 0%, rgba(183, 28, 28, 0.25) 100%);
+
+            .card-art {
+              width: 36px;
+              height: 36px;
+              background: radial-gradient(circle, rgba(239, 68, 68, 0.25) 0%, rgba(153, 27, 27, 0.45) 100%);
+              border-color: rgba(248, 113, 113, 0.45);
+              box-shadow: inset 0 1px 2px rgba(254, 202, 202, 0.35), 0 2px 8px rgba(185, 28, 28, 0.35);
+
+              .icon {
+                width: 28px;
+                height: 28px;
+                filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.65));
+              }
+            }
 
             .unit-name {
               color: #ffcdd2;
@@ -2511,18 +2621,36 @@ body.theme-muspelheim {
               border-color: rgba(244, 67, 54, 0.6);
               color: #ff8a80;
               background: rgba(0, 0, 0, 0.6);
+              margin-top: 1px;
             }
 
             &:hover:not(.unavailable) {
               border-color: #ff5252;
               background: rgba(244, 67, 54, 0.3);
               box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+              transform: translateY(-2px);
+
+              .card-art {
+                border-color: #f87171;
+                box-shadow: 0 0 12px rgba(239, 68, 68, 0.75);
+                transform: translateY(-1px);
+              }
+
+              .icon {
+                transform: scale(1.06) rotate(-3deg);
+              }
             }
 
             &.selected {
               border-color: #ff1744;
               background: rgba(244, 67, 54, 0.45);
               box-shadow: 0 0 20px rgba(255, 23, 68, 0.7);
+              transform: translateY(-2px);
+
+              .card-art {
+                border-color: #ff1744;
+                box-shadow: 0 0 18px rgba(255, 23, 68, 0.85);
+              }
             }
           }
         }
@@ -2531,10 +2659,11 @@ body.theme-muspelheim {
       /* Fixed Shovel Demolish Dock at Bottom */
       #sidebar-shovel-dock {
         flex-shrink: 0;
-        padding-top: 6px;
+        padding: 6px 4px 0;
         border-top: 1px solid var(--panel-border-glow);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
 
         .unit-card.shovel-card {
           margin-top: 0;
@@ -2553,144 +2682,26 @@ body.theme-muspelheim {
       overflow: hidden;
 
       /* Gilded Top Bar HUD */
+      /* Gilded Top Bar HUD: Clean Sun count on left, Audio & Settings on right */
       #ui-top-bar {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         height: 72px;
         padding: 0 20px;
         background: var(--top-bar-bg);
         border-bottom: 2px solid var(--panel-border);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
         box-sizing: border-box;
-        gap: 14px;
-
-        .top-bar-left {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-shrink: 0;
-          z-index: 25;
-
-          .roster-topbar-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            height: 42px;
-            box-sizing: border-box;
-            padding: 0 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            background: linear-gradient(135deg, rgba(20, 26, 34, 0.96) 0%, rgba(28, 20, 16, 0.98) 50%, rgba(14, 30, 26, 0.96) 100%);
-            border: 1.5px solid #d4af37;
-            color: #fef08a;
-            font-family: var(--font-heading);
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 10px rgba(212, 175, 55, 0.2);
-            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-            backdrop-filter: blur(10px);
-
-            .roster-icon {
-              font-size: 1rem;
-              line-height: 1;
-            }
-
-            .roster-text {
-              line-height: 1;
-              white-space: nowrap;
-            }
-
-            &:hover {
-              background: linear-gradient(135deg, rgba(28, 38, 50, 0.98) 0%, rgba(42, 28, 22, 0.98) 50%, rgba(18, 44, 38, 0.98) 100%);
-              border-color: #fde047;
-              box-shadow: 0 5px 18px rgba(0, 0, 0, 0.8), 0 0 14px rgba(212, 175, 55, 0.45);
-              color: #ffffff;
-              transform: translateY(-1.5px);
-            }
-
-            &:active {
-              transform: translateY(1px) scale(0.98);
-              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(212, 175, 55, 0.25);
-            }
-          }
-        }
-
-        .realm-badge.center-realm-tablet {
-          position: absolute;
-          left: 50%;
-          top: 12px;
-          transform: translateX(-50%);
-          height: 48px;
-          width: 440px;
-          max-width: calc(100vw - 440px);
-          box-sizing: border-box;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          padding: 0 16px;
-          background: linear-gradient(135deg, rgba(20, 26, 34, 0.95) 0%, rgba(28, 20, 16, 0.97) 50%, rgba(14, 30, 26, 0.95) 100%);
-          border: 1.8px solid #d4af37;
-          border-radius: 10px;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 12px rgba(212, 175, 55, 0.35);
-          backdrop-filter: blur(10px);
-          z-index: 20;
-
-          .realm-crest {
-            font-size: 1.35rem;
-            line-height: 1;
-            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
-          }
-
-          .realm-text-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-
-            .realm-subtext {
-              font-size: 0.62rem;
-              font-weight: 700;
-              letter-spacing: 2.5px;
-              color: #f59e0b;
-              text-transform: uppercase;
-              line-height: 1;
-              margin-bottom: 2px;
-            }
-
-            #realm-name {
-              font-family: var(--font-heading);
-              font-size: 1.05rem;
-              font-weight: 800;
-              letter-spacing: 1px;
-              color: #fef08a;
-              text-shadow: 0 0 10px rgba(253, 224, 71, 0.5);
-              line-height: 1.1;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              max-width: 320px;
-            }
-          }
-        }
 
         .top-bar-spacer {
           flex-grow: 1;
         }
 
-        .top-bar-right {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        .top-bar-actions-slot {
+          width: 104px;
+          height: 46px;
           flex-shrink: 0;
-          z-index: 25;
-
-          .top-bar-actions-slot {
-            width: 104px;
-            height: 46px;
-            flex-shrink: 0;
-          }
         }
 
         /* Generic HUD Stat Boxes */
@@ -2747,51 +2758,6 @@ body.theme-muspelheim {
           #sun-count {
             color: var(--topbar-sun-color);
             text-shadow: var(--topbar-val-shadow);
-          }
-        }
-
-        /* Level Selector */
-        #level-counter {
-          .level-btn-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 2px;
-
-            .lvl-btn {
-              background: var(--topbar-btn-bg);
-              border: 1px solid var(--topbar-btn-border);
-              color: var(--topbar-btn-color);
-              width: 26px;
-              height: 26px;
-              border-radius: 6px;
-              cursor: pointer;
-              font-family: var(--font-ui);
-              font-size: 1rem;
-              font-weight: 800;
-              line-height: 1;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              transition: all 0.2s ease;
-
-              &:hover {
-                background: rgba(212, 175, 55, 0.3);
-                border-color: #ffe082;
-                box-shadow: 0 0 10px var(--panel-border-glow);
-                transform: scale(1.1);
-              }
-
-              &:active {
-                transform: scale(0.95);
-              }
-            }
-
-            #level-display {
-              min-width: 18px;
-              text-align: center;
-              color: var(--topbar-val-color);
-            }
           }
         }
       }

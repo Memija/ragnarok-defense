@@ -27,6 +27,7 @@ import { SmallTroll } from '../units/SmallTroll';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
 import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo } from './DefenderRegistry';
+import { DEFENDER_ICONS } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
 
 interface WeatherParticle {
@@ -388,9 +389,8 @@ export class Game {
     shovelCard.innerHTML = `
       <span class="hotkey-badge">D</span>
       <div class="card-art">
-        <span class="icon">⛏️</span>
+        <span class="icon">${DEFENDER_ICONS.shovel}</span>
       </div>
-      <div class="unit-name" data-i18n="dig">${t('dig')}</div>
       <div class="cost shovel-cost" data-i18n="remove">${t('remove')}</div>
     `;
 

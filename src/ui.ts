@@ -95,6 +95,17 @@ export function initUI() {
     doneSettingsBtn.addEventListener('click', closeSettings);
   }
 
+  const leaveBattleBtn = document.getElementById('settings-leave-battle-btn');
+  if (leaveBattleBtn) {
+    leaveBattleBtn.addEventListener('click', () => {
+      closeSettings();
+      const returnBtn = document.getElementById('return-menu-btn');
+      if (returnBtn) {
+        returnBtn.click();
+      }
+    });
+  }
+
   if (settingsModal) {
     settingsModal.addEventListener('click', (e) => {
       if (e.target === settingsModal || e.target === modalBackdrop) {

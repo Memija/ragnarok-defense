@@ -76,6 +76,14 @@
                 <span class="theme-btn-text">☀️ Light Mode</span>
               </button>
             </div>
+
+            <div class="settings-row" id="settings-leave-battle-row">
+              <div class="setting-label-group">
+                <span class="setting-icon">🗺️</span>
+                <span class="setting-name" data-i18n="returnToRealms">Realm Selection</span>
+              </div>
+              <button id="settings-leave-battle-btn" class="theme-btn settings-action-btn" data-i18n="returnToRealms">Return to Realms</button>
+            </div>
           </div>
 
           <div class="settings-footer">
@@ -218,7 +226,38 @@
             <div class="unit-card" data-unit="sunflower" data-cost="50" data-tooltip="Sunflower: Generates golden Sol energy over time">
               <span class="hotkey-badge">1</span>
               <div class="card-art">
-                <span class="icon">🌻</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-sunflower">
+                    <defs>
+                      <linearGradient id="sol-petal-idx" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#fef08a"/><stop offset="60%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/>
+                      </linearGradient>
+                      <radialGradient id="sol-core-idx" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#ffedd5"/><stop offset="40%" stop-color="#ea580c"/><stop offset="85%" stop-color="#9a3412"/><stop offset="100%" stop-color="#431407"/>
+                      </radialGradient>
+                      <linearGradient id="sol-stem-idx" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#15803d"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M24 28 Q24 38 22 43" stroke="url(#sol-stem-idx)" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M23 37 Q15 36 14 31 Q20 31 23 35 Z" fill="#22c55e" stroke="#14532d" stroke-width="0.8"/>
+                    <path d="M23 39 Q31 38 33 33 Q27 32 23 37 Z" fill="#22c55e" stroke="#14532d" stroke-width="0.8"/>
+                    <path d="M24 21 L22 6 Q24 4 26 6 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L31 8 Q34 9 34 11 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L37 14 Q39 16 38 18 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L39 20 Q41 22 39 24 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L37 28 Q37 30 35 31 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L30 34 Q28 36 26 35 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L23 37 Q24 38 25 37 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L17 34 Q15 33 16 31 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L11 28 Q9 26 11 24 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L9 20 Q9 18 11 17 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L12 13 Q13 11 15 11 Z" fill="url(#sol-petal-idx)"/>
+                    <path d="M24 21 L17 8 Q19 7 21 8 Z" fill="url(#sol-petal-idx)"/>
+                    <circle cx="24" cy="21" r="9" fill="url(#sol-core-idx)" stroke="#f59e0b" stroke-width="1.2"/>
+                    <path d="M26 15 L22 20 L26 22 L22 27" stroke="#fef08a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Solflower</div>
               <div class="cost"><span class="sun-icon">☀️</span> 50</div>
@@ -227,7 +266,28 @@
             <div class="unit-card" data-unit="peashooter" data-cost="100" data-tooltip="Peashooter: Fires mystic kinetic orbs at invaders">
               <span class="hotkey-badge">2</span>
               <div class="card-art">
-                <span class="icon">🟢</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-peashooter">
+                    <defs>
+                      <linearGradient id="pea-body-idx" x1="12" y1="10" x2="36" y2="34" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#86efac"/><stop offset="40%" stop-color="#22c55e"/><stop offset="80%" stop-color="#15803d"/><stop offset="100%" stop-color="#14532d"/>
+                      </linearGradient>
+                      <radialGradient id="pea-orb-idx" cx="40%" cy="40%" r="60%">
+                        <stop offset="0%" stop-color="#ffffff"/><stop offset="30%" stop-color="#86efac"/><stop offset="75%" stop-color="#16a34a"/><stop offset="100%" stop-color="#052e16"/>
+                      </radialGradient>
+                    </defs>
+                    <path d="M12 42 Q24 38 36 42 Z" fill="#14532d"/>
+                    <path d="M14 41 Q8 35 15 33 Q21 37 17 41 Z" fill="#22c55e"/>
+                    <path d="M21 38 Q20 28 22 22" stroke="#16a34a" stroke-width="4.5" stroke-linecap="round"/>
+                    <path d="M15 17 Q9 14 11 9 Q14 8 16 13" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                    <ellipse cx="21" cy="18" rx="8" ry="7" fill="url(#pea-body-idx)" stroke="#14532d" stroke-width="1"/>
+                    <path d="M24 13 L33 10 Q36 18 33 26 L24 23 Z" fill="url(#pea-body-idx)" stroke="#14532d" stroke-width="1"/>
+                    <ellipse cx="33" cy="18" rx="2.5" ry="7" fill="#ca8a04" stroke="#854d0e" stroke-width="0.9"/>
+                    <circle cx="35" cy="18" r="4.2" fill="url(#pea-orb-idx)" stroke="#dcfce7" stroke-width="0.8"/>
+                    <circle cx="18" cy="15" r="1.8" fill="#f8fafc"/>
+                    <circle cx="18.8" cy="15" r="0.9" fill="#0f172a"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Peashooter</div>
               <div class="cost"><span class="sun-icon">☀️</span> 100</div>
@@ -236,7 +296,24 @@
             <div class="unit-card" data-unit="snowpea" data-cost="175" data-tooltip="Snow Pea: Fires frost shards that slow enemy advance">
               <span class="hotkey-badge">3</span>
               <div class="card-art">
-                <span class="icon">❄️</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-snowpea">
+                    <defs>
+                      <linearGradient id="frost-ice-idx" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#ffffff"/><stop offset="35%" stop-color="#bae6fd"/><stop offset="70%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0284c7"/>
+                      </linearGradient>
+                      <radialGradient id="frost-core-idx" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#7dd3fc"/><stop offset="85%" stop-color="#0369a1"/><stop offset="100%" stop-color="#082f49"/>
+                      </radialGradient>
+                    </defs>
+                    <polygon points="24,4 28,18 24,24 20,18" fill="url(#frost-ice-idx)" stroke="#0284c7" stroke-width="0.8"/>
+                    <polygon points="24,44 28,30 24,24 20,30" fill="url(#frost-ice-idx)" stroke="#0284c7" stroke-width="0.8"/>
+                    <polygon points="4,24 18,28 24,24 18,20" fill="url(#frost-ice-idx)" stroke="#0284c7" stroke-width="0.8"/>
+                    <polygon points="44,24 30,28 24,24 30,20" fill="url(#frost-ice-idx)" stroke="#0284c7" stroke-width="0.8"/>
+                    <polygon points="24,15 31.8,19.5 31.8,28.5 24,33 16.2,28.5 16.2,19.5" fill="url(#frost-core-idx)" stroke="#bae6fd" stroke-width="1.3"/>
+                    <polygon points="24,19 25.5,22.5 29,24 25.5,25.5 24,29 22.5,25.5 19,24 22.5,22.5" fill="#ffffff"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Snow Pea</div>
               <div class="cost"><span class="sun-icon">☀️</span> 175</div>
@@ -245,7 +322,28 @@
             <div class="unit-card" data-unit="repeater" data-cost="200" data-tooltip="Repeater: Rapidly fires twin projectiles in succession">
               <span class="hotkey-badge">4</span>
               <div class="card-art">
-                <span class="icon">🌿</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-repeater">
+                    <defs>
+                      <linearGradient id="rep-body-idx" x1="10" y1="8" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#4ade80"/><stop offset="35%" stop-color="#16a34a"/><stop offset="75%" stop-color="#15803d"/><stop offset="100%" stop-color="#052e16"/>
+                      </linearGradient>
+                      <radialGradient id="rep-orb-idx" cx="40%" cy="40%" r="60%">
+                        <stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#86efac"/><stop offset="80%" stop-color="#15803d"/><stop offset="100%" stop-color="#052e16"/>
+                      </radialGradient>
+                    </defs>
+                    <path d="M19 40 Q17 28 20 22" stroke="#14532d" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M13 15 Q8 10 12 6 Q16 6 18 12 Z" fill="#22c55e"/>
+                    <ellipse cx="19" cy="18" rx="8" ry="7.5" fill="url(#rep-body-idx)" stroke="#052e16" stroke-width="1"/>
+                    <path d="M22 10 L33 7 Q36 13 33 17 L22 15 Z" fill="url(#rep-body-idx)"/>
+                    <circle cx="34.5" cy="12" r="3.2" fill="url(#rep-orb-idx)"/>
+                    <path d="M22 19 L35 18 Q38 25 35 29 L22 25 Z" fill="url(#rep-body-idx)"/>
+                    <circle cx="36.5" cy="23.5" r="3.6" fill="url(#rep-orb-idx)"/>
+                    <rect x="25" y="11" width="3" height="13" rx="1.2" fill="#ca8a04"/>
+                    <circle cx="16" cy="15" r="1.8" fill="#f8fafc"/>
+                    <circle cx="17" cy="15" r="0.9" fill="#0f172a"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Repeater</div>
               <div class="cost"><span class="sun-icon">☀️</span> 200</div>
@@ -254,7 +352,21 @@
             <div class="unit-card" data-unit="wallnut" data-cost="50" data-tooltip="Rune Bastion: Fortified stone bastion tower with high defensive vitality">
               <span class="hotkey-badge">5</span>
               <div class="card-art">
-                <span class="icon">🏰</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-wallnut">
+                    <defs>
+                      <linearGradient id="bst-stone-idx" x1="12" y1="8" x2="36" y2="42" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#94a3b8"/><stop offset="35%" stop-color="#64748b"/><stop offset="75%" stop-color="#334155"/><stop offset="100%" stop-color="#1e293b"/>
+                      </linearGradient>
+                    </defs>
+                    <rect x="10" y="38" width="28" height="6" rx="1.5" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+                    <path d="M12 38 L14 14 L34 14 L36 38 Z" fill="url(#bst-stone-idx)" stroke="#0f172a" stroke-width="1.2"/>
+                    <path d="M12 14 L12 9 L17 9 L17 12 L22 12 L22 9 L26 9 L26 12 L31 12 L31 9 L36 9 L36 14 Z" fill="url(#bst-stone-idx)" stroke="#0f172a" stroke-width="1.2"/>
+                    <rect x="13.2" y="18" width="21.6" height="3" fill="#1e293b" stroke="#ca8a04" stroke-width="0.8"/>
+                    <rect x="12.4" y="32" width="23.2" height="3" fill="#1e293b" stroke="#ca8a04" stroke-width="0.8"/>
+                    <path d="M24 22 L24 30 M24 24 L20 22 M24 24 L28 22" stroke="#fde047" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Rune Bastion</div>
               <div class="cost"><span class="sun-icon">☀️</span> 50</div>
@@ -263,7 +375,15 @@
             <div class="unit-card" data-unit="potatomine" data-cost="25" data-tooltip="Rune Mine: Subterranean runic ward tower that erupts on enemy contact">
               <span class="hotkey-badge">6</span>
               <div class="card-art">
-                <span class="icon">🪨</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-potatomine">
+                    <ellipse cx="24" cy="40" rx="18" ry="5" fill="#1c1917" stroke="#44403c" stroke-width="1"/>
+                    <polygon points="17,39 20,18 28,18 31,39" fill="#334155" stroke="#0f172a" stroke-width="1.2"/>
+                    <path d="M22 23 L24 21 L26 23 L24 28 L22 28" stroke="#f97316" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="24" y1="14" x2="24" y2="8" stroke="#ca8a04" stroke-width="1.6" stroke-linecap="round"/>
+                    <polygon points="24,4 27,8 24,12 21,8" fill="#ef4444" stroke="#fef08a" stroke-width="0.8"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Rune Mine</div>
               <div class="cost"><span class="sun-icon">☀️</span> 25</div>
@@ -272,7 +392,23 @@
             <div class="unit-card" data-unit="chomper" data-cost="150" data-tooltip="Chomper: Devours nearby enemies whole in one bite">
               <span class="hotkey-badge">7</span>
               <div class="card-art">
-                <span class="icon">🪴</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-chomper">
+                    <defs>
+                      <linearGradient id="chm-jaw-idx" x1="8" y1="6" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#9333ea"/><stop offset="40%" stop-color="#6b21a8"/><stop offset="80%" stop-color="#3b0764"/><stop offset="100%" stop-color="#1e0236"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M22 41 Q20 30 23 24" stroke="#581c87" stroke-width="4.5" stroke-linecap="round"/>
+                    <ellipse cx="26" cy="19" rx="10" ry="11" fill="#2e1065" stroke="#3b0764" stroke-width="1.2"/>
+                    <circle cx="22" cy="19" r="2.8" fill="#e879f9"/>
+                    <path d="M15 17 C13 7 32 4 37 13 C31 16 23 15 15 17 Z" fill="url(#chm-jaw-idx)" stroke="#2e1065" stroke-width="1.2"/>
+                    <polygon points="21,15 23,19 25,15" fill="#f8fafc"/>
+                    <polygon points="27,14 29,19 31,13" fill="#f8fafc"/>
+                    <path d="M16 21 C14 31 32 34 37 25 C31 22 23 23 16 21 Z" fill="url(#chm-jaw-idx)" stroke="#2e1065" stroke-width="1.2"/>
+                    <polygon points="23,23 25,19 27,23" fill="#f8fafc"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Chomper</div>
               <div class="cost"><span class="sun-icon">☀️</span> 150</div>
@@ -281,7 +417,15 @@
             <div class="unit-card" data-unit="cherrybomb" data-cost="150" data-tooltip="Forge Blaster: High-yield magma explosive turret detonating in a 3x3 blast">
               <span class="hotkey-badge">8</span>
               <div class="card-art">
-                <span class="icon">💣</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-cherrybomb">
+                    <circle cx="23" cy="27" r="13" fill="#1e293b" stroke="#334155" stroke-width="1.3"/>
+                    <path d="M17 21 Q21 24 20 30 Q25 31 29 27" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                    <rect x="20" y="12" width="6" height="4" rx="1" fill="#d97706" stroke="#78350f" stroke-width="0.8"/>
+                    <path d="M23 12 Q23 7 30 6 Q34 6 34 10" stroke="#78350f" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <circle cx="34" cy="9" r="2.5" fill="#fef08a"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Forge Blaster</div>
               <div class="cost"><span class="sun-icon">☀️</span> 150</div>
@@ -290,7 +434,15 @@
             <div class="unit-card" data-unit="torchwood" data-cost="175" data-tooltip="Fire Spire: Arcane fire spire amplifying and igniting passing projectiles">
               <span class="hotkey-badge">9</span>
               <div class="card-art">
-                <span class="icon">🗼</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-torchwood">
+                    <rect x="11" y="41" width="26" height="4" rx="1" fill="#1c1917"/>
+                    <polygon points="16,38 18,22 30,22 32,38" fill="#292524" stroke="#0c0a09" stroke-width="1"/>
+                    <ellipse cx="24" cy="20" rx="9" ry="2.5" fill="#44403c" stroke="#d97706" stroke-width="0.8"/>
+                    <path d="M16 20 C14 13 21 7 22 2 C25 6 28 8 28 13 C30 10 32 11 32 20 Z" fill="#ea580c"/>
+                    <path d="M20 20 C18 15 22 11 23 7 C25 10 26 12 26 15 C27 13 28 14 28 20 Z" fill="#fef08a"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Fire Spire</div>
               <div class="cost"><span class="sun-icon">☀️</span> 175</div>
@@ -299,7 +451,17 @@
             <div class="unit-card" data-unit="kernelpult" data-cost="100" data-tooltip="Dwarven Catapult: Heavy dwarven siege engine hurling boulders and tar">
               <span class="hotkey-badge">0</span>
               <div class="card-art">
-                <span class="icon">⚙️</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-kernelpult">
+                    <line x1="8" y1="40" x2="40" y2="40" stroke="#78350f" stroke-width="4.5" stroke-linecap="round"/>
+                    <circle cx="13" cy="40" r="4.5" fill="#ca8a04" stroke="#451a03" stroke-width="1.2"/>
+                    <circle cx="35" cy="40" r="4.5" fill="#ca8a04" stroke="#451a03" stroke-width="1.2"/>
+                    <polygon points="26,18 20,38 32,38" fill="none" stroke="#78350f" stroke-width="3"/>
+                    <circle cx="26" cy="28" r="4" fill="#d97706" stroke="#78350f" stroke-width="0.9"/>
+                    <line x1="10" y1="16" x2="33" y2="33" stroke="#451a03" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="12" cy="11" r="5" fill="#64748b" stroke="#0f172a" stroke-width="0.9"/>
+                  </svg>
+                </span>
               </div>
               <div class="unit-name">Dwarven Catapult</div>
               <div class="cost"><span class="sun-icon">☀️</span> 100</div>
@@ -309,81 +471,54 @@
             <div class="unit-card shovel-card" data-unit="shovel" data-cost="0" data-tooltip="Demolish: Clear a defender to free up battlefield space">
               <span class="hotkey-badge">D</span>
               <div class="card-art">
-                <span class="icon">⛏️</span>
+                <span class="icon">
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-shovel">
+                    <defs>
+                      <linearGradient id="shv-shaft-idx" x1="12" y1="36" x2="32" y2="14" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#451a03"/><stop offset="50%" stop-color="#78350f"/><stop offset="100%" stop-color="#b45309"/>
+                      </linearGradient>
+                      <linearGradient id="shv-steel-idx" x1="12" y1="12" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#f1f5f9"/><stop offset="40%" stop-color="#94a3b8"/><stop offset="80%" stop-color="#475569"/><stop offset="100%" stop-color="#1e293b"/>
+                      </linearGradient>
+                    </defs>
+                    <line x1="12" y1="34" x2="32" y2="14" stroke="url(#shv-shaft-idx)" stroke-width="4.2" stroke-linecap="round"/>
+                    <line x1="15" y1="33" x2="17" y2="29" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/>
+                    <line x1="20" y1="28" x2="22" y2="24" stroke="#d97706" stroke-width="1.4" stroke-linecap="round"/>
+                    <line x1="25" y1="23" x2="27" y2="19" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/>
+                    <circle cx="10" cy="36" r="2.8" fill="#eab308" stroke="#713f12" stroke-width="0.9"/>
+                    <path d="M19 7 C26 10 35 14 41 11 C38 18 34 26 37 32 C31 27 26 23 23 18 Z" fill="url(#shv-steel-idx)" stroke="#0f172a" stroke-width="1.2" stroke-linejoin="round"/>
+                    <path d="M22 10 C28 13 36 15 40 12 C37 17 33 23 35 29" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" fill="none" opacity="0.85"/>
+                    <path d="M26 13 L30 17 L33 15 M28 16 L30 20" stroke="#ef4444" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
               </div>
-              <div class="unit-name" data-i18n="dig">Dig</div>
               <div class="cost shovel-cost" data-i18n="remove">Remove</div>
             </div>
           </div>
         </aside>
 
         <div id="game-content">
+          <!-- Upper HUD: Contains only Sun count, audio and settings controls -->
           <header id="ui-top-bar">
-            <div class="top-bar-left">
-              <button id="return-menu-btn" class="return-btn tree-return-btn" title="Return to Realm Selection" aria-label="Return to Realm Selection" data-i18n-title="returnToRealms" data-i18n-aria="returnToRealms">
-                <span class="btn-corner-rune tl">ᛟ</span>
-                <span class="btn-corner-rune br">ᛟ</span>
-
-                <div class="tree-portal-glyph">
-                  <span class="glyph-arrow">‹</span>
-                  <div class="tree-icon-frame">
-                    <svg viewBox="0 0 24 24" class="yggdrasil-tree-svg" fill="none" stroke="currentColor">
-                      <path d="M12 22V13M12 13C12 13 8 10 5 11M12 13C12 13 16 10 19 11M12 9C12 9 8 7 6 4M12 9C12 9 16 7 18 4M12 13V4.5M12 4.5C10 2.5 8 1.5 12 1.5C16 1.5 14 2.5 12 4.5M12 22C10 22 7 21 5.5 18M12 22C14 22 17 21 18.5 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-
-                <span class="btn-text" data-i18n="realms">Realms</span>
-                <span class="return-btn-flourish">✧</span>
-                <div class="btn-shimmer-sweep"></div>
-              </button>
-
-              <button id="roster-btn" class="roster-topbar-btn" title="Change Defenders Roster" aria-label="Change Defenders" data-i18n-title="roster">
-                <span class="roster-icon">⚔️</span>
-                <span class="roster-text" data-i18n="roster">Roster</span>
-              </button>
-            </div>
-
-            <!-- Majestic Center Realm Tablet -->
-            <div id="active-realm-badge" class="realm-badge center-realm-tablet">
-              <div class="realm-crest">
-                <span id="realm-icon">❄️</span>
+            <div id="resource-counter" class="hud-stat-box">
+              <div class="sol-talisman">
+                <span class="sol-ray"></span>
+                <span class="sol-icon">☀️</span>
               </div>
-              <div class="realm-text-group">
-                <span class="realm-subtext" data-i18n="currentRealm">Current Realm</span>
-                <span id="realm-name">Jötunheim</span>
+              <div class="stat-info">
+                <span class="stat-label" data-i18n="sun">Sol Energy</span>
+                <span id="sun-count" class="stat-value">50</span>
               </div>
             </div>
 
             <div class="top-bar-spacer"></div>
 
-            <div class="top-bar-right">
-              <div id="resource-counter" class="hud-stat-box">
-                <div class="sol-talisman">
-                  <span class="sol-ray"></span>
-                  <span class="sol-icon">☀️</span>
-                </div>
-                <div class="stat-info">
-                  <span class="stat-label" data-i18n="sun">Sol Energy</span>
-                  <span id="sun-count" class="stat-value">50</span>
-                </div>
-              </div>
-
-              <div id="level-counter" class="hud-stat-box">
-                <div class="stat-info">
-                  <span class="stat-label" data-i18n="level">Level</span>
-                  <div class="level-btn-group">
-                    <button id="level-down" class="lvl-btn" aria-label="Decrease Level">−</button>
-                    <span id="level-display" class="stat-value">1</span>
-                    <button id="level-up" class="lvl-btn" aria-label="Increase Level">+</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Dedicated non-overlapping slot for the top action buttons -->
-              <div class="top-bar-actions-slot"></div>
-            </div>
+            <!-- Dedicated non-overlapping slot for the audio and settings buttons -->
+            <div class="top-bar-actions-slot"></div>
           </header>
+
+          <!-- Hidden fallback button for programmatic canvas return triggers -->
+          <button id="return-menu-btn" class="hidden" style="display: none;" aria-hidden="true"></button>
 
           <div class="canvas-wrapper">
             <canvas id="game-canvas" width="900" height="500"></canvas>
