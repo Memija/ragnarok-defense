@@ -1,10 +1,12 @@
 import { Defender } from '../entities/Defender';
 import { Game } from '../engine/Game';
 import { SoundManager } from '../engine/SoundManager';
+import { getRealmCurrency } from '../engine/Currency';
 
 export class SunFlower extends Defender {
   produceTimer: number = 0;
   produceRate: number = 10000;
+  currentRealm: string = 'midgard';
 
   constructor(x: number, y: number, row: number, col: number) {
     super(x, y, 60, 80, 200, 50, row, col);
@@ -12,18 +14,21 @@ export class SunFlower extends Defender {
 
   update(deltaTime: number, game: Game) {
     super.update(deltaTime, game);
+    this.currentRealm = game.realm || 'midgard';
     this.produceTimer += deltaTime;
     if (this.produceTimer >= this.produceRate) {
       this.produceTimer = 0;
       game.sun += 25; 
       game.updateUI();
-      game.addFloatingText(this.x + this.width / 2, this.y, '+25 ☀️', '#ffd54f', true);
-      game.particles.emit(this.x + this.width / 2, this.y + 10, '#ffeb3b', 12, 4, 3, 400);
+      const currency = getRealmCurrency(this.currentRealm);
+      game.addFloatingText(this.x + this.width / 2, this.y, `+25 ${currency.symbol}`, currency.color, true);
+      game.particles.emit(this.x + this.width / 2, this.y + 10, currency.particleColor, 14, 4, 3, 400);
       SoundManager.getInstance().playSun();
     }
   }
 
   draw(ctx: CanvasRenderingContext2D) {
+    const currency = getRealmCurrency(this.currentRealm);
     this.drawWithTransform(ctx, () => {
       const cx = this.x + this.width / 2;
       const cy = this.y + this.height / 2;
@@ -32,7 +37,7 @@ export class SunFlower extends Defender {
       ctx.fillRect(cx - 4, cy, 8, this.height / 2);
 
       ctx.shadowBlur = 20;
-      ctx.shadowColor = '#ffeb3b';
+      ctx.shadowColor = currency.color;
       ctx.fillStyle = '#fff59d';
       
       const numPetals = 8;

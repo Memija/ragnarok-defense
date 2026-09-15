@@ -77,6 +77,80 @@
               </button>
             </div>
 
+            <!-- Level Configuration Section -->
+            <div class="settings-section level-config-section">
+              <div class="settings-section-header">
+                <div class="setting-label-group">
+                  <span class="setting-icon">⚙️</span>
+                  <span class="setting-name" data-i18n="levelConfigTitle">Level Parameters</span>
+                </div>
+                <button type="button" id="reset-all-levels-btn" class="settings-text-btn" data-i18n="resetAllLevels" title="Reset all levels to default">Reset All</button>
+              </div>
+              <p class="settings-section-subtitle" data-i18n="levelConfigSubtitle">Set starting currency and squad slots per level</p>
+
+              <!-- Level selector pills: 1 to 10 -->
+              <div class="level-pills-bar" id="settings-level-pills">
+                <button type="button" class="level-pill active" data-level="1">1</button>
+                <button type="button" class="level-pill" data-level="2">2</button>
+                <button type="button" class="level-pill" data-level="3">3</button>
+                <button type="button" class="level-pill" data-level="4">4</button>
+                <button type="button" class="level-pill" data-level="5">5</button>
+                <button type="button" class="level-pill" data-level="6">6</button>
+                <button type="button" class="level-pill" data-level="7">7</button>
+                <button type="button" class="level-pill" data-level="8">8</button>
+                <button type="button" class="level-pill" data-level="9">9</button>
+                <button type="button" class="level-pill" data-level="10">10</button>
+              </div>
+
+              <!-- Config Card for Selected Level -->
+              <div class="level-config-card">
+                <div class="config-level-header">
+                  <span class="active-level-label" id="config-level-indicator">Level 1</span>
+                  <button type="button" id="reset-current-level-btn" class="settings-text-btn reset-single-btn" data-i18n="resetLevel">Reset Level</button>
+                </div>
+
+                <!-- Starting Currency Row -->
+                <div class="config-row">
+                  <div class="config-row-label">
+                    <span class="cfg-icon">🪙</span>
+                    <span class="cfg-text" data-i18n="startingCurrency">Starting Currency</span>
+                  </div>
+                  <div class="cfg-stepper">
+                    <button type="button" class="cfg-step-btn" id="currency-minus-btn" aria-label="Decrease currency">-50</button>
+                    <input type="number" id="level-currency-input" class="cfg-number-input" min="25" max="9999" step="25" value="1000" />
+                    <button type="button" class="cfg-step-btn" id="currency-plus-btn" aria-label="Increase currency">+50</button>
+                  </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="cfg-presets-bar">
+                  <button type="button" class="cfg-preset-pill" data-amount="100">100</button>
+                  <button type="button" class="cfg-preset-pill" data-amount="250">250</button>
+                  <button type="button" class="cfg-preset-pill" data-amount="500">500</button>
+                  <button type="button" class="cfg-preset-pill active" data-amount="1000">1000</button>
+                  <button type="button" class="cfg-preset-pill" data-amount="2000">2000</button>
+                </div>
+
+                <!-- Squad Slots Row -->
+                <div class="config-row">
+                  <div class="config-row-label">
+                    <span class="cfg-icon">🛡️</span>
+                    <span class="cfg-text" data-i18n="squadSlots">Squad Slots</span>
+                  </div>
+                  <div class="cfg-stepper">
+                    <button type="button" class="cfg-step-btn" id="slots-minus-btn" aria-label="Decrease slots">-1</button>
+                    <span id="level-slots-display" class="cfg-display-value">4 Slots</span>
+                    <button type="button" class="cfg-step-btn" id="slots-plus-btn" aria-label="Increase slots">+1</button>
+                  </div>
+                </div>
+
+                <!-- Visual Slot Pips -->
+                <div class="slot-pips-bar" id="slot-pips-preview">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+            </div>
+
             <div class="settings-row" id="settings-leave-battle-row">
               <div class="setting-label-group">
                 <span class="setting-icon">🗺️</span>
@@ -503,10 +577,10 @@
             <div id="resource-counter" class="hud-stat-box">
               <div class="sol-talisman">
                 <span class="sol-ray"></span>
-                <span class="sol-icon">☀️</span>
+                <span class="sol-icon currency-icon">🪙</span>
               </div>
               <div class="stat-info">
-                <span class="stat-label" data-i18n="sun">Sol Energy</span>
+                <span class="stat-label">Hacksilver</span>
                 <span id="sun-count" class="stat-value">50</span>
               </div>
             </div>

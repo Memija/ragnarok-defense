@@ -12,6 +12,7 @@ import {
 } from './DefenderRegistry';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
+import { getRealmCurrency, getRealmCurrencyName } from './Currency';
 
 export interface SelectionModalOptions {
   realm: string;
@@ -417,6 +418,10 @@ export class DefenderSelectionModal {
         card.setAttribute('tabindex', '0');
         card.title = def.tooltip;
 
+        const currentRealm = this.currentOptions?.realm || 'midgard';
+        const currency = getRealmCurrency(currentRealm);
+        const currencyName = getRealmCurrencyName(currentRealm);
+
         card.innerHTML = `
           ${isSelected ? `<span class="card-slot-badge">#${slotIdx}</span>` : ''}
           <div class="card-check">✓</div>
@@ -429,8 +434,8 @@ export class DefenderSelectionModal {
               <span class="card-name">${def.name}</span>
               <span class="card-origin">✦ ${def.origin}</span>
             </div>
-            <div class="card-cost" title="Sol Energy Cost">
-              <span class="sun-icon">☀️</span> ${def.cost}
+            <div class="card-cost" title="${currencyName} Cost">
+              <span class="currency-icon">${currency.symbol}</span> ${def.cost}
             </div>
           </div>
 

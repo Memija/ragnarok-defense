@@ -1,5 +1,18 @@
 import { SoundManager } from './engine/SoundManager';
-import { translations } from './i18n';
+import { translations, t } from './i18n';
+import {
+  getStartingCurrencyForLevel,
+  setStartingCurrencyForLevel,
+  getSlotLimitForLevel,
+  setSlotLimitForLevel,
+  isLevelCustomized,
+  resetLevelConfig,
+  resetAllLevelConfigs,
+  MIN_STARTING_CURRENCY,
+  MAX_STARTING_CURRENCY,
+  MIN_SLOTS,
+  MAX_SLOTS
+} from './engine/GameConfig';
 
 export function initUI() {
   const soundToggleBtn = document.getElementById('sound-toggle');
@@ -30,6 +43,8 @@ export function initUI() {
   const modalBackdrop = settingsModal?.querySelector('.settings-modal-backdrop');
 
   let closeTimeout: number | null = null;
+  let currentSettingsLevel: number = 1;
+  let updateLevelSettingsUI: () => void = () => {};
 
   const openSettings = () => {
     if (closeTimeout) {
@@ -41,6 +56,10 @@ export function initUI() {
     if (game && typeof game.pause === 'function') {
       game.pause();
     }
+    if (game && typeof game.level === 'number') {
+      currentSettingsLevel = Math.min(10, Math.max(1, game.level));
+    }
+    updateLevelSettingsUI();
     if (settingsModal) {
       settingsModal.classList.remove('hidden');
       settingsModal.style.pointerEvents = 'auto';
@@ -197,6 +216,8 @@ export function initUI() {
       updateThemeButtonText(themeToggleBtn, document.body.dataset.theme || 'system', dict);
     }
 
+    updateLevelSettingsUI();
+
     window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
   };
 
@@ -285,5 +306,188 @@ export function initUI() {
   } else {
     applyLanguage(savedLang);
   }
+
+  // Level Configuration controls in Settings
+  const levelPillsContainer = document.getElementById('settings-level-pills');
+  const levelPillButtons = levelPillsContainer ? Array.from(levelPillsContainer.querySelectorAll<HTMLButtonElement>('.level-pill')) : [];
+  const levelIndicator = document.getElementById('config-level-indicator');
+  const currencyInput = document.getElementById('level-currency-input') as HTMLInputElement | null;
+  const currencyMinusBtn = document.getElementById('currency-minus-btn') as HTMLButtonElement | null;
+  const currencyPlusBtn = document.getElementById('currency-plus-btn') as HTMLButtonElement | null;
+  const presetPills = Array.from(document.querySelectorAll<HTMLButtonElement>('.cfg-preset-pill'));
+  const slotsDisplay = document.getElementById('level-slots-display');
+  const slotsMinusBtn = document.getElementById('slots-minus-btn') as HTMLButtonElement | null;
+  const slotsPlusBtn = document.getElementById('slots-plus-btn') as HTMLButtonElement | null;
+  const slotPipsContainer = document.getElementById('slot-pips-preview');
+  const resetCurrentLevelBtn = document.getElementById('reset-current-level-btn') as HTMLButtonElement | null;
+  const resetAllLevelsBtn = document.getElementById('reset-all-levels-btn') as HTMLButtonElement | null;
+
+  updateLevelSettingsUI = () => {
+    const lang = document.body.dataset.lang || 'en';
+    const currentCurrency = getStartingCurrencyForLevel(currentSettingsLevel);
+    const currentSlots = getSlotLimitForLevel(currentSettingsLevel);
+    const customized = isLevelCustomized(currentSettingsLevel);
+
+    // Update level selector pills
+    levelPillButtons.forEach(pill => {
+      const lvl = parseInt(pill.dataset.level || '1', 10);
+      const isCurrent = lvl === currentSettingsLevel;
+      pill.classList.toggle('active', isCurrent);
+      const lvlIsCustom = isLevelCustomized(lvl);
+      pill.classList.toggle('customized', lvlIsCustom);
+      pill.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+    });
+
+    // Update level indicator header
+    if (levelIndicator) {
+      const customTag = customized ? t('customLabel', lang) : t('defaultLabel', lang);
+      levelIndicator.innerHTML = `
+        <span class="lvl-title">Level ${currentSettingsLevel}</span>
+        <span class="cfg-badge ${customized ? 'is-custom' : 'is-default'}">${customTag}</span>
+      `;
+    }
+
+    // Update currency input & presets
+    if (currencyInput) {
+      currencyInput.value = currentCurrency.toString();
+    }
+    if (currencyMinusBtn) {
+      currencyMinusBtn.disabled = currentCurrency <= MIN_STARTING_CURRENCY;
+    }
+    if (currencyPlusBtn) {
+      currencyPlusBtn.disabled = currentCurrency >= MAX_STARTING_CURRENCY;
+    }
+
+    presetPills.forEach(pill => {
+      const amt = parseInt(pill.dataset.amount || '0', 10);
+      pill.classList.toggle('active', amt === currentCurrency);
+    });
+
+    // Update slots display
+    if (slotsDisplay) {
+      const formatStr = t('slotsCount', lang);
+      slotsDisplay.textContent = formatStr.replace('{count}', currentSlots.toString());
+    }
+    if (slotsMinusBtn) {
+      slotsMinusBtn.disabled = currentSlots <= MIN_SLOTS;
+    }
+    if (slotsPlusBtn) {
+      slotsPlusBtn.disabled = currentSlots >= MAX_SLOTS;
+    }
+
+    // Render slot visual pips (up to 12)
+    if (slotPipsContainer) {
+      slotPipsContainer.innerHTML = '';
+      for (let i = 1; i <= MAX_SLOTS; i++) {
+        const pip = document.createElement('div');
+        const isActive = i <= currentSlots;
+        pip.className = `slot-pip ${isActive ? 'active' : 'empty'}`;
+        pip.title = `Slot ${i}${isActive ? ' (Active)' : ' (Locked)'}`;
+        pip.innerHTML = `<span class="pip-num">${i}</span>`;
+        slotPipsContainer.appendChild(pip);
+      }
+    }
+  };
+
+  // Attach event listeners for level settings
+  levelPillButtons.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const lvl = parseInt(pill.dataset.level || '1', 10);
+      if (lvl !== currentSettingsLevel) {
+        soundManager.playClick();
+        currentSettingsLevel = lvl;
+        updateLevelSettingsUI();
+      }
+    });
+  });
+
+  if (currencyMinusBtn) {
+    currencyMinusBtn.addEventListener('click', () => {
+      soundManager.playClick();
+      const cur = getStartingCurrencyForLevel(currentSettingsLevel);
+      setStartingCurrencyForLevel(currentSettingsLevel, Math.max(MIN_STARTING_CURRENCY, cur - 50));
+      updateLevelSettingsUI();
+    });
+  }
+
+  if (currencyPlusBtn) {
+    currencyPlusBtn.addEventListener('click', () => {
+      soundManager.playClick();
+      const cur = getStartingCurrencyForLevel(currentSettingsLevel);
+      setStartingCurrencyForLevel(currentSettingsLevel, Math.min(MAX_STARTING_CURRENCY, cur + 50));
+      updateLevelSettingsUI();
+    });
+  }
+
+  if (currencyInput) {
+    const handleCurrencyCommit = () => {
+      let val = parseInt(currencyInput.value, 10);
+      if (isNaN(val)) {
+        val = getStartingCurrencyForLevel(currentSettingsLevel);
+      }
+      setStartingCurrencyForLevel(currentSettingsLevel, val);
+      updateLevelSettingsUI();
+    };
+
+    currencyInput.addEventListener('change', handleCurrencyCommit);
+    currencyInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        currencyInput.blur();
+      }
+    });
+  }
+
+  presetPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      soundManager.playClick();
+      const amt = parseInt(pill.dataset.amount || '0', 10);
+      if (amt > 0) {
+        setStartingCurrencyForLevel(currentSettingsLevel, amt);
+        updateLevelSettingsUI();
+      }
+    });
+  });
+
+  if (slotsMinusBtn) {
+    slotsMinusBtn.addEventListener('click', () => {
+      soundManager.playClick();
+      const cur = getSlotLimitForLevel(currentSettingsLevel);
+      if (cur > MIN_SLOTS) {
+        setSlotLimitForLevel(currentSettingsLevel, cur - 1);
+        updateLevelSettingsUI();
+      }
+    });
+  }
+
+  if (slotsPlusBtn) {
+    slotsPlusBtn.addEventListener('click', () => {
+      soundManager.playClick();
+      const cur = getSlotLimitForLevel(currentSettingsLevel);
+      if (cur < MAX_SLOTS) {
+        setSlotLimitForLevel(currentSettingsLevel, cur + 1);
+        updateLevelSettingsUI();
+      }
+    });
+  }
+
+  if (resetCurrentLevelBtn) {
+    resetCurrentLevelBtn.addEventListener('click', () => {
+      soundManager.playClick();
+      resetLevelConfig(currentSettingsLevel);
+      updateLevelSettingsUI();
+    });
+  }
+
+  if (resetAllLevelsBtn) {
+    resetAllLevelsBtn.addEventListener('click', () => {
+      soundManager.playClick();
+      resetAllLevelConfigs();
+      updateLevelSettingsUI();
+    });
+  }
+
+  // Initial call
+  updateLevelSettingsUI();
 }
+
 

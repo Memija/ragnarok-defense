@@ -29,6 +29,8 @@ import { t } from '../i18n';
 import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo } from './DefenderRegistry';
 import { DEFENDER_ICONS } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
+import { getRealmCurrency, getRealmCurrencyName } from './Currency';
+import { getStartingCurrencyForLevel } from './GameConfig';
 
 interface WeatherParticle {
   x: number; y: number; vx: number; vy: number;
@@ -133,6 +135,7 @@ export class Game {
     } else {
       this.level = 1;
     }
+    this.sun = getStartingCurrencyForLevel(this.level);
     this.onOpenRoster = onOpenRoster;
     this.selectedDefenders = selectedDefenders && selectedDefenders.length > 0
       ? [...selectedDefenders]
@@ -153,6 +156,7 @@ export class Game {
 
     this.initWeather();
     this.bindEvents();
+    this.updateRealmHeader();
     this.renderSidebar();
     this.updateUI();
   }
@@ -257,9 +261,12 @@ export class Game {
   }
 
   updateUI() {
+    const currency = getRealmCurrency(this.realm);
     const sunCountEl = document.getElementById('sun-count');
     if (sunCountEl) {
       sunCountEl.textContent = this.sun.toString();
+      sunCountEl.style.color = currency.color;
+      sunCountEl.style.textShadow = `0 0 10px ${currency.glowColor}`;
     }
     const levelDisplay = document.getElementById('level-display');
     if (levelDisplay) {
@@ -359,6 +366,8 @@ export class Game {
     if (!container) return;
     container.innerHTML = '';
 
+    const currency = getRealmCurrency(this.realm);
+
     this.selectedDefenders.forEach((unitId, idx) => {
       const info = getDefenderInfo(unitId);
       if (!info) return;
@@ -375,7 +384,7 @@ export class Game {
           <span class="icon">${info.icon}</span>
         </div>
         <div class="unit-name">${info.name}</div>
-        <div class="cost"><span class="sun-icon">☀️</span> ${info.cost}</div>
+        <div class="cost"><span class="currency-icon">${currency.symbol}</span> ${info.cost}</div>
       `;
       container.appendChild(card);
     });
@@ -530,7 +539,23 @@ export class Game {
         }
       });
     }
+
+    window.addEventListener('levelconfigchanged', this.handleLevelConfigChange);
   }
+
+  handleLevelConfigChange = (e?: any) => {
+    const affectedLevel = e?.detail?.level;
+    if (affectedLevel === undefined || affectedLevel === this.level) {
+      const maxSlots = getDefenderSlotLimit(this.level);
+      if (this.selectedDefenders.length > maxSlots) {
+        this.selectedDefenders = this.selectedDefenders.slice(0, maxSlots);
+      } else if (this.selectedDefenders.length < maxSlots) {
+        this.selectedDefenders = getSavedLoadout(this.level);
+      }
+      this.renderSidebar();
+      this.updateUI();
+    }
+  };
 
   handleLanguageChange = () => {
     this.renderSidebar();
@@ -565,6 +590,33 @@ export class Game {
     }
     if (realmNameEl) realmNameEl.textContent = displayName;
     if (realmIconEl) realmIconEl.textContent = info.icon;
+
+    // Update Upper HUD resource counter for the active world's currency
+    const currency = getRealmCurrency(this.realm);
+    const currencyName = getRealmCurrencyName(this.realm);
+    const resourceCounter = document.getElementById('resource-counter');
+    if (resourceCounter) {
+      const labelEl = resourceCounter.querySelector('.stat-label');
+      if (labelEl) {
+        labelEl.textContent = currencyName;
+      }
+      const iconEl = resourceCounter.querySelector('.sol-icon, .currency-icon');
+      if (iconEl) {
+        iconEl.textContent = currency.symbol;
+      }
+      const talismanEl = resourceCounter.querySelector('.sol-talisman') as HTMLElement;
+      if (talismanEl) {
+        talismanEl.style.setProperty('--talisman-color', currency.color);
+        talismanEl.style.setProperty('--talisman-glow', currency.glowColor);
+        talismanEl.style.borderColor = currency.color;
+        talismanEl.style.boxShadow = `0 0 14px ${currency.glowColor}`;
+      }
+      const valEl = document.getElementById('sun-count');
+      if (valEl) {
+        valEl.style.color = currency.color;
+        valEl.style.textShadow = `0 0 10px ${currency.glowColor}`;
+      }
+    }
   }
 
   restartBattle() {
@@ -576,11 +628,12 @@ export class Game {
     this.attackers = [];
     this.projectiles = [];
     this.floatingTexts = [];
-    this.sun = 1000;
+    this.sun = getStartingCurrencyForLevel(this.level);
     for (let r = 0; r < this.grid.rows; r++) {
       this.valkyrieAvailable[r] = true;
     }
     this.realmEntranceTimer = 2.5;
+    this.updateRealmHeader();
     this.updateUI();
   }
 
@@ -3165,6 +3218,7 @@ export class Game {
   stop() {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('languagechange', this.handleLanguageChange);
+    window.removeEventListener('levelconfigchanged', this.handleLevelConfigChange);
     cancelAnimationFrame(this.animationId);
   }
 }

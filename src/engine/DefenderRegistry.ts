@@ -1,5 +1,6 @@
 import { t } from '../i18n';
 import { DEFENDER_ICONS } from './DefenderIcons';
+import { getSlotLimitForLevel } from './GameConfig';
 
 export type DefenderCategory = 'plants' | 'towers';
 
@@ -224,7 +225,7 @@ export const CITY_LEVELS: Record<string, number> = {
  * Level 7+: 10 (Up to 10 out of 12 available defenders)
  */
 export function getDefenderSlotLimit(level: number): number {
-  return Math.min(10, Math.max(3, level + 3));
+  return getSlotLimitForLevel(level);
 }
 
 const PRIORITY_ORDER = [
