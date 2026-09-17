@@ -30,7 +30,7 @@ import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo } f
 import { DEFENDER_ICONS } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
-import { getStartingCurrencyForLevel } from './GameConfig';
+import { getStartingCurrencyForLevel, getDefaultStartingCurrency } from './GameConfig';
 
 interface WeatherParticle {
   x: number; y: number; vx: number; vy: number;
@@ -68,7 +68,7 @@ export class Game {
     return this.grid ? this.grid.height : (this.canvas.clientHeight || 500);
   }
   
-  sun: number = 1000;
+  sun: number = getDefaultStartingCurrency(1);
   level: number = 1;
   selectedUnit: string | null = null;
   selectedDefenders: string[] = [];
@@ -1017,7 +1017,7 @@ export class Game {
       ctx.fillRect(0, 0, wallW, this.height);
 
       // 2. Heavy Dwarven Bronze Border Beam with Water-Ward Rivets
-      ctx.fillStyle = '#1c2a32';
+      ctx.fillStyle = '#10232a';
       ctx.fillRect(wallW - 10, 0, 10, this.height);
       ctx.fillStyle = '#14b8a6';
       ctx.shadowColor = '#2dd4bf';
@@ -1029,86 +1029,90 @@ export class Game {
       }
       ctx.shadowBlur = 0;
 
-      // 3. Wall Torches & Lantern with Amber Flame
+      // 3. Wall Torches & Lantern with Mystical Water-Ward Teal Flame
       const torchY = this.height * 0.18;
       const flicker = Math.sin(time * 6.5) * 0.25 + 0.75;
+      const lanternX = wallW - 28;
       // Lantern bracket
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(285, torchY - 3, 30, 6);
-      ctx.fillRect(310, torchY - 15, 5, 15);
-      // Lantern Housing
       ctx.fillStyle = '#1e293b';
+      ctx.fillRect(lanternX - 22, torchY - 3, 22, 6);
+      ctx.fillRect(lanternX - 4, torchY - 15, 5, 15);
+      // Lantern Housing
+      ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.roundRect(302, torchY - 26, 22, 22, 4);
+      ctx.roundRect(lanternX - 14, torchY - 26, 22, 22, 4);
       ctx.fill();
-      ctx.strokeStyle = '#d97706';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 1.6;
       ctx.stroke();
-      // Glowing Core
-      ctx.fillStyle = `rgba(251, 191, 36, ${0.85 * flicker})`;
-      ctx.shadowColor = '#f59e0b';
+      // Glowing Core with Teal Water-Ward Flame
+      ctx.fillStyle = `rgba(45, 212, 191, ${0.85 * flicker})`;
+      ctx.shadowColor = '#2dd4bf';
       ctx.shadowBlur = 14 * flicker;
       ctx.beginPath();
-      ctx.arc(313, torchY - 15, 6, 0, Math.PI * 2);
+      ctx.arc(lanternX - 3, torchY - 15, 6, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
 
       // 4. Carved Dwarven Canal Water Runes: ᚨ ᛚ ᛏ (Althjof)
       const aRunes = ['ᚨ', 'ᛚ', 'ᛏ', '·', 'ᚲ', 'ᚨ', 'ᚾ', 'ᚨ', 'ᛚ'];
-      ctx.font = 'bold 17px serif';
+      ctx.font = 'bold 16px serif';
       const runeGlow = 0.55 + Math.sin(time * 1.6) * 0.25;
       ctx.fillStyle = `rgba(45, 212, 191, ${runeGlow})`;
       ctx.shadowColor = '#14b8a6';
       ctx.shadowBlur = 10;
+      const runeSpacing = Math.min(48, (this.height - 100) / aRunes.length);
+      const runeX = wallW - 65;
       for (let ri = 0; ri < aRunes.length; ri++) {
-        ctx.fillText(aRunes[ri], 258, 65 + ri * 55);
+        ctx.fillText(aRunes[ri], runeX, 65 + ri * runeSpacing);
       }
       ctx.shadowBlur = 0;
 
       // 5. River Gate Sluice Arch & Iron Portcullis
       const gateTop = this.height * 0.38;
       const gateH = this.height * 0.42;
-      const gateX = 135;
-      const gateW2 = 90;
+      const gateW2 = Math.min(74, Math.max(56, Math.round(wallW * 0.38)));
+      const gateX = Math.max(16, Math.round(wallW * 0.46 - gateW2 * 0.5));
 
       // Sluice Arch surround
-      ctx.fillStyle = '#0f171d';
+      ctx.fillStyle = '#0a1419';
       ctx.beginPath();
-      ctx.moveTo(gateX, gateTop + 30);
-      ctx.arc(gateX + gateW2 / 2, gateTop + 30, gateW2 / 2, Math.PI, 0);
+      ctx.moveTo(gateX, gateTop + 24);
+      ctx.arc(gateX + gateW2 / 2, gateTop + 24, gateW2 / 2, Math.PI, 0);
       ctx.lineTo(gateX + gateW2, gateTop + gateH);
       ctx.lineTo(gateX, gateTop + gateH);
       ctx.closePath();
       ctx.fill();
 
       // Arch Stone Keystone
-      ctx.fillStyle = '#263b47';
+      ctx.fillStyle = '#1c2d36';
       ctx.beginPath();
-      ctx.moveTo(gateX + gateW2 / 2 - 12, gateTop);
-      ctx.lineTo(gateX + gateW2 / 2 + 12, gateTop);
-      ctx.lineTo(gateX + gateW2 / 2 + 8, gateTop + 24);
-      ctx.lineTo(gateX + gateW2 / 2 - 8, gateTop + 24);
+      ctx.moveTo(gateX + gateW2 / 2 - 10, gateTop);
+      ctx.lineTo(gateX + gateW2 / 2 + 10, gateTop);
+      ctx.lineTo(gateX + gateW2 / 2 + 7, gateTop + 20);
+      ctx.lineTo(gateX + gateW2 / 2 - 7, gateTop + 20);
       ctx.closePath();
       ctx.fill();
 
       // Iron Portcullis Bars
       ctx.strokeStyle = '#1e293b';
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 4;
       ctx.lineCap = 'square';
-      for (let bar = 0; bar < 4; bar++) {
-        const bx = gateX + 12 + bar * 22;
+      const numBars = Math.max(3, Math.floor(gateW2 / 20));
+      for (let bar = 0; bar < numBars; bar++) {
+        const bx = gateX + 10 + bar * ((gateW2 - 20) / Math.max(1, numBars - 1));
         ctx.beginPath();
-        ctx.moveTo(bx, gateTop + 30);
+        ctx.moveTo(bx, gateTop + 24);
         ctx.lineTo(bx, gateTop + gateH);
         ctx.stroke();
       }
       // Horizontal Iron Braces
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.5;
       for (let rail = 0; rail < 3; rail++) {
-        const ry2 = gateTop + 55 + rail * (gateH * 0.28);
+        const ry2 = gateTop + 45 + rail * (gateH * 0.28);
         ctx.beginPath();
-        ctx.moveTo(gateX + 4, ry2);
-        ctx.lineTo(gateX + gateW2 - 4, ry2);
+        ctx.moveTo(gateX + 3, ry2);
+        ctx.lineTo(gateX + gateW2 - 3, ry2);
         ctx.stroke();
       }
 
@@ -1119,14 +1123,14 @@ export class Game {
       gateWaterGrad.addColorStop(1, 'rgba(224, 242, 254, 0.85)');
       ctx.fillStyle = gateWaterGrad;
       ctx.beginPath();
-      ctx.fillRect(gateX + 6, gateTop + gateH - 32, gateW2 - 12, 32);
+      ctx.fillRect(gateX + 4, gateTop + gateH - 28, gateW2 - 8, 28);
 
       // Water culvert pipe spilling out
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(gateX - 22, gateTop + gateH - 45, 24, 16);
-      ctx.strokeStyle = '#d97706';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(gateX - 22, gateTop + gateH - 45, 24, 16);
+      ctx.fillStyle = '#0f2229';
+      ctx.fillRect(gateX - 16, gateTop + gateH - 40, 20, 14);
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(gateX - 16, gateTop + gateH - 40, 20, 14);
 
       // 6. DWARVEN RIVER WARDEN / MASTER ARTISAN on the battlement platform
       const sentryX = 75;
@@ -1767,24 +1771,34 @@ export class Game {
           ctx.rotate(turbSpin);
 
           // Bronze Turbine Outer Casing
-          ctx.strokeStyle = '#d97706';
+          ctx.strokeStyle = '#0f766e';
           ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.arc(0, 0, 13, 0, Math.PI * 2);
           ctx.stroke();
 
-          // 6 Curved Bronze Turbine Vanes
+          // Outer Runic Trim
+          ctx.strokeStyle = '#14b8a6';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(0, 0, 14.5, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // 6 Curved Bronze & Teal Turbine Vanes
           for (let vi = 0; vi < 6; vi++) {
             const vAng = (vi * Math.PI * 2) / 6;
-            ctx.fillStyle = vi % 2 === 0 ? '#b45309' : '#f59e0b';
+            ctx.fillStyle = vi % 2 === 0 ? '#0d9488' : '#2dd4bf';
             ctx.fillRect(Math.cos(vAng) * 3, Math.sin(vAng) * 3, 9, 2.5);
           }
 
           // Glowing Runic Core
-          ctx.fillStyle = '#2dd4bf';
+          ctx.fillStyle = '#5eead4';
+          ctx.shadowColor = '#14b8a6';
+          ctx.shadowBlur = 6;
           ctx.beginPath();
           ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
           ctx.fill();
+          ctx.shadowBlur = 0;
           ctx.restore();
 
           // High-pressure churning water foam in the sluice
@@ -1798,12 +1812,12 @@ export class Game {
           ctx.fill();
 
           // Pressure Gauge with active needle
-          ctx.fillStyle = '#1c1917';
+          ctx.fillStyle = '#0f172a';
           ctx.beginPath();
           ctx.arc(wallX - 43, by - 13, 5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = '#f59e0b';
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = '#14b8a6';
+          ctx.lineWidth = 1.2;
           ctx.stroke();
           // Gauge needle
           const needleAng = Math.PI * 0.75 + Math.sin(time * 6 + r) * 0.4;
@@ -1938,25 +1952,30 @@ export class Game {
         }
       }
 
-      // ── 4. DWARVEN AQUEDUCT BRIDGE & TIMBER CATWALK (Midground) ──
+      // ── 4. DWARVEN AQUEDUCT BRIDGE & CATWALK (Midground) ──
       const bY = riverTopY - 14;
-      // Stone bridge beam
-      ctx.fillStyle = '#111b20';
+      // Stone bridge beam in subterranean basalt
+      ctx.fillStyle = '#0a151b';
       ctx.fillRect(this.grid.startX, bY, w - this.grid.startX, 14);
-      // Soft ambient rail shadow
-      ctx.fillStyle = 'rgba(146, 64, 14, 0.2)';
-      ctx.fillRect(this.grid.startX, bY - 2, w - this.grid.startX, 2);
+      // Aged bronze railing trim
+      ctx.fillStyle = '#14b8a6';
+      ctx.fillRect(this.grid.startX, bY - 2, w - this.grid.startX, 2.5);
 
       // Bridge support arch piers
       for (let pi = 0; pi < 3; pi++) {
         const px = w * (0.46 + pi * 0.20);
-        ctx.fillStyle = '#0a1216';
-        ctx.fillRect(px - 14, bY + 18, 28, riverBotY - bY - 18);
-        ctx.strokeStyle = '#1e293b';
-        ctx.strokeRect(px - 14, bY + 18, 28, riverBotY - bY - 18);
+        ctx.fillStyle = '#071216';
+        ctx.fillRect(px - 14, bY + 14, 28, riverBotY - bY - 14);
+        ctx.strokeStyle = '#115e59';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(px - 14, bY + 14, 28, riverBotY - bY - 14);
+
+        // Bronze pier collar bracket
+        ctx.fillStyle = '#0f766e';
+        ctx.fillRect(px - 16, bY + 12, 32, 5);
 
         // Water culvert arch on pier
-        ctx.fillStyle = '#060d10';
+        ctx.fillStyle = '#03080a';
         ctx.beginPath();
         ctx.arc(px, riverBotY - 30, 10, Math.PI, 0);
         ctx.rect(px - 10, riverBotY - 30, 20, 30);
@@ -1964,7 +1983,8 @@ export class Game {
 
         // Water foaming at pier base
         const pFoamGrad = ctx.createRadialGradient(px, riverBotY - 2, 2, px, riverBotY - 2, 22);
-        pFoamGrad.addColorStop(0, 'rgba(224, 242, 254, 0.7)');
+        pFoamGrad.addColorStop(0, 'rgba(224, 242, 254, 0.75)');
+        pFoamGrad.addColorStop(0.5, 'rgba(45, 212, 191, 0.4)');
         pFoamGrad.addColorStop(1, 'rgba(14, 165, 233, 0)');
         ctx.fillStyle = pFoamGrad;
         ctx.beginPath();
@@ -1972,27 +1992,27 @@ export class Game {
         ctx.fill();
       }
 
-      // ── 5. THE ROTATING GREAT WATERWHEEL OF ALTHJOF (Distant Backdrop) ──
-      const wheelX = w * 0.91;
+      // ── 5. THE ROTATING GREAT WATERWHEEL OF ALTHJOF (Right Midground) ──
+      const wheelX = w * 0.90;
       const wheelY = riverTopY + (riverBotY - riverTopY) * 0.42;
       const wheelR = Math.min(85, (riverBotY - riverTopY) * 0.50);
-      const wheelRot = time * 0.48; // Smooth continuous majestic rotation
+      const wheelRot = time * 0.48; // Smooth continuous rotation
       ctx.save();
-      ctx.globalAlpha = 0.32; // Soft atmospheric depth so combat lanes remain crisp
+      ctx.globalAlpha = 0.42; // Atmospheric depth while keeping runes & mechanics crisp
 
       // ── 4b. AQUEDUCT WATER CHUTE FEEDING THE GREAT WHEEL ──
       const chuteX = wheelX - wheelR * 0.42;
       const chuteY = bY + 12;
-      // Stone & Bronze water chute
-      ctx.fillStyle = '#0a1418';
+      // Basalt stone & canal bronze water chute
+      ctx.fillStyle = '#081419';
       ctx.fillRect(chuteX - 30, chuteY, 50, 16);
-      ctx.strokeStyle = '#d97706';
+      ctx.strokeStyle = '#14b8a6';
       ctx.lineWidth = 2;
       ctx.strokeRect(chuteX - 30, chuteY, 50, 16);
 
       // Churning water torrent pouring from chute onto the top buckets
       const pourGrad = ctx.createLinearGradient(chuteX + 15, chuteY, chuteX + 26, wheelY - wheelR * 0.72);
-      pourGrad.addColorStop(0, 'rgba(224, 242, 254, 0.95)');
+      pourGrad.addColorStop(0, 'rgba(240, 253, 250, 0.95)');
       pourGrad.addColorStop(0.4, 'rgba(45, 212, 191, 0.85)');
       pourGrad.addColorStop(1, 'rgba(14, 165, 233, 0.75)');
       ctx.fillStyle = pourGrad;
@@ -2019,29 +2039,29 @@ export class Game {
       ctx.translate(wheelX, wheelY);
 
       // Wheel shadow on rear stone wall
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
       ctx.beginPath();
       ctx.arc(6, 6, wheelR + 8, 0, Math.PI * 2);
       ctx.fill();
 
-      // Outer Bronze Rim
+      // Outer Aged Canal Bronze Rim
       ctx.rotate(wheelRot);
-      ctx.strokeStyle = '#78350f';
+      ctx.strokeStyle = '#0a1a20';
       ctx.lineWidth = 14;
       ctx.beginPath();
       ctx.arc(0, 0, wheelR, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Polished Gold/Bronze Tread band with runes
-      ctx.strokeStyle = '#fbbf24';
+      // Polished Bronze & Teal Tread band with runes
+      ctx.strokeStyle = '#14b8a6';
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = '#f59e0b';
+      ctx.shadowColor = '#2dd4bf';
       ctx.shadowBlur = 8;
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Inner timber rim
-      ctx.strokeStyle = '#451a03';
+      // Inner basalt timber rim
+      ctx.strokeStyle = '#042f2e';
       ctx.lineWidth = 8;
       ctx.beginPath();
       ctx.arc(0, 0, wheelR - 12, 0, Math.PI * 2);
@@ -2049,16 +2069,16 @@ export class Game {
 
       // Runic inscriptions along the bronze rim
       const rimRunes = ['ᚨ', 'ᛚ', 'ᛏ', 'ᛗ', 'ᚲ', 'ᚱ', 'ᚦ', 'ᛟ'];
-      ctx.font = 'bold 9px serif';
+      ctx.font = 'bold 9.5px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (let ri = 0; ri < 8; ri++) {
         const rAng = (ri * Math.PI * 2) / 8;
         const rx = Math.cos(rAng) * (wheelR - 6);
         const ry = Math.sin(rAng) * (wheelR - 6);
-        ctx.fillStyle = '#2dd4bf';
+        ctx.fillStyle = '#5eead4';
         ctx.shadowColor = '#14b8a6';
-        ctx.shadowBlur = 5;
+        ctx.shadowBlur = 6;
         ctx.fillText(rimRunes[ri], rx, ry);
       }
       ctx.shadowBlur = 0;
@@ -2070,20 +2090,20 @@ export class Game {
         ctx.save();
         ctx.rotate(pAng);
 
-        // Heavy Oak Spoke
-        ctx.fillStyle = pIdx % 2 === 0 ? '#3e2723' : '#271810';
+        // Heavy Bog-Oak Spoke
+        ctx.fillStyle = pIdx % 2 === 0 ? '#111c22' : '#0b1317';
         ctx.fillRect(-4, 0, 8, wheelR - 10);
 
-        // Bronze Spoke Reinforcement Ring
-        ctx.fillStyle = '#b45309';
+        // Aged Bronze Spoke Reinforcement Ring
+        ctx.fillStyle = '#0d9488';
         ctx.fillRect(-6, wheelR * 0.55 - 3, 12, 6);
 
         // Water Bucket Blade on the rim
-        ctx.fillStyle = '#78350f';
+        ctx.fillStyle = '#0f766e';
         ctx.beginPath();
         ctx.roundRect(wheelR - 14, -6, 26, 12, 3);
         ctx.fill();
-        ctx.strokeStyle = '#fbbf24';
+        ctx.strokeStyle = '#5eead4';
         ctx.lineWidth = 1.4;
         ctx.stroke();
 
@@ -2091,27 +2111,27 @@ export class Game {
       }
 
       // Central Bronze Axle Hub
-      ctx.fillStyle = '#1c1917';
+      ctx.fillStyle = '#081014';
       ctx.beginPath();
       ctx.arc(0, 0, 32, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 3.5;
       ctx.stroke();
 
       // Center Gear Teeth (rotates with wheel)
       for (let g = 0; g < 10; g++) {
         const ga = (g * Math.PI * 2) / 10;
-        ctx.fillStyle = '#d97706';
+        ctx.fillStyle = '#0d9488';
         ctx.fillRect(Math.cos(ga) * 28 - 4, Math.sin(ga) * 28 - 4, 8, 8);
       }
 
       // Center Core Cap
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = '#042f2e';
       ctx.beginPath();
       ctx.arc(0, 0, 16, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#2dd4bf';
+      ctx.fillStyle = '#5eead4';
       ctx.shadowColor = '#14b8a6';
       ctx.shadowBlur = 8;
       ctx.font = 'bold 12px serif';
@@ -2123,7 +2143,6 @@ export class Game {
       ctx.restore(); // Exit wheel rotation
 
       // ── 6. WATER CASCADES & SPLASHING FOAM FROM THE GREAT WHEEL ──
-      // Churning whitewater basin at base of wheel
       const foamBaseY = wheelY + wheelR - 4;
       const foamGrad = ctx.createRadialGradient(wheelX, foamBaseY, 12, wheelX, foamBaseY, wheelR * 0.92);
       foamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
@@ -2146,6 +2165,126 @@ export class Game {
         ctx.fill();
       }
       ctx.restore(); // Exit distant waterwheel alpha
+
+      // ── 6b. DWARVEN CANAL OUTER EMBANKMENT & RIVER GATE (Right Bulwark) ──
+      const rWallW = 50;
+      const rWallX = w - rWallW;
+
+      // Subterranean Dwarven Basalt Embankment Wall
+      const rWallGrad = ctx.createLinearGradient(rWallX, 0, w, 0);
+      rWallGrad.addColorStop(0, '#0c171c');
+      rWallGrad.addColorStop(0.5, '#122026');
+      rWallGrad.addColorStop(1, '#081014');
+      ctx.fillStyle = rWallGrad;
+      ctx.fillRect(rWallX, 0, rWallW, h);
+
+      // Stone brick lines along right embankment
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.lineWidth = 1.2;
+      for (let by = 0; by < h; by += 32) {
+        ctx.beginPath();
+        ctx.moveTo(rWallX, by);
+        ctx.lineTo(w, by);
+        ctx.stroke();
+      }
+
+      // Bronze canal rim border beam facing the river
+      const rBeamG = ctx.createLinearGradient(rWallX, 0, rWallX + 8, 0);
+      rBeamG.addColorStop(0, '#14b8a6');
+      rBeamG.addColorStop(0.5, '#0f766e');
+      rBeamG.addColorStop(1, '#0a1419');
+      ctx.fillStyle = rBeamG;
+      ctx.fillRect(rWallX, 0, 8, h);
+
+      // Water-ward teal rivets along the right border
+      ctx.fillStyle = '#14b8a6';
+      ctx.shadowColor = '#2dd4bf';
+      ctx.shadowBlur = 4;
+      for (let ri = 0; ri < Math.floor(h / 32); ri++) {
+        ctx.beginPath();
+        ctx.arc(rWallX + 4, 16 + ri * 32, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      // Breached Outer River Gate Arch (From where attackers advance)
+      const rGateTop = h * 0.22;
+      const rGateH = h * 0.58;
+      const rGateW = 42;
+      const rGateX = rWallX + 6;
+
+      // Dark Canal Culvert Portal Void
+      ctx.fillStyle = '#04080a';
+      ctx.beginPath();
+      ctx.moveTo(rGateX, rGateTop + 24);
+      ctx.arc(rGateX + rGateW / 2, rGateTop + 24, rGateW / 2, Math.PI, 0);
+      ctx.lineTo(rGateX + rGateW, rGateTop + rGateH);
+      ctx.lineTo(rGateX, rGateTop + rGateH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Arch Stone Keystone with Glowing Rune ᚦ (Gateway / Threshold)
+      ctx.fillStyle = '#162830';
+      ctx.beginPath();
+      ctx.moveTo(rGateX + rGateW / 2 - 8, rGateTop);
+      ctx.lineTo(rGateX + rGateW / 2 + 8, rGateTop);
+      ctx.lineTo(rGateX + rGateW / 2 + 6, rGateTop + 18);
+      ctx.lineTo(rGateX + rGateW / 2 - 6, rGateTop + 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#2dd4bf';
+      ctx.shadowColor = '#14b8a6';
+      ctx.shadowBlur = 6;
+      ctx.font = 'bold 11px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ᚦ', rGateX + rGateW / 2, rGateTop + 13);
+      ctx.shadowBlur = 0;
+
+      // Heavy Iron Portcullis Grate (Raised/breached)
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 3.5;
+      for (let bar = 0; bar < 2; bar++) {
+        const bx = rGateX + 14 + bar * 16;
+        ctx.beginPath();
+        ctx.moveTo(bx, rGateTop + 24);
+        ctx.lineTo(bx, rGateTop + rGateH);
+        ctx.stroke();
+      }
+      for (let rail = 0; rail < 3; rail++) {
+        const ry = rGateTop + 40 + rail * (rGateH * 0.26);
+        ctx.beginPath();
+        ctx.moveTo(rGateX + 4, ry);
+        ctx.lineTo(rGateX + rGateW - 4, ry);
+        ctx.stroke();
+      }
+
+      // Torrents pouring into the battlefield from the breached gate
+      const rGateWater = ctx.createLinearGradient(rGateX, rGateTop + rGateH - 30, rGateX, rGateTop + rGateH);
+      rGateWater.addColorStop(0, 'rgba(20, 184, 166, 0.35)');
+      rGateWater.addColorStop(0.5, 'rgba(45, 212, 191, 0.55)');
+      rGateWater.addColorStop(1, 'rgba(224, 242, 254, 0.8)');
+      ctx.fillStyle = rGateWater;
+      ctx.fillRect(rGateX, rGateTop + rGateH - 24, rGateW, 24);
+
+      // Water monitoring wall lantern on the right embankment
+      const rLanternY = h * 0.16;
+      const rLanternX = rWallX + 24;
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(rLanternX - 10, rLanternY - 3, 16, 5);
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(rLanternX - 7, rLanternY - 20, 16, 18, 3);
+      ctx.fill();
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(45, 212, 191, 0.85)';
+      ctx.shadowColor = '#2dd4bf';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(rLanternX + 1, rLanternY - 11, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
 
       // ── 7. COOL SUBTERRANEAN RIVER MIST & FOG BANKS ──
       for (let f = 0; f < 3; f++) {

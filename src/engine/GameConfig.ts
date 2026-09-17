@@ -1,9 +1,22 @@
-export const DEFAULT_STARTING_CURRENCY = 1000;
+export const DEFAULT_STARTING_CURRENCY = 150;
 export const MIN_STARTING_CURRENCY = 25;
 export const MAX_STARTING_CURRENCY = 9999;
 
 export const MIN_SLOTS = 1;
 export const MAX_SLOTS = 12;
+
+export const DEFAULT_LEVEL_STARTING_CURRENCY: Record<number, number> = {
+  1: 150,
+  2: 250,
+  3: 350,
+  4: 500,
+  5: 650,
+  6: 800,
+  7: 1000,
+  8: 1200,
+  9: 1400,
+  10: 1600
+};
 
 const CURRENCY_STORAGE_KEY = 'ragnarok_level_starting_currency';
 const SLOTS_STORAGE_KEY = 'ragnarok_level_slots';
@@ -18,9 +31,16 @@ export function getDefaultSlotLimit(level: number): number {
 
 /**
  * Returns default starting currency for a given level.
+ * Level 1: 150, Level 2: 250, Level 3: 350, Level 4: 500, Level 5: 650,
+ * Level 6: 800, Level 7: 1000, Level 8: 1200, Level 9: 1400, Level 10: 1600
  */
-export function getDefaultStartingCurrency(_level: number): number {
-  return DEFAULT_STARTING_CURRENCY;
+export function getDefaultStartingCurrency(level: number): number {
+  const lvl = Math.round(level);
+  if (lvl in DEFAULT_LEVEL_STARTING_CURRENCY) {
+    return DEFAULT_LEVEL_STARTING_CURRENCY[lvl];
+  }
+  if (lvl < 1) return DEFAULT_LEVEL_STARTING_CURRENCY[1];
+  return Math.min(MAX_STARTING_CURRENCY, 1600 + (lvl - 10) * 200);
 }
 
 function getStoredObject<T>(key: string): Record<string, T> {
