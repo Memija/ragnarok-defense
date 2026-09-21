@@ -148,7 +148,16 @@ export const translations: Record<string, Record<string, string>> = {
     def_einherjar_name: 'Asgard Einherjar',
     def_einherjar_desc: 'Elevated celestial champion standing atop a marble watchtower, cleaving enemies with Gungnir.',
     def_einherjar_tooltip: 'Asgard Einherjar: Celestial champion atop a watchtower delivering devastating melee strikes.',
-    def_einherjar_role: 'Celestial Sentinel'
+    def_einherjar_role: 'Celestial Sentinel',
+    emergency_defense_title_ready: '🌊 HYDRAULIC TORRENT RAM',
+    emergency_defense_title_discharged: '✕ TORRENT RAM (DISCHARGED)',
+    emergency_defense_status_armed: 'Emergency Lane Defense · Armed',
+    emergency_defense_status_spent: 'Emergency defense spent for this row',
+    action_plant: '✦ Plant {name} ✦',
+    action_build: '✦ Build {name} ✦',
+    plant: 'Plant',
+    build: 'Build',
+    occupied: 'Occupied'
   },
   de: {
     title: 'Ragnarök Verteidigung',
@@ -297,7 +306,16 @@ export const translations: Record<string, Record<string, string>> = {
     def_einherjar_name: 'Asgard-Einherjer',
     def_einherjar_desc: 'Erhabener Himmelskrieger auf einem Marmorturm, der Feinde mit Gungnir niederstreckt.',
     def_einherjar_tooltip: 'Asgard-Einherjer: Himmlischer Champion auf einem Wachturm mit vernichtenden Nahkampfhieben.',
-    def_einherjar_role: 'Himmlischer Wächter'
+    def_einherjar_role: 'Himmlischer Wächter',
+    emergency_defense_title_ready: '🌊 HYDRAULISCHER STURMWIDDER',
+    emergency_defense_title_discharged: '✕ STURMWIDDER (ENTLADEN)',
+    emergency_defense_status_armed: 'Notfall-Linienverteidigung · Bereit',
+    emergency_defense_status_spent: 'Notfallverteidigung für diese Reihe verbraucht',
+    action_plant: '✦ {name} pflanzen ✦',
+    action_build: '✦ {name} bauen ✦',
+    plant: 'Pflanzen',
+    build: 'Bauen',
+    occupied: 'Besetzt'
   },
   id: {
     title: 'Ragnarök Defense',
@@ -446,7 +464,16 @@ export const translations: Record<string, Record<string, string>> = {
     def_einherjar_name: 'Einherjar Asgard',
     def_einherjar_desc: 'Pendekar langit agung di atas menara marmer, menebas musuh dengan tombak Gungnir.',
     def_einherjar_tooltip: 'Einherjar Asgard: Kesatria langit di atas menara pengawas melancarkan tebasan jarak dekat dahsyat.',
-    def_einherjar_role: 'Penjaga Langit'
+    def_einherjar_role: 'Penjaga Langit',
+    emergency_defense_title_ready: '🌊 PENDOBRAK ARUS HIDROLIK',
+    emergency_defense_title_discharged: '✕ PENDOBRAK ARUS (HABIS)',
+    emergency_defense_status_armed: 'Pertahanan Jalur Darurat · Siap',
+    emergency_defense_status_spent: 'Pertahanan darurat habis untuk baris ini',
+    action_plant: '✦ Tanam {name} ✦',
+    action_build: '✦ Bangun {name} ✦',
+    plant: 'Tanam',
+    build: 'Bangun',
+    occupied: 'Terisi'
   },
   bs: {
     title: 'Odbrana Ragnaroka',
@@ -595,7 +622,16 @@ export const translations: Record<string, Record<string, string>> = {
     def_einherjar_name: 'Asgardski Einherjar',
     def_einherjar_desc: 'Uzvišeni nebeski šampion na mramornom tornju, obara neprijatelje kopljem Gungnir.',
     def_einherjar_tooltip: 'Asgardski Einherjar: Nebeski šampion na tornju koji zadaje razorne udarce iz blizine.',
-    def_einherjar_role: 'Nebeski stražar'
+    def_einherjar_role: 'Nebeski stražar',
+    emergency_defense_title_ready: '🌊 HIDRAULIČNI BUJIČNI OVAN',
+    emergency_defense_title_discharged: '✕ BUJIČNI OVAN (ISPRAŽNJEN)',
+    emergency_defense_status_armed: 'Odbrana staze u nuždi · Spremno',
+    emergency_defense_status_spent: 'Odbrana u nuždi iskorištena za ovaj red',
+    action_plant: '✦ Posadi {name} ✦',
+    action_build: '✦ Izgradi {name} ✦',
+    plant: 'Posadi',
+    build: 'Izgradi',
+    occupied: 'Zauzeto'
   },
   pl: {
     title: 'Obrona Ragnarok',
@@ -744,7 +780,16 @@ export const translations: Record<string, Record<string, string>> = {
     def_einherjar_name: 'Einherjer z Asgardu',
     def_einherjar_desc: 'Wyniosły niebiański wojownik na marmurowej wieży, rozcinający wrogów włócznią Gungnir.',
     def_einherjar_tooltip: 'Einherjer z Asgardu: Niebiański czempion na wieży zadający druzgocące ciosy wręcz.',
-    def_einherjar_role: 'Niebiański Strażnik'
+    def_einherjar_role: 'Niebiański Strażnik',
+    emergency_defense_title_ready: '🌊 HYDRAULICZNY TARAN POTOKOWY',
+    emergency_defense_title_discharged: '✕ TARAN POTOKOWY (ROZŁADOWANY)',
+    emergency_defense_status_armed: 'Awaryjna obrona linii · W gotowości',
+    emergency_defense_status_spent: 'Awaryjna obrona wyczerpana dla tego rzędu',
+    action_plant: '✦ Zasadź {name} ✦',
+    action_build: '✦ Zbuduj {name} ✦',
+    plant: 'Zasadź',
+    build: 'Zbuduj',
+    occupied: 'Zajęte'
   },
   'sr-Cyrl': {
     title: 'Одбрана Рагнарока',
@@ -893,7 +938,16 @@ export const translations: Record<string, Record<string, string>> = {
     def_einherjar_name: 'Асгардски Еинхерјар',
     def_einherjar_desc: 'Узвишени небески шампион на мермерном торњу, обара непријатеље копљем Гунгнир.',
     def_einherjar_tooltip: 'Асгардски Еинхерјар: Небески шампион на кули који задаје разорне ударце из близине.',
-    def_einherjar_role: 'Небески стражар'
+    def_einherjar_role: 'Небески стражар',
+    emergency_defense_title_ready: '🌊 ХИДРАУЛИЧНИ БУЈИЧНИ ОВАН',
+    emergency_defense_title_discharged: '✕ БУЈИЧНИ ОВАН (ИСПРАЖЊЕН)',
+    emergency_defense_status_armed: 'Одбрана стазе у нужди · Спремно',
+    emergency_defense_status_spent: 'Одбрана у нужди искоришћена за овај ред',
+    action_plant: '✦ Посади {name} ✦',
+    action_build: '✦ Изгради {name} ✦',
+    plant: 'Посади',
+    build: 'Изгради',
+    occupied: 'Заузето'
   }
 };
 

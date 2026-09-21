@@ -2274,7 +2274,14 @@ export class Game {
         ctx.save();
         const tipX = wallX + 18;
         const tipY = Math.max(20, Math.min(h - 55, by - 22));
-        const tipW = 195;
+        const headerText = isReady ? t('emergency_defense_title_ready') : t('emergency_defense_title_discharged');
+        const descText = isReady ? t('emergency_defense_status_armed') : t('emergency_defense_status_spent');
+
+        ctx.font = 'bold 11px sans-serif';
+        const headW = ctx.measureText(headerText).width;
+        ctx.font = '10px sans-serif';
+        const descW = ctx.measureText(descText).width;
+        const tipW = Math.max(195, Math.ceil(Math.max(headW, descW) + 20));
         const tipH = 44;
 
         // Tooltip container
@@ -2294,12 +2301,12 @@ export class Game {
         ctx.font = 'bold 11px sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(isReady ? '🌊 HYDRAULIC TORRENT RAM' : '✕ TORRENT RAM (DISCHARGED)', tipX + 8, tipY + 7);
+        ctx.fillText(headerText, tipX + 8, tipY + 7);
 
         // Tooltip Subtitle / Description
         ctx.fillStyle = isReady ? '#ccfbf1' : '#cbd5e1';
         ctx.font = '10px sans-serif';
-        ctx.fillText(isReady ? 'Emergency Lane Defense · Armed' : 'Emergency defense spent for this row', tipX + 8, tipY + 24);
+        ctx.fillText(descText, tipX + 8, tipY + 24);
 
         ctx.restore();
       }
@@ -3362,7 +3369,7 @@ export class Game {
       ctx.font = 'bold 11px "Outfit", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('⛔ Occupied', cx + cellW / 2, cy + cellH / 2);
+      ctx.fillText(`⛔ ${t('occupied')}`, cx + cellW / 2, cy + cellH / 2);
     } else {
       // Valid Placement: Glowing Norse Rune Circle (Cyan for Towers, Green for Plants)
       const defenderInfo = getDefenderInfo(this.selectedUnit);
@@ -3435,7 +3442,8 @@ export class Game {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const unitName = defenderInfo ? defenderInfo.name : (this.selectedUnit.charAt(0).toUpperCase() + this.selectedUnit.slice(1));
-      const actionLabel = isTower ? `✦ Build ${unitName} ✦` : `✦ Plant ${unitName} ✦`;
+      const actionTemplate = isTower ? (t('action_build') || '✦ Build {name} ✦') : (t('action_plant') || '✦ Plant {name} ✦');
+      const actionLabel = actionTemplate.replace('{name}', unitName);
       ctx.fillText(actionLabel, centerX, cy + cellH - 12);
     }
 
