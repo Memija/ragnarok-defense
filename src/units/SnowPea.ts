@@ -19,7 +19,7 @@ export class SnowPea extends Defender {
     this.scaleX = 1 - Math.sin(this.animTimer / 200) * 0.02;
     
     if (this.fireTimer >= this.fireRate) {
-      const isZombieInRow = game.attackers.some(z => z.row === this.row && z.x > this.x);
+      const isZombieInRow = game.hasAttackerInRow(this.row, this.x);
       if (isZombieInRow) {
         this.fireTimer = 0;
         game.projectiles.push(new SnowProjectile(this.x + this.width, this.y + 10, this.row));

@@ -13,7 +13,7 @@ export class PeaShooter extends Defender {
 
   update(deltaTime: number, game: Game) {
     super.update(deltaTime, game);
-    const zombieInRow = game.attackers.some(a => a.row === this.row && a.x > this.x);
+    const zombieInRow = game.hasAttackerInRow(this.row, this.x);
     if (zombieInRow) {
       this.fireTimer += deltaTime;
       if (this.fireTimer >= this.fireRate) {

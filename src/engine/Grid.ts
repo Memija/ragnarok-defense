@@ -23,7 +23,38 @@ export class Grid {
     this.cellSize = this.cellHeight; // compatibility fallback
   }
 
+  private cachedCanvas: HTMLCanvasElement | null = null;
+  private cachedDpr: number = 0;
+
+  invalidateCache() {
+    this.cachedCanvas = null;
+  }
+
   draw(ctx: CanvasRenderingContext2D) {
+    const dpr = window.devicePixelRatio || 1;
+    if (!this.cachedCanvas || this.cachedDpr !== dpr) {
+      this.buildCache(dpr);
+    }
+    if (this.cachedCanvas) {
+      ctx.drawImage(this.cachedCanvas, 0, 0, this.width, this.height);
+    }
+  }
+
+  private buildCache(dpr: number) {
+    const offscreen = document.createElement('canvas');
+    offscreen.width = Math.ceil(this.width * dpr);
+    offscreen.height = Math.ceil(this.height * dpr);
+    const offCtx = offscreen.getContext('2d');
+    if (!offCtx) return;
+
+    offCtx.scale(dpr, dpr);
+    this.renderGrid(offCtx);
+
+    this.cachedCanvas = offscreen;
+    this.cachedDpr = dpr;
+  }
+
+  private renderGrid(ctx: CanvasRenderingContext2D) {
     ctx.save();
 
     // ── Draw Each Grid Cell with Realm-Specific Luxury Flagstone Style ──

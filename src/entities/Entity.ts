@@ -35,7 +35,7 @@ export abstract class Entity {
     }
   }
 
-  update(deltaTime: number, ..._args: any[]): void {
+  update(deltaTime: number, _game?: any): void {
     this.animTimer += deltaTime;
     if (this.flashTimer > 0) {
       this.flashTimer -= deltaTime;
@@ -95,10 +95,6 @@ export abstract class Entity {
 
   drawWithTransform(ctx: CanvasRenderingContext2D, drawFn: () => void) {
     ctx.save();
-    
-    if ((this as any).isSlowed) {
-      ctx.filter = 'sepia(100%) hue-rotate(180deg) saturate(200%) brightness(1.2)';
-    }
 
     ctx.translate(this.x + this.width / 2 + this.offsetX + this.recoilX, this.y + this.height / 2 + this.offsetY);
     ctx.rotate(this.rotation);
@@ -107,10 +103,18 @@ export abstract class Entity {
     
     drawFn();
 
+    if ((this as any).isSlowed) {
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.38)';
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
     if (this.flashTimer > 0) {
       ctx.globalCompositeOperation = 'source-atop';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
       ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.globalCompositeOperation = 'source-over';
     }
     
     ctx.restore();

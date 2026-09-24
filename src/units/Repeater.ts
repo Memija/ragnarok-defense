@@ -29,7 +29,7 @@ export class Repeater extends Defender {
         this.recoilX = -10;
       }
     } else if (this.fireTimer >= this.fireRate) {
-      const isZombieInRow = game.attackers.some(z => z.row === this.row && z.x > this.x);
+      const isZombieInRow = game.hasAttackerInRow(this.row, this.x);
       if (isZombieInRow) {
         this.fireTimer = 0;
         game.projectiles.push(new Pea(this.x + this.width, this.y + 10, this.row));

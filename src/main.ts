@@ -223,9 +223,37 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
     });
   }
 
+  let pausedByVisibility = false;
+
+  const isModalOpen = () => {
+    const settingsModal = document.getElementById('settings-modal');
+    if (settingsModal && !settingsModal.classList.contains('hidden')) return true;
+    const defenderModal = document.getElementById('defender-selection-modal');
+    if (defenderModal && !defenderModal.classList.contains('hidden')) return true;
+    return false;
+  };
+
+  const handleResume = () => {
+    if (document.hidden) return;
+    if (game && game.gameState === 'playing') {
+      if (pausedByVisibility || (!isModalOpen() && game.isPaused)) {
+        pausedByVisibility = false;
+        game.resume();
+      }
+    }
+  };
+
+  const handlePause = () => {
+    if (game && !game.isPaused && game.gameState === 'playing') {
+      pausedByVisibility = true;
+      game.pause();
+    }
+  };
+
   if (returnBtn) {
     returnBtn.addEventListener('click', () => {
       SoundManager.getInstance().playClick();
+      pausedByVisibility = false;
       if (game) {
         game.stop();
         game = null;
@@ -243,6 +271,18 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       }
     });
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      handlePause();
+    } else {
+      handleResume();
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    handleResume();
+  });
 
   (window as any).__startGame = startGame;
   (window as any).__getGame = () => game;

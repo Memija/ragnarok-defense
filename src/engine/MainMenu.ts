@@ -49,6 +49,18 @@ interface CanopyCloud {
   seed: number;
 }
 
+const AURORA_LIGHT_WAVES = [
+  { color: 'rgba(56, 189, 248, 0.10)', yRatio: 0.16, freq: 0.003, speed: 0.4 },
+  { color: 'rgba(45, 212, 191, 0.08)', yRatio: 0.22, freq: 0.004, speed: 0.3 },
+  { color: 'rgba(125, 211, 252, 0.10)', yRatio: 0.13, freq: 0.002, speed: 0.5 }
+];
+
+const AURORA_DARK_WAVES = [
+  { color: 'rgba(34, 211, 238, 0.14)', yRatio: 0.16, freq: 0.003, speed: 0.4 },
+  { color: 'rgba(45, 212, 191, 0.12)', yRatio: 0.22, freq: 0.004, speed: 0.3 },
+  { color: 'rgba(167, 139, 250, 0.08)', yRatio: 0.13, freq: 0.002, speed: 0.5 }
+];
+
 export class MainMenu {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -527,19 +539,11 @@ export class MainMenu {
     // Flowing Glacial Aurora Curtains
     ctx.save();
     ctx.globalCompositeOperation = isLight ? 'multiply' : 'lighter';
-    const auroraWaves = isLight
-      ? [
-          { color: 'rgba(56, 189, 248, 0.10)', y: h * 0.16, freq: 0.003, speed: 0.4 },
-          { color: 'rgba(45, 212, 191, 0.08)', y: h * 0.22, freq: 0.004, speed: 0.3 },
-          { color: 'rgba(125, 211, 252, 0.10)', y: h * 0.13, freq: 0.002, speed: 0.5 }
-        ]
-      : [
-          { color: 'rgba(34, 211, 238, 0.14)', y: h * 0.16, freq: 0.003, speed: 0.4 },
-          { color: 'rgba(45, 212, 191, 0.12)', y: h * 0.22, freq: 0.004, speed: 0.3 },
-          { color: 'rgba(167, 139, 250, 0.08)', y: h * 0.13, freq: 0.002, speed: 0.5 }
-        ];
+    const waves = isLight ? AURORA_LIGHT_WAVES : AURORA_DARK_WAVES;
 
-    for (const au of auroraWaves) {
+    for (let wi = 0; wi < waves.length; wi++) {
+      const au = waves[wi];
+      const baseAy = h * au.yRatio;
       ctx.beginPath();
       ctx.moveTo(0, 0);
       const steps = 24;
@@ -547,7 +551,7 @@ export class MainMenu {
         const x = (i / steps) * w;
         const wave = Math.sin(time * au.speed + x * au.freq) * (h * 0.07) +
                      Math.cos(time * (au.speed * 0.7) + x * (au.freq * 2)) * (h * 0.03);
-        ctx.lineTo(x, au.y + wave);
+        ctx.lineTo(x, baseAy + wave);
       }
       ctx.lineTo(w, 0);
       ctx.closePath();
@@ -733,7 +737,7 @@ export class MainMenu {
     ctx.save();
 
     if (r.locked) {
-      ctx.filter = 'saturate(75%) brightness(92%) opacity(85%)';
+      ctx.globalAlpha = 0.82;
     }
 
     // 1. Radiant Aura on Hover

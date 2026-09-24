@@ -43,6 +43,23 @@ export class SoundManager {
     return this.isMuted;
   }
 
+  public resumeContext(): void {
+    if (this.ctx && this.ctx.state === 'suspended' && !this.isMuted) {
+      this.ctx.resume().catch(() => {});
+    }
+  }
+
+  private autoCleanup(source: OscillatorNode | AudioBufferSourceNode, nodes: AudioNode[] = []) {
+    source.onended = () => {
+      try {
+        source.disconnect();
+        for (let i = 0; i < nodes.length; i++) {
+          nodes[i].disconnect();
+        }
+      } catch (_) {}
+    };
+  }
+
   // Crisp Norse UI Medallion Click
   public playClick() {
     const ctx = this.initCtx();
@@ -56,6 +73,7 @@ export class SoundManager {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
     osc.connect(gain);
     gain.connect(ctx.destination);
+    this.autoCleanup(osc, [gain]);
     osc.start();
     osc.stop(ctx.currentTime + 0.05);
   }
@@ -74,6 +92,7 @@ export class SoundManager {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
     osc.connect(gain);
     gain.connect(ctx.destination);
+    this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.09);
   }
@@ -93,6 +112,7 @@ export class SoundManager {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
     osc.connect(gain);
     gain.connect(ctx.destination);
+    this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.16);
   }
@@ -111,6 +131,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.03 + 0.18);
       osc.connect(gain);
       gain.connect(ctx.destination);
+      this.autoCleanup(osc, [gain]);
       osc.start(now + i * 0.03);
       osc.stop(now + i * 0.03 + 0.18);
     });
@@ -152,6 +173,7 @@ export class SoundManager {
 
     osc.connect(gain);
     gain.connect(ctx.destination);
+    this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.2);
   }
@@ -170,6 +192,7 @@ export class SoundManager {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     osc.connect(gain);
     gain.connect(ctx.destination);
+    this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.08);
   }
@@ -190,6 +213,7 @@ export class SoundManager {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
     osc.connect(gain);
     gain.connect(ctx.destination);
+    this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.6);
 
@@ -213,6 +237,7 @@ export class SoundManager {
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
     noiseGain.connect(ctx.destination);
+    this.autoCleanup(noise, [noiseFilter, noiseGain]);
     noise.start(now);
     noise.stop(now + 0.4);
   }
@@ -231,6 +256,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.22);
       osc.connect(gain);
       gain.connect(ctx.destination);
+      this.autoCleanup(osc, [gain]);
       osc.start(now + i * 0.04);
       osc.stop(now + i * 0.04 + 0.22);
     });
@@ -259,6 +285,7 @@ export class SoundManager {
     osc.connect(filter);
     filter.connect(gain);
     gain.connect(ctx.destination);
+    this.autoCleanup(osc, [filter, gain]);
     osc.start(now);
     osc.stop(now + 1.2);
   }
@@ -284,6 +311,7 @@ export class SoundManager {
         gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.7);
         osc.connect(gain);
         gain.connect(ctx.destination);
+        this.autoCleanup(osc, [gain]);
         osc.start(now + t);
         osc.stop(now + t + 0.7);
       });
@@ -310,6 +338,7 @@ export class SoundManager {
     osc.connect(filter);
     filter.connect(gain);
     gain.connect(ctx.destination);
+    this.autoCleanup(osc, [filter, gain]);
     osc.start(now);
     osc.stop(now + 1.5);
   }

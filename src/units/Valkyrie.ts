@@ -40,7 +40,7 @@ export class Valkyrie extends Entity {
       }
     }
     
-    if (this.x > game.canvas.width) {
+    if (this.x > game.width + 60) {
       this.markedForDeletion = true;
     }
   }

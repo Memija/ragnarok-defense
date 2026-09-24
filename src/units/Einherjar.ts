@@ -44,7 +44,7 @@ export class Einherjar extends Defender {
 
   update(deltaTime: number, game: Game) {
     super.update(deltaTime, game);
-    const hasEnemy = game.attackers.some(a => a.row === this.row && a.x > this.x);
+    const hasEnemy = game.hasAttackerInRow(this.row, this.x);
     if (hasEnemy) {
       this.fireTimer += deltaTime;
       if (this.fireTimer >= this.fireRate) {

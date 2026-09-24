@@ -273,13 +273,13 @@ export class MapMenu {
 
   loadBackgrounds() {
     this.bgDarkImg = new Image();
-    this.bgDarkImg.src = '/assets/svartalfheim_map_dark.jpg';
+    this.bgDarkImg.src = '/assets/svartalfheim_map_dark.webp';
     this.bgDarkImg.onload = () => {
       this.bgDarkLoaded = true;
     };
 
     this.bgLightImg = new Image();
-    this.bgLightImg.src = '/assets/svartalfheim_map_light.jpg';
+    this.bgLightImg.src = '/assets/svartalfheim_map_light.webp';
     this.bgLightImg.onload = () => {
       this.bgLightLoaded = true;
     };
@@ -443,10 +443,9 @@ export class MapMenu {
   loop = () => { this.draw(); this.animationId = requestAnimationFrame(this.loop); };
 
   draw() {
-    const rect = this.canvas.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
     const dpr = window.devicePixelRatio || 1;
+    const w = this.canvas.clientWidth || (this.canvas.width / dpr);
+    const h = this.canvas.clientHeight || (this.canvas.height / dpr);
     const ctx = this.ctx;
     const time = Date.now() / 1000;
     const isLight = document.body.dataset.activeTheme === 'light';
@@ -835,7 +834,7 @@ export class MapMenu {
     ctx.clip();
 
     if (loc.locked) {
-      ctx.filter = 'brightness(96%) saturate(92%) contrast(98%)';
+      ctx.globalAlpha = 0.82;
     }
 
     // Dispatch to bespoke handcrafted vector renderer
@@ -866,7 +865,9 @@ export class MapMenu {
         break;
     }
 
-    ctx.filter = 'none';
+    if (loc.locked) {
+      ctx.globalAlpha = 1.0;
+    }
 
     // If locked, draw heavy crossed dwarven iron chains and padlock
     if (loc.locked) {

@@ -17,7 +17,7 @@ export abstract class Attacker extends Entity {
     this.row = row;
   }
   
-  update(deltaTime: number, ..._args: any[]) {
+  update(deltaTime: number, game?: any) {
     let effectiveDeltaTime = deltaTime;
     
     if (this.slowTimer > 0) {
@@ -42,8 +42,7 @@ export abstract class Attacker extends Entity {
       }
     }
 
-    super.update(effectiveDeltaTime, ..._args);
-    const game = _args[0];
+    super.update(effectiveDeltaTime, game);
 
     if (!this.isEating && !this.isStunned) {
       this.x -= this.speed * (effectiveDeltaTime / 1000);
