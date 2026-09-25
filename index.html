@@ -190,24 +190,8 @@
             </div>
           </div>
 
-          <!-- Category Filter Tabs -->
-          <div class="category-tabs" id="category-tabs">
-            <button class="cat-tab active" data-cat="all">
-              <span class="tab-icon">⚔️</span>
-              <span class="tab-label" data-i18n="catAll">All Roster</span>
-              <span class="tab-count">12</span>
-            </button>
-            <button class="cat-tab" data-cat="plants">
-              <span class="tab-icon">🌿</span>
-              <span class="tab-label" data-i18n="catPlants">Plants</span>
-              <span class="tab-count">5</span>
-            </button>
-            <button class="cat-tab" data-cat="towers">
-              <span class="tab-icon">🏰</span>
-              <span class="tab-label" data-i18n="catTowers">Towers</span>
-              <span class="tab-count">7</span>
-            </button>
-          </div>
+          <!-- World Filter Tabs (Populated dynamically by DefenderSelectionModal) -->
+          <div class="category-tabs" id="category-tabs"></div>
 
           <!-- Roster Grid -->
           <div class="defender-grid" id="defender-grid">
@@ -580,6 +564,17 @@
             </div>
 
             <div class="top-bar-spacer"></div>
+
+            <div class="hud-buttons-group">
+              <button id="roster-btn" class="hud-action-btn" aria-label="Roster" title="Roster (Squad Selection)" data-i18n-title="roster">
+                <span class="btn-icon">📜</span>
+                <span class="btn-text" data-i18n="roster">Roster</span>
+              </button>
+              <button id="in-game-return-btn" class="hud-action-btn" aria-label="Return to Realms" title="Return to Realm Selection" data-i18n-title="returnToRealms">
+                <span class="btn-icon">↩️</span>
+                <span class="btn-text" data-i18n="returnToRealms">Return</span>
+              </button>
+            </div>
 
             <!-- Dedicated non-overlapping slot for the audio and settings buttons -->
             <div class="top-bar-actions-slot"></div>

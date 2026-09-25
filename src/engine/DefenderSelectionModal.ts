@@ -1,14 +1,16 @@
 import {
-  DEFENDERS_LIST,
   DEFENDERS_MAP,
   CATEGORIES,
-  type DefenderCategory,
+  type WorldId,
   getDefenderSlotLimit,
   getRecommendedLoadout,
   getSavedLoadout,
   saveLoadout,
   getLocalizedDefender,
-  getDefenderInfo
+  getDefenderInfo,
+  getDefendersListForRealm,
+  getDefendersGroupedByWorld,
+  getWorldMeta
 } from './DefenderRegistry';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
@@ -50,7 +52,7 @@ export class DefenderSelectionModal {
   private currentOptions: SelectionModalOptions | null = null;
   private selected: string[] = [];
   private limit: number = 4;
-  private activeCategory: 'all' | DefenderCategory = 'all';
+  private activeWorldFilter: 'all' | WorldId = 'all';
 
   constructor() {
     this.modalEl = document.getElementById('defender-modal');
@@ -131,22 +133,6 @@ export class DefenderSelectionModal {
       this.proceedToBattle();
     });
 
-    // Category Tabs Switching
-    if (this.tabsContainerEl) {
-      const tabButtons = this.tabsContainerEl.querySelectorAll('.cat-tab');
-      tabButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const target = e.currentTarget as HTMLElement;
-          const cat = (target.dataset.cat || 'all') as 'all' | DefenderCategory;
-          this.activeCategory = cat;
-          tabButtons.forEach(b => b.classList.remove('active'));
-          target.classList.add('active');
-          SoundManager.getInstance().playClick();
-          this.renderGrid();
-        });
-      });
-    }
-
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (this.warningModalEl && !this.warningModalEl.classList.contains('hidden')) {
@@ -161,7 +147,8 @@ export class DefenderSelectionModal {
     });
 
     window.addEventListener('languagechange', () => {
-      this.updateTabCounts();
+      this.renderWorldTabs();
+      this.updateModalHeaderAndButton();
       if (this.modalEl && !this.modalEl.classList.contains('hidden')) {
         this.render();
       }
@@ -216,16 +203,87 @@ export class DefenderSelectionModal {
     this.currentOptions?.onConfirm(chosen);
   }
 
-  private updateTabCounts() {
+  private renderWorldTabs() {
     if (!this.tabsContainerEl) return;
-    const allCount = this.tabsContainerEl.querySelector('[data-cat="all"] .tab-count');
-    if (allCount) allCount.textContent = `${DEFENDERS_LIST.length}`;
+    this.tabsContainerEl.innerHTML = '';
+    const currentRealm = this.currentOptions?.realm || 'midgard';
+    const defendersList = getDefendersListForRealm(currentRealm);
+    const groups = getDefendersGroupedByWorld(currentRealm);
 
-    const plantsCount = this.tabsContainerEl.querySelector('[data-cat="plants"] .tab-count');
-    if (plantsCount) plantsCount.textContent = `${DEFENDERS_LIST.filter(d => d.category === 'plants').length}`;
+    // All Worlds Tab
+    const allTab = document.createElement('button');
+    allTab.className = `cat-tab ${this.activeWorldFilter === 'all' ? 'active' : ''}`;
+    allTab.dataset.world = 'all';
+    allTab.innerHTML = `
+      <span class="tab-icon">🌐</span>
+      <span class="tab-label">${t('allWorlds') || 'All Worlds'}</span>
+      <span class="tab-count">${defendersList.length}</span>
+    `;
+    allTab.addEventListener('click', () => {
+      this.activeWorldFilter = 'all';
+      this.updateActiveTabStyles();
+      SoundManager.getInstance().playClick();
+      this.renderGrid();
+    });
+    this.tabsContainerEl.appendChild(allTab);
 
-    const towersCount = this.tabsContainerEl.querySelector('[data-cat="towers"] .tab-count');
-    if (towersCount) towersCount.textContent = `${DEFENDERS_LIST.filter(d => d.category === 'towers').length}`;
+    // World Tabs (Active Home Realm first!)
+    groups.forEach(group => {
+      const world = group.world;
+      const btn = document.createElement('button');
+      btn.className = `cat-tab ${group.isHomeWorld ? 'home-tab' : ''} ${this.activeWorldFilter === world.id ? 'active' : ''}`;
+      btn.dataset.world = world.id;
+      btn.style.setProperty('--world-color', world.color);
+      const worldName = t(`world_${world.id}`) || world.name;
+      btn.innerHTML = `
+        <span class="tab-icon">${world.icon}</span>
+        <span class="tab-label">${worldName}${group.isHomeWorld ? ' 🛡️' : ''}</span>
+        <span class="tab-count">${group.defenders.length}</span>
+      `;
+      btn.addEventListener('click', () => {
+        this.activeWorldFilter = world.id;
+        this.updateActiveTabStyles();
+        SoundManager.getInstance().playClick();
+        this.renderGrid();
+      });
+      this.tabsContainerEl?.appendChild(btn);
+    });
+  }
+
+  private updateActiveTabStyles() {
+    if (!this.tabsContainerEl) return;
+    const tabs = this.tabsContainerEl.querySelectorAll<HTMLElement>('.cat-tab');
+    tabs.forEach(tab => {
+      const world = tab.dataset.world;
+      if (world === this.activeWorldFilter) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+  }
+
+  private updateModalHeaderAndButton() {
+    if (!this.currentOptions) return;
+    const options = this.currentOptions;
+    if (this.levelBadgeEl) {
+      if (options.city) {
+        const cityKey = `loc_${options.city.replace(/-/g, '_')}_name`;
+        const transCity = t(cityKey);
+        const cityFormatted = transCity !== cityKey ? transCity : options.city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        this.levelBadgeEl.textContent = `${cityFormatted} · ${t('level')} ${options.level}`;
+      } else {
+        const realmKey = `world_${options.realm}`;
+        const transRealm = t(realmKey);
+        const realmFormatted = transRealm !== realmKey ? transRealm : options.realm.replace(/\b\w/g, c => c.toUpperCase());
+        this.levelBadgeEl.textContent = `${realmFormatted} · ${t('level')} ${options.level}`;
+      }
+    }
+
+    const confirmBtnText = this.confirmBtn?.querySelector('.btn-text');
+    if (confirmBtnText) {
+      confirmBtnText.textContent = options.isMidGame ? (t('updateSquad') || 'Update Squad ⚔️') : (t('toBattle') || 'To Battle ⚔️');
+    }
   }
 
   public open(options: SelectionModalOptions) {
@@ -247,26 +305,10 @@ export class DefenderSelectionModal {
       this.selected = this.selected.slice(0, this.limit);
     }
 
-    // Reset active category to 'all'
-    this.activeCategory = 'all';
-    if (this.tabsContainerEl) {
-      const tabButtons = this.tabsContainerEl.querySelectorAll('.cat-tab');
-      tabButtons.forEach(b => {
-        if (b.getAttribute('data-cat') === 'all') {
-          b.classList.add('active');
-        } else {
-          b.classList.remove('active');
-        }
-      });
-    }
-
-    this.updateTabCounts();
-
-    // Update level badge
-    if (this.levelBadgeEl) {
-      this.levelBadgeEl.textContent = `${t('level')} ${options.level}`;
-    }
-
+    // Reset active world filter to 'all'
+    this.activeWorldFilter = 'all';
+    this.renderWorldTabs();
+    this.updateModalHeaderAndButton();
     this.render();
 
     if (this.modalEl) {
@@ -343,11 +385,16 @@ export class DefenderSelectionModal {
     for (let i = 0; i < this.limit; i++) {
       const token = document.createElement('div');
       const unitId = this.selected[i];
-      if (unitId && DEFENDERS_MAP[unitId]) {
-        const unit = getDefenderInfo(unitId) || DEFENDERS_MAP[unitId];
+      const currentRealm = this.currentOptions?.realm || 'midgard';
+      if (unitId && (DEFENDERS_MAP[unitId] || unitId === 'sunflower' || unitId.startsWith('sunflower_'))) {
+        const unit = getDefenderInfo(unitId, currentRealm) || DEFENDERS_MAP[unitId];
         const categoryLabel = t(`cat_${unit.category}_title`) || (unit.category === 'plants' ? t('catPlants') : t('catTowers'));
+        const worldMeta = getWorldMeta(unit.world);
+        const worldName = t(`world_${worldMeta.id}`) || worldMeta.name;
+
         token.className = 'slot-token filled';
-        token.title = `${unit.name} (${categoryLabel}) — ${t('clickToRemove')}`;
+        token.title = `${unit.name} (${worldName} · ${categoryLabel}) — ${t('clickToRemove')}`;
+        token.style.borderColor = worldMeta.badgeBorder;
         token.innerHTML = `
           <span class="token-icon">${unit.icon}</span>
           <span class="slot-num">${i + 1}</span>
@@ -369,32 +416,45 @@ export class DefenderSelectionModal {
     if (!this.gridEl) return;
     this.gridEl.innerHTML = '';
     const isFull = this.selected.length >= this.limit;
+    const currentRealm = this.currentOptions?.realm || 'midgard';
 
-    const categoriesToRender: DefenderCategory[] =
-      this.activeCategory === 'all'
-        ? (['plants', 'towers'] as DefenderCategory[])
-        : [this.activeCategory];
+    const allGroups = getDefendersGroupedByWorld(currentRealm);
+    const groupsToRender = this.activeWorldFilter === 'all'
+      ? allGroups
+      : allGroups.filter(g => g.world.id === this.activeWorldFilter);
 
-    categoriesToRender.forEach(catKey => {
-      const meta = CATEGORIES[catKey];
-      const units = DEFENDERS_LIST.filter(d => d.category === catKey);
+    groupsToRender.forEach(group => {
+      const world = group.world;
+      const units = group.defenders;
       if (units.length === 0) return;
 
       const section = document.createElement('section');
-      section.className = `roster-section section-${catKey}`;
+      section.className = `roster-section section-world section-${world.id} ${group.isHomeWorld ? 'is-home-realm' : ''}`;
+      section.style.setProperty('--world-accent', world.color);
+      section.style.setProperty('--world-border', world.badgeBorder);
+      section.style.setProperty('--world-bg', world.badgeBg);
+
+      const localizedWorldName = t(`world_${world.id}`) || world.name;
+      const localizedWorldSub = t(`realm_${world.id}`) || world.sub;
 
       // Section Header Banner
       const header = document.createElement('div');
       header.className = 'section-header';
       header.innerHTML = `
         <div class="section-title-group">
-          <span class="section-icon">${meta.icon}</span>
+          <div class="section-icon-frame" style="border-color:${world.badgeBorder}; background:${world.badgeBg};">
+            <span class="section-rune">${world.rune}</span>
+            <span class="section-icon">${world.icon}</span>
+          </div>
           <div>
-            <h3 class="section-title">${t(`cat_${catKey}_title`) || meta.name}</h3>
-            <p class="section-subtitle">${t(`cat_${catKey}_sub`) || meta.subtitle}</p>
+            <div class="section-title-line">
+              <h3 class="section-title" style="color:${world.color};">${localizedWorldName}</h3>
+              ${group.isHomeWorld ? `<span class="section-home-badge">🛡️ ${t('hostRealmDefenses') || 'Host Realm'}</span>` : ''}
+            </div>
+            <p class="section-subtitle">${localizedWorldSub}</p>
           </div>
         </div>
-        <span class="section-badge" style="border-color:${meta.badgeBorder}; background:${meta.badgeBg}; color:${meta.color};">
+        <span class="section-badge" style="border-color:${world.badgeBorder}; background:${world.badgeBg}; color:${world.color};">
           ${units.length} ${t('available') || 'Available'}
         </span>
       `;
@@ -405,34 +465,37 @@ export class DefenderSelectionModal {
       cardsGrid.className = 'section-cards-grid';
 
       units.forEach(rawDef => {
-        const def = getLocalizedDefender(rawDef);
+        const def = getLocalizedDefender(rawDef, currentRealm);
         const isSelected = this.selected.includes(def.id);
         const slotIdx = isSelected ? this.selected.indexOf(def.id) + 1 : 0;
         const isDisabled = !isSelected && isFull;
 
         const card = document.createElement('div');
-        card.className = `roster-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled-cap' : ''}`;
+        card.className = `roster-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled-cap' : ''} card-world-${world.id}`;
         card.dataset.unit = def.id;
+        card.dataset.world = world.id;
         card.dataset.category = def.category;
         card.setAttribute('role', 'button');
         card.setAttribute('tabindex', '0');
         card.title = def.tooltip;
 
-        const currentRealm = this.currentOptions?.realm || 'midgard';
         const currency = getRealmCurrency(currentRealm);
         const currencyName = getRealmCurrencyName(currentRealm);
+        const catKey = def.category;
+        const catMeta = CATEGORIES[catKey];
+        const catName = t(`cat_${catKey}_title`) || catMeta?.name || def.categoryName;
 
         card.innerHTML = `
           ${isSelected ? `<span class="card-slot-badge">#${slotIdx}</span>` : ''}
           <div class="card-check">✓</div>
 
           <div class="card-top-row">
-            <div class="card-icon-frame" style="border-color:${meta.badgeBorder}">
+            <div class="card-icon-frame" style="border-color:${world.badgeBorder}">
               <span class="card-icon">${def.icon}</span>
             </div>
             <div class="card-identity">
               <span class="card-name">${def.name}</span>
-              <span class="card-origin">✦ ${def.origin}</span>
+              <span class="card-origin" style="color:${world.color}">✦ ${def.origin}</span>
             </div>
             <div class="card-cost" title="${currencyName} Cost">
               <span class="currency-icon">${currency.symbol}</span> ${def.cost}
@@ -440,8 +503,11 @@ export class DefenderSelectionModal {
           </div>
 
           <div class="card-role-row">
-            <span class="role-pill" style="border-color:${meta.badgeBorder}; background:${meta.badgeBg}; color:${meta.color};">
+            <span class="role-pill" style="border-color:${world.badgeBorder}; background:${world.badgeBg}; color:${world.color};">
               ${def.role}
+            </span>
+            <span class="category-mini-pill cat-${catKey}">
+              ${catKey === 'plants' ? '🌿' : '🏰'} ${catName}
             </span>
           </div>
 

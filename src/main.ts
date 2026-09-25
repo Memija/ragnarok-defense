@@ -91,7 +91,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
     });
   };
 
-  const startGame = (realm: string, city?: string) => {
+  const launchGame = (realm: string, city?: string, chosenDefenders?: string[]) => {
     if (mainMenuDiv && gameContainer) {
       document.body.className = city ? `theme-${realm} location-${city}` : `theme-${realm}`;
       const realmNames: Record<string, { name: string; icon: string }> = {
@@ -134,7 +134,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       gameContainer.classList.remove('hidden');
 
       const targetLevel = city && CITY_LEVELS[city] ? CITY_LEVELS[city] : 1;
-      const chosenDefenders = getSavedLoadout(targetLevel);
+      const squad = chosenDefenders && chosenDefenders.length > 0 ? chosenDefenders : getSavedLoadout(targetLevel);
       
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.parentElement?.getBoundingClientRect();
@@ -151,9 +151,38 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       if (game) {
         game.stop();
       }
-      // Passing realm, city, chosenDefenders, targetLevel, and roster opener
-      game = new Game(canvas, ctx, realm, city, chosenDefenders, targetLevel, openRosterForCurrentGame);
+      // Passing realm, city, squad, targetLevel, and roster opener
+      game = new Game(canvas, ctx, realm, city, squad, targetLevel, openRosterForCurrentGame);
       game.start();
+    }
+  };
+
+  const promptDefenderSelection = (realm: string, city?: string) => {
+    const targetLevel = city && CITY_LEVELS[city] ? CITY_LEVELS[city] : 1;
+    const initialSelected = getSavedLoadout(targetLevel);
+    const previousBodyClass = document.body.className;
+    document.body.className = city ? `theme-${realm} location-${city}` : `theme-${realm}`;
+
+    defenderModal.open({
+      realm,
+      city,
+      level: targetLevel,
+      initialSelected,
+      isMidGame: false,
+      onConfirm: (chosen) => {
+        launchGame(realm, city, chosen);
+      },
+      onCancel: () => {
+        document.body.className = previousBodyClass;
+      }
+    });
+  };
+
+  const startGame = (realm: string, city?: string, chosenDefenders?: string[]) => {
+    if (chosenDefenders && chosenDefenders.length > 0) {
+      launchGame(realm, city, chosenDefenders);
+    } else {
+      promptDefenderSelection(realm, city);
     }
   };
 
@@ -228,8 +257,8 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   const isModalOpen = () => {
     const settingsModal = document.getElementById('settings-modal');
     if (settingsModal && !settingsModal.classList.contains('hidden')) return true;
-    const defenderModal = document.getElementById('defender-selection-modal');
-    if (defenderModal && !defenderModal.classList.contains('hidden')) return true;
+    const defenderModalEl = document.getElementById('defender-modal');
+    if (defenderModalEl && !defenderModalEl.classList.contains('hidden')) return true;
     return false;
   };
 
@@ -250,26 +279,32 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
     }
   };
 
+  const handleReturnToMenu = () => {
+    SoundManager.getInstance().playClick();
+    pausedByVisibility = false;
+    if (game) {
+      game.stop();
+      game = null;
+    }
+    
+    document.body.className = '';
+    gameContainer?.classList.add('hidden');
+    
+    if (mainMenuDiv) {
+      mainMenuDiv.classList.remove('hidden');
+      mainMenuDiv.classList.add('active');
+      resizeMenu();
+      mainMenu.built = false;
+      mainMenu.start();
+    }
+  };
+
   if (returnBtn) {
-    returnBtn.addEventListener('click', () => {
-      SoundManager.getInstance().playClick();
-      pausedByVisibility = false;
-      if (game) {
-        game.stop();
-        game = null;
-      }
-      
-      document.body.className = '';
-      gameContainer?.classList.add('hidden');
-      
-      if (mainMenuDiv) {
-        mainMenuDiv.classList.remove('hidden');
-        mainMenuDiv.classList.add('active');
-        resizeMenu();
-        mainMenu.built = false;
-        mainMenu.start();
-      }
-    });
+    returnBtn.addEventListener('click', handleReturnToMenu);
+  }
+  const inGameReturnBtn = document.getElementById('in-game-return-btn');
+  if (inGameReturnBtn) {
+    inGameReturnBtn.addEventListener('click', handleReturnToMenu);
   }
 
   document.addEventListener('visibilitychange', () => {
@@ -285,5 +320,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   });
 
   (window as any).__startGame = startGame;
+  (window as any).__launchGame = launchGame;
+  (window as any).__promptDefenderSelection = promptDefenderSelection;
   (window as any).__getGame = () => game;
 }

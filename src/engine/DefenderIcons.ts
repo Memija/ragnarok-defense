@@ -49,7 +49,7 @@ export const DEFENDER_ICONS: Record<string, string> = {
   <circle cx="36" cy="30" r="0.9" fill="#fca5a5"/>
 </svg>`,
 
-  // 🌻 Solflower (Sacred Flora)
+  // 🌻 Solflower / Midgard Bounty Blossom (Sacred Flora)
   sunflower: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-sunflower">
   <defs>
     <linearGradient id="sol-petal" x1="0" y1="0" x2="0" y2="1">
@@ -91,6 +91,309 @@ export const DEFENDER_ICONS: Record<string, string> = {
   <circle cx="24" cy="21" r="9" fill="url(#sol-core)" stroke="#f59e0b" stroke-width="1.2"/>
   <path d="M26 15 L22 20 L26 22 L22 27" stroke="#fef08a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" filter="url(#sol-glow)"/>
   <circle cx="24" cy="21" r="6" stroke="#fde047" stroke-width="0.8" stroke-dasharray="1.5 2" fill="none" opacity="0.75"/>
+</svg>`,
+
+  // 👑 Draupnir Font / Asgard Celestial Font (Divine Tower)
+  sunflower_asgard: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-draupnir-font">
+  <defs>
+    <linearGradient id="drp-pedestal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#fef08a"/>
+      <stop offset="70%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#854d0e"/>
+    </linearGradient>
+    <linearGradient id="drp-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="30%" stop-color="#fde047"/>
+      <stop offset="70%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#a16207"/>
+    </linearGradient>
+    <filter id="drp-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <circle cx="24" cy="18" r="16" fill="#fde047" opacity="0.25" filter="url(#drp-glow)"/>
+  <!-- Pedestal base -->
+  <path d="M12 43 L36 43 L33 36 L15 36 Z" fill="url(#drp-pedestal)" stroke="#78350f" stroke-width="1"/>
+  <rect x="18" y="27" width="12" height="9" rx="1.5" fill="url(#drp-pedestal)" stroke="#78350f" stroke-width="0.9"/>
+  <!-- Font basin bowl -->
+  <path d="M10 27 Q24 32 38 27 L35 23 Q24 25 13 23 Z" fill="url(#drp-pedestal)" stroke="#78350f" stroke-width="1"/>
+  <ellipse cx="24" cy="24" rx="12" ry="3.5" fill="#fef08a" stroke="#ca8a04" stroke-width="0.8"/>
+  <!-- Glowing Fehu Rune ᚠ -->
+  <path d="M22 29 L22 35 M22 30 L26 28.5 M22 32.5 L26 31" stroke="#451a03" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Levitating Draupnir Golden Ring -->
+  <ellipse cx="24" cy="14" rx="9" ry="5.5" fill="none" stroke="url(#drp-ring)" stroke-width="2.6" filter="url(#drp-glow)"/>
+  <ellipse cx="24" cy="14" rx="7" ry="3.5" fill="none" stroke="#fff" stroke-width="0.8" opacity="0.8"/>
+  <!-- Molten Gold Droplet falling into basin -->
+  <path d="M24 16 C22 19 22 21 24 22 C26 21 26 19 24 16 Z" fill="#fef08a" stroke="#ca8a04" stroke-width="0.6"/>
+  <!-- Divine Rays -->
+  <line x1="24" y1="5" x2="24" y2="7.5" stroke="#fde047" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="15" y1="9" x2="17" y2="10.5" stroke="#fde047" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="33" y1="9" x2="31" y2="10.5" stroke="#fde047" stroke-width="1.2" stroke-linecap="round"/>
+</svg>`,
+
+  // ⚒️ Forge Bellows / Svartalfheim Dwarven Smelter (Dwarven Tower)
+  sunflower_svartalfheim: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-forge-bellows">
+  <defs>
+    <linearGradient id="blw-bronze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="50%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+    <linearGradient id="blw-fire" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="50%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+    <linearGradient id="blw-iron" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="50%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="blw-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <!-- Furnace Core Hearth -->
+  <path d="M12 43 L36 43 L34 22 L14 22 Z" fill="url(#blw-bronze)" stroke="#271106" stroke-width="1.2"/>
+  <!-- Iron reinforced rim and bands -->
+  <rect x="11" y="40" width="26" height="3" rx="1" fill="url(#blw-iron)" stroke="#0f172a" stroke-width="0.8"/>
+  <rect x="13" y="27" width="22" height="2.5" fill="url(#blw-iron)"/>
+  <!-- Glowing molten coal grate -->
+  <path d="M18 38 C18 32 30 32 30 38 Z" fill="url(#blw-fire)" stroke="#ffedd5" stroke-width="0.8" filter="url(#blw-glow)"/>
+  <path d="M22 34 L26 34 M20 37 L28 37" stroke="#451a03" stroke-width="1" stroke-linecap="round"/>
+  <!-- Copper exhaust chimney on top -->
+  <path d="M20 22 L20 12 L28 12 L28 22 Z" fill="url(#blw-bronze)" stroke="#271106" stroke-width="1"/>
+  <ellipse cx="24" cy="12" rx="4.5" ry="1.8" fill="#78350f" stroke="#451a03" stroke-width="0.8"/>
+  <!-- Steam/Smoke rings -->
+  <circle cx="24" cy="7.5" r="2.8" fill="#e2e8f0" opacity="0.6"/>
+  <circle cx="27" cy="4" r="2.2" fill="#cbd5e1" opacity="0.45"/>
+  <!-- Mechanical Leather Bellows on right side -->
+  <path d="M34 26 L42 22 L42 34 L34 32 Z" fill="#78350f" stroke="#291206" stroke-width="1"/>
+  <path d="M36 25 L40 23 L40 33 L36 31.5" stroke="#f59e0b" stroke-width="0.8"/>
+  <line x1="42" y1="28" x2="45" y2="28" stroke="#d97706" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Minted Dwarven Ingot sitting in front -->
+  <polygon points="17,43 31,43 29,40 19,40" fill="#fde047" stroke="#b45309" stroke-width="0.8" filter="url(#blw-glow)"/>
+</svg>`,
+
+  // 💠 Sunstone Prism / Alfheim Starlight Lotus (Sacred Flora / Light Relic)
+  sunflower_alfheim: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-sunstone-prism">
+  <defs>
+    <linearGradient id="alf-cryst" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#bae6fd"/>
+      <stop offset="70%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="alf-stem" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7dd3fc"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <filter id="alf-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <circle cx="24" cy="20" r="16" fill="#38bdf8" opacity="0.3" filter="url(#alf-glow)"/>
+  <!-- Crystalline stem & basal leaves -->
+  <path d="M24 26 Q24 36 23 43" stroke="url(#alf-stem)" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M23 37 Q15 36 13 32 Q20 31 23 35 Z" fill="#38bdf8" stroke="#0284c7" stroke-width="0.8" opacity="0.85"/>
+  <path d="M24 39 Q32 38 34 34 Q28 33 24 37 Z" fill="#38bdf8" stroke="#0284c7" stroke-width="0.8" opacity="0.85"/>
+  <!-- Outer Crystal Lotus Petals -->
+  <polygon points="24,20 18,7 24,12" fill="url(#alf-cryst)" stroke="#0284c7" stroke-width="0.6"/>
+  <polygon points="24,20 30,7 24,12" fill="url(#alf-cryst)" stroke="#0284c7" stroke-width="0.6"/>
+  <polygon points="24,20 9,14 16,17" fill="url(#alf-cryst)" stroke="#0284c7" stroke-width="0.6"/>
+  <polygon points="24,20 39,14 32,17" fill="url(#alf-cryst)" stroke="#0284c7" stroke-width="0.6"/>
+  <polygon points="24,20 8,24 16,23" fill="url(#alf-cryst)" stroke="#0284c7" stroke-width="0.6"/>
+  <polygon points="24,20 40,24 32,23" fill="url(#alf-cryst)" stroke="#0284c7" stroke-width="0.6"/>
+  <polygon points="24,20 14,31 20,26" fill="url(#alf-cryst)" stroke="#0284c7" stroke-width="0.6"/>
+  <polygon points="24,20 34,31 28,26" fill="url(#alf-cryst)" stroke="#0284c7" stroke-width="0.6"/>
+  <!-- Central Glowing Diamond Sunstone Prism -->
+  <polygon points="24,11 31,19 24,27 17,19" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2" filter="url(#alf-glow)"/>
+  <polygon points="24,14 28,19 24,24 20,19" fill="#ffffff" opacity="0.9"/>
+  <line x1="24" y1="11" x2="24" y2="27" stroke="#38bdf8" stroke-width="0.8"/>
+  <line x1="17" y1="19" x2="31" y2="19" stroke="#38bdf8" stroke-width="0.8"/>
+</svg>`,
+
+  // 🔶 Amber Sapling / Vanaheim Golden Ash Sprout (Sacred Flora)
+  sunflower_vanaheim: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-amber-sapling">
+  <defs>
+    <linearGradient id="amb-bark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="50%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+    <linearGradient id="amb-leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#84cc16"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+    <radialGradient id="amb-tear" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="40%" stop-color="#f59e0b"/>
+      <stop offset="85%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </radialGradient>
+    <filter id="amb-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <circle cx="24" cy="22" r="16" fill="#f59e0b" opacity="0.2" filter="url(#amb-glow)"/>
+  <!-- Branching sapling trunk -->
+  <path d="M22 43 Q24 32 23 23 Q20 18 16 15" stroke="url(#amb-bark)" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M23 23 Q27 18 31 16" stroke="url(#amb-bark)" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M23 28 Q29 25 33 27" stroke="url(#amb-bark)" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Lush golden-emerald leaves -->
+  <path d="M16 15 C11 14 10 9 14 6 C18 6 19 11 16 15 Z" fill="url(#amb-leaf)" stroke="#4d7c0f" stroke-width="0.8"/>
+  <path d="M31 16 C35 14 37 9 33 6 C29 6 28 11 31 16 Z" fill="url(#amb-leaf)" stroke="#4d7c0f" stroke-width="0.8"/>
+  <path d="M23 18 C20 14 20 8 24 5 C28 8 28 14 23 18 Z" fill="url(#amb-leaf)" stroke="#4d7c0f" stroke-width="0.8"/>
+  <path d="M33 27 C37 26 39 21 35 18 C31 18 30 23 33 27 Z" fill="url(#amb-leaf)" stroke="#4d7c0f" stroke-width="0.8"/>
+  <path d="M14 29 C10 28 8 23 12 20 C16 20 17 25 14 29 Z" fill="url(#amb-leaf)" stroke="#4d7c0f" stroke-width="0.8"/>
+  <!-- Weeping Golden Amber teardrop jewel -->
+  <path d="M24 24 C21 28 20 32 24 35 C28 32 27 28 24 24 Z" fill="url(#amb-tear)" stroke="#b45309" stroke-width="0.8" filter="url(#amb-glow)"/>
+  <ellipse cx="23" cy="30" rx="1.8" ry="3" fill="#ffffff" opacity="0.75"/>
+</svg>`,
+
+  // ❄️ Rime Geyser / Jotunheim Glacial Monolith (Elemental Tower)
+  sunflower_jotunheim: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-rime-geyser">
+  <defs>
+    <linearGradient id="jot-ice" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#a5f3fc"/>
+      <stop offset="70%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+    <filter id="jot-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <circle cx="24" cy="20" r="16" fill="#22d3ee" opacity="0.25" filter="url(#jot-glow)"/>
+  <!-- Glacial base crag -->
+  <polygon points="10,43 38,43 34,36 14,36" fill="#0891b2" stroke="#164e63" stroke-width="1"/>
+  <!-- Chiseled ice monolith spire -->
+  <polygon points="15,36 18,12 24,5 30,12 33,36" fill="url(#jot-ice)" stroke="#0891b2" stroke-width="1.2"/>
+  <polygon points="24,5 24,36 33,36 30,12" fill="#0891b2" opacity="0.35"/>
+  <!-- Carved Isa Rune ᛁ (Ice) -->
+  <line x1="24" y1="16" x2="24" y2="28" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" filter="url(#jot-glow)"/>
+  <!-- Chiseled facet cuts -->
+  <line x1="18" y1="12" x2="24" y2="16" stroke="#cffafe" stroke-width="0.8"/>
+  <line x1="30" y1="12" x2="24" y2="16" stroke="#155e75" stroke-width="0.8"/>
+  <line x1="24" y1="28" x2="15" y2="36" stroke="#cffafe" stroke-width="0.8"/>
+  <!-- Floating Rime Shards & Blizzard Mist -->
+  <polygon points="11,18 14,14 15,19 12,21" fill="#ecfeff" stroke="#22d3ee" stroke-width="0.6"/>
+  <polygon points="36,17 38,13 39,18 35,20" fill="#ecfeff" stroke="#22d3ee" stroke-width="0.6"/>
+  <circle cx="24" cy="4" r="2.2" fill="#ffffff" filter="url(#jot-glow)"/>
+</svg>`,
+
+  // 🌫️ Hvergelmir Well / Niflheim Primordial Font (Primordial Shrine)
+  sunflower_niflheim: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-hvergelmir-well">
+  <defs>
+    <linearGradient id="nif-stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="nif-vapor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#cffafe"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <filter id="nif-glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <circle cx="24" cy="20" r="16" fill="#cffafe" opacity="0.22" filter="url(#nif-glow)"/>
+  <!-- Ancient slate stone basin well -->
+  <path d="M12 43 L36 43 L34 26 L14 26 Z" fill="url(#nif-stone)" stroke="#0f172a" stroke-width="1.2"/>
+  <ellipse cx="24" cy="26" rx="11" ry="3.5" fill="#334155" stroke="#0f172a" stroke-width="1"/>
+  <!-- Stone brick markings -->
+  <line x1="20" y1="31" x2="28" y2="31" stroke="#1e293b" stroke-width="0.9"/>
+  <line x1="16" y1="37" x2="32" y2="37" stroke="#1e293b" stroke-width="0.9"/>
+  <line x1="24" y1="31" x2="24" y2="37" stroke="#1e293b" stroke-width="0.8"/>
+  <!-- Overflowing cold mist cascading down the rim -->
+  <path d="M14 26 C13 32 17 33 17 28 C17 35 22 34 22 27 C22 34 27 35 27 28 C27 34 32 33 33 26 Z" fill="#ecfeff" opacity="0.8" filter="url(#nif-glow)"/>
+  <!-- Levitating primordial mist crystal wisp -->
+  <circle cx="24" cy="15" r="7.5" fill="url(#nif-vapor)" opacity="0.88" filter="url(#nif-glow)"/>
+  <ellipse cx="24" cy="15" rx="5" ry="2.5" fill="#ffffff" opacity="0.9"/>
+  <path d="M18 15 Q24 9 30 15 Q24 21 18 15 Z" fill="#a5f3fc" opacity="0.8"/>
+  <circle cx="24" cy="15" r="2.5" fill="#ffffff"/>
+</svg>`,
+
+  // 🔥 Magma Font / Muspelheim Surtr's Brazier (Volcanic Tower)
+  sunflower_muspelheim: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-magma-font">
+  <defs>
+    <linearGradient id="mus-obsidian" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#450a0a"/>
+      <stop offset="50%" stop-color="#1c1917"/>
+      <stop offset="100%" stop-color="#0c0a09"/>
+    </linearGradient>
+    <linearGradient id="mus-magma" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#b91c1c"/>
+      <stop offset="40%" stop-color="#f97316"/>
+      <stop offset="85%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <filter id="mus-glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="2.4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <circle cx="24" cy="22" r="17" fill="#ef4444" opacity="0.25" filter="url(#mus-glow)"/>
+  <!-- Volcanic basalt brazier bowl -->
+  <path d="M10 43 L38 43 L36 36 L12 36 Z" fill="url(#mus-obsidian)" stroke="#7f1d1d" stroke-width="1"/>
+  <path d="M12 36 L18 24 L30 24 L36 36 Z" fill="url(#mus-obsidian)" stroke="#7f1d1d" stroke-width="1"/>
+  <path d="M9 24 Q24 28 39 24 L37 20 Q24 22 11 20 Z" fill="url(#mus-obsidian)" stroke="#991b1b" stroke-width="1.2"/>
+  <!-- Glowing volcanic magma fissures -->
+  <path d="M16 35 L20 28 L23 33 L28 26 L31 34" stroke="#f97316" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" filter="url(#mus-glow)"/>
+  <!-- Roaring Fire Flames -->
+  <path d="M15 22 C14 15 19 12 21 7 C23 11 24 13 23 15 C26 12 28 9 29 6 C32 11 34 16 32 22 Z" fill="url(#mus-magma)" filter="url(#mus-glow)"/>
+  <path d="M18 22 C17 17 21 15 22 11 C24 14 25 16 24 18 C26 15 27 13 28 10 C30 14 31 18 29 22 Z" fill="#fef08a"/>
+  <!-- Floating Ember Sparks -->
+  <circle cx="16" cy="9" r="1.4" fill="#fde047" filter="url(#mus-glow)"/>
+  <circle cx="33" cy="7" r="1.6" fill="#f97316" filter="url(#mus-glow)"/>
+</svg>`,
+
+  // 💀 Soul Beacon / Helheim Grave Lantern (Necrotic Tower)
+  sunflower_helheim: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-soul-beacon">
+  <defs>
+    <linearGradient id="hel-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="hel-soul" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#581c87"/>
+      <stop offset="45%" stop-color="#a855f7"/>
+      <stop offset="85%" stop-color="#e9d5ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <filter id="hel-glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="2.4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <circle cx="24" cy="22" r="16" fill="#c084fc" opacity="0.25" filter="url(#hel-glow)"/>
+  <!-- Lantern Post & Base -->
+  <path d="M14 43 L34 43 L31 38 L17 38 Z" fill="url(#hel-metal)" stroke="#09090b" stroke-width="1"/>
+  <rect x="22" y="32" width="4" height="7" fill="url(#hel-metal)" stroke="#09090b" stroke-width="0.8"/>
+  <!-- Gothic lantern cage frame -->
+  <polygon points="17,32 31,32 29,17 19,17" fill="#0f172a" opacity="0.6" stroke="url(#hel-metal)" stroke-width="1.2"/>
+  <!-- Spire Roof -->
+  <polygon points="16,17 32,17 24,7" fill="url(#hel-metal)" stroke="#09090b" stroke-width="1.2"/>
+  <circle cx="24" cy="6" r="2" fill="none" stroke="#94a3b8" stroke-width="1.2"/>
+  <!-- Spectral chain draped across post -->
+  <path d="M16 28 Q24 35 32 28" stroke="#a855f7" stroke-width="1.2" stroke-dasharray="2 2" fill="none" filter="url(#hel-glow)"/>
+  <!-- Dancing Violet Soul Flame -->
+  <path d="M24 16 C20 20 20 25 22 28 C24 30 25 30 26 28 C28 25 28 20 24 16 Z" fill="url(#hel-soul)" filter="url(#hel-glow)"/>
+  <circle cx="24" cy="25" r="2" fill="#ffffff"/>
+  <!-- Ghost Wisps circling -->
+  <circle cx="14" cy="20" r="1.6" fill="#e9d5ff" opacity="0.75" filter="url(#hel-glow)"/>
+  <circle cx="34" cy="22" r="1.8" fill="#d8b4fe" opacity="0.75" filter="url(#hel-glow)"/>
 </svg>`,
 
   // 🟢 Peashooter (Sacred Flora)
@@ -509,6 +812,8 @@ export const DEFENDER_ICONS: Record<string, string> = {
   <circle cx="12" cy="12" r="1.2" fill="#fef08a"/>
 </svg>`
 };
+
+DEFENDER_ICONS.sunflower_midgard = DEFENDER_ICONS.sunflower;
 
 export function getDefenderIcon(id: string): string {
   return DEFENDER_ICONS[id] || '⚔️';

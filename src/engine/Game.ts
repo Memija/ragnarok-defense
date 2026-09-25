@@ -383,12 +383,12 @@ export class Game {
     const currency = getRealmCurrency(this.realm);
 
     this.selectedDefenders.forEach((unitId, idx) => {
-      const info = getDefenderInfo(unitId);
+      const info = getDefenderInfo(unitId, this.realm);
       if (!info) return;
       const hotkey = idx < 9 ? (idx + 1).toString() : idx === 9 ? '0' : '';
       const card = document.createElement('div');
       card.className = 'unit-card';
-      card.dataset.unit = info.id;
+      card.dataset.unit = unitId;
       card.dataset.cost = info.cost.toString();
       card.dataset.tooltip = info.tooltip;
 
@@ -686,8 +686,8 @@ export class Game {
 
     if (unitType === 'peashooter' && this.sun >= 100) {
       unit = new PeaShooter(x, y, row, col);
-    } else if (unitType === 'sunflower' && this.sun >= 50) {
-      unit = new SunFlower(x, y, row, col);
+    } else if ((unitType === 'sunflower' || unitType.startsWith('sunflower_')) && this.sun >= 50) {
+      unit = new SunFlower(x, y, row, col, this.realm);
     } else if (unitType === 'wallnut' && this.sun >= 50) {
       unit = new WallNut(x, y, row, col);
     } else if (unitType === 'torchwood' && this.sun >= 175) {
@@ -3487,7 +3487,7 @@ export class Game {
       ctx.fillText(`⛔ ${t('occupied')}`, cx + cellW / 2, cy + cellH / 2);
     } else {
       // Valid Placement: Glowing Norse Rune Circle (Cyan for Towers, Green for Plants)
-      const defenderInfo = getDefenderInfo(this.selectedUnit);
+      const defenderInfo = getDefenderInfo(this.selectedUnit, this.realm);
       const isTower = defenderInfo?.category === 'towers';
       const pulse = (Math.sin(now * 4) + 1) / 2;
 
@@ -3538,7 +3538,7 @@ export class Game {
       ctx.restore();
 
       // Attack Trajectory Guide Arrow down the row
-      if (this.selectedUnit !== 'sunflower' && this.selectedUnit !== 'wallnut' && this.selectedUnit !== 'potatomine') {
+      if (!this.selectedUnit.startsWith('sunflower') && this.selectedUnit !== 'wallnut' && this.selectedUnit !== 'potatomine') {
         ctx.save();
         ctx.strokeStyle = isTower ? 'rgba(56, 189, 248, 0.4)' : 'rgba(129, 199, 132, 0.35)';
         ctx.lineWidth = 2;
