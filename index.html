@@ -219,7 +219,7 @@
         <div class="squad-warning-content">
           <button id="close-warning-btn" class="close-btn" aria-label="Close Warning" title="Close Warning">&times;</button>
           <div class="warning-rune-tag">⚠️ ᚲ ᚨ ᚢ ᛏ ᛁ ᛟ ᚾ ⚠️</div>
-          <h2 class="warning-title" data-i18n="squadIncompleteTitle">Incomplete Squad</h2>
+          <h2 class="warning-title" id="squad-warning-title" data-i18n="squadIncompleteTitle">Incomplete Squad</h2>
           <div class="gold-divider"><span>✧ ᚱ ✧</span></div>
           <p id="squad-warning-desc" class="warning-desc">
             Your squad only has <strong id="warning-current-slots" class="hl-slot">0</strong> of <strong id="warning-max-slots" class="hl-slot">4</strong> defenders selected. Are you sure you want to march into battle without a full roster?
@@ -232,8 +232,9 @@
               <span class="btn-text" data-i18n="adjustSquad">Adjust Squad</span>
             </button>
             <button id="warning-proceed-btn" class="warning-btn btn-primary">
-              <span class="btn-icon">⚔️</span>
-              <span class="btn-text" data-i18n="proceedAnyway">Proceed Anyway ⚔️</span>
+              <span class="btn-icon btn-icon-left">⚔️</span>
+              <span class="btn-text" data-i18n="proceedAnyway">Continue Anyway</span>
+              <span class="btn-icon btn-icon-right">⚔️</span>
             </button>
           </div>
         </div>

@@ -10,7 +10,8 @@ import {
   getDefenderInfo,
   getDefendersListForRealm,
   getDefendersGroupedByWorld,
-  getWorldMeta
+  getWorldMeta,
+  isCurrencyProducer
 } from './DefenderRegistry';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
@@ -46,8 +47,11 @@ export class DefenderSelectionModal {
   private closeWarningBtn: HTMLElement | null;
   private warningProceedBtn: HTMLElement | null;
   private warningAdjustBtn: HTMLElement | null;
+  private warningTitleEl: HTMLElement | null;
   private warningDescEl: HTMLElement | null;
   private warningSlotStripEl: HTMLElement | null;
+
+  private warningState = { isIncomplete: false, isMissingProducer: false };
 
   private currentOptions: SelectionModalOptions | null = null;
   private selected: string[] = [];
@@ -73,6 +77,7 @@ export class DefenderSelectionModal {
     this.closeWarningBtn = document.getElementById('close-warning-btn');
     this.warningProceedBtn = document.getElementById('warning-proceed-btn');
     this.warningAdjustBtn = document.getElementById('warning-adjust-btn');
+    this.warningTitleEl = document.getElementById('squad-warning-title') || (this.warningModalEl?.querySelector('.warning-title') as HTMLElement) || null;
     this.warningDescEl = document.getElementById('squad-warning-desc');
     this.warningSlotStripEl = document.getElementById('warning-slot-strip');
 
@@ -107,8 +112,13 @@ export class DefenderSelectionModal {
 
     this.confirmBtn?.addEventListener('click', () => {
       if (this.selected.length === 0) return;
-      if (this.selected.length < this.limit) {
-        this.openWarningModal();
+      const producerAvailable = this.isCurrencyProducerAvailable();
+      const hasProducer = this.hasSelectedCurrencyProducer();
+      const isMissingProducer = producerAvailable && !hasProducer;
+      const isIncomplete = this.selected.length < this.limit;
+
+      if (isIncomplete || isMissingProducer) {
+        this.openWarningModal(isIncomplete, isMissingProducer);
       } else {
         this.proceedToBattle();
       }
@@ -158,18 +168,66 @@ export class DefenderSelectionModal {
     });
   }
 
-  private openWarningModal() {
+  private hasSelectedCurrencyProducer(): boolean {
+    const currentRealm = this.currentOptions?.realm || 'midgard';
+    return this.selected.some(id => {
+      const unit = getDefenderInfo(id, currentRealm) || DEFENDERS_MAP[id];
+      return unit && isCurrencyProducer(unit);
+    });
+  }
+
+  private isCurrencyProducerAvailable(): boolean {
+    const currentRealm = this.currentOptions?.realm || 'midgard';
+    const defendersList = getDefendersListForRealm(currentRealm);
+    return defendersList.some(def => isCurrencyProducer(def));
+  }
+
+  private openWarningModal(isIncomplete: boolean = false, isMissingProducer: boolean = false) {
     SoundManager.getInstance().playClick();
+    this.warningState = { isIncomplete, isMissingProducer };
     this.updateWarningModalContent();
     this.warningModalEl?.classList.remove('hidden');
   }
 
   private updateWarningModalContent() {
+    const { isIncomplete, isMissingProducer } = this.warningState;
+    const currentRealm = this.currentOptions?.realm || 'midgard';
+    const currency = getRealmCurrency(currentRealm);
+    const currencyName = getRealmCurrencyName(currentRealm);
+    const defendersList = getDefendersListForRealm(currentRealm);
+    const sampleProducer = defendersList.find(d => isCurrencyProducer(d));
+    const sampleProducerName = sampleProducer ? sampleProducer.name : (t('def_sunflower_name') || 'Solflower');
+
+    if (this.warningTitleEl) {
+      if (isMissingProducer && !isIncomplete) {
+        this.warningTitleEl.textContent = t('noProducerTitle') || 'No Producing Units';
+      } else if (isMissingProducer && isIncomplete) {
+        this.warningTitleEl.textContent = t('squadWarningTitle') || 'Squad Warning';
+      } else {
+        this.warningTitleEl.textContent = t('squadIncompleteTitle') || 'Incomplete Squad';
+      }
+    }
+
     if (this.warningDescEl) {
-      const template = t('squadIncompleteWarning') || 'Your squad only has {current} of {max} defenders selected. Are you sure you want to march into battle without a full roster?';
-      this.warningDescEl.innerHTML = template
-        .replace('{current}', `<strong class="hl-slot">${this.selected.length}</strong>`)
-        .replace('{max}', `<strong class="hl-slot">${this.limit}</strong>`);
+      if (isMissingProducer && !isIncomplete) {
+        const template = t('noProducerWarning') || 'You have not selected any {currency} producing units (such as {producer}). Without generating {currencyName}, you will struggle to summon reinforcements as the battle progresses! Are you sure you want to proceed?';
+        this.warningDescEl.innerHTML = template
+          .replace('{currency}', `<strong class="hl-currency">${currency.symbol}</strong>`)
+          .replace('{currencyName}', `<strong class="hl-currency">${currencyName}</strong>`)
+          .replace('{producer}', `<strong class="hl-slot">${sampleProducerName}</strong>`);
+      } else if (isMissingProducer && isIncomplete) {
+        const template = t('noProducerAndIncompleteWarning') || 'Your squad has empty slots and NO {currency} producing units selected! Without generating {currencyName}, deploying new defenses will be extremely difficult. Are you sure you want to proceed?';
+        this.warningDescEl.innerHTML = template
+          .replace('{current}', `<strong class="hl-slot">${this.selected.length}</strong>`)
+          .replace('{max}', `<strong class="hl-slot">${this.limit}</strong>`)
+          .replace('{currency}', `<strong class="hl-currency">${currency.symbol}</strong>`)
+          .replace('{currencyName}', `<strong class="hl-currency">${currencyName}</strong>`);
+      } else {
+        const template = t('squadIncompleteWarning') || 'Your squad only has {current} of {max} defenders selected. Are you sure you want to march into battle without a full roster?';
+        this.warningDescEl.innerHTML = template
+          .replace('{current}', `<strong class="hl-slot">${this.selected.length}</strong>`)
+          .replace('{max}', `<strong class="hl-slot">${this.limit}</strong>`);
+      }
     }
 
     if (this.warningSlotStripEl) {
@@ -178,14 +236,27 @@ export class DefenderSelectionModal {
         const pill = document.createElement('div');
         const unitId = this.selected[i];
         if (unitId && DEFENDERS_MAP[unitId]) {
-          const unit = getDefenderInfo(unitId) || DEFENDERS_MAP[unitId];
-          pill.className = 'slot-pill filled';
-          pill.innerHTML = `<span>${unit.icon}</span> <span>${unit.name}</span>`;
+          const unit = getDefenderInfo(unitId, currentRealm) || DEFENDERS_MAP[unitId];
+          const isCurrency = isCurrencyProducer(unit);
+          pill.className = `slot-pill filled ${isCurrency ? 'is-currency-producer' : ''}`;
+          pill.innerHTML = `<span>${unit.icon}</span> <span>${unit.name}</span>${isCurrency ? ' <span class="pill-coin-pip">🪙</span>' : ''}`;
         } else {
           pill.className = 'slot-pill empty';
           pill.innerHTML = `<span>⭕</span> <span>${t('slotEmpty')}</span>`;
         }
         this.warningSlotStripEl.appendChild(pill);
+      }
+
+      if (isMissingProducer) {
+        const callout = document.createElement('div');
+        callout.className = 'warning-producer-callout';
+        callout.innerHTML = `
+          <span class="callout-icon">⚠️</span>
+          <span class="callout-text">
+            <strong>${t('noProducerAlert') || 'Missing Currency Producer'}</strong>: ${currency.symbol} ${currencyName} (+25 / 10s)
+          </span>
+        `;
+        this.warningSlotStripEl.appendChild(callout);
       }
     }
   }
@@ -367,8 +438,14 @@ export class DefenderSelectionModal {
 
     // Update confirm button
     if (this.confirmBtn && this.confirmPillEl) {
+      const isMissingProducer = this.isCurrencyProducerAvailable() && !this.hasSelectedCurrencyProducer();
       this.confirmPillEl.textContent = `${this.selected.length}/${this.limit} ${t('slotsSelected')}`;
       (this.confirmBtn as HTMLButtonElement).disabled = this.selected.length === 0;
+      if (isMissingProducer && this.selected.length > 0) {
+        this.confirmBtn.title = t('noProducerAlert') || 'Warning: Missing Currency Producer';
+      } else {
+        this.confirmBtn.title = '';
+      }
     }
 
     // Render Equipped Slot Preview
@@ -392,11 +469,13 @@ export class DefenderSelectionModal {
         const worldMeta = getWorldMeta(unit.world);
         const worldName = t(`world_${worldMeta.id}`) || worldMeta.name;
 
-        token.className = 'slot-token filled';
+        const isCurrency = isCurrencyProducer(unit);
+        token.className = `slot-token filled ${isCurrency ? 'is-currency-producer' : ''}`;
         token.title = `${unit.name} (${worldName} · ${categoryLabel}) — ${t('clickToRemove')}`;
-        token.style.borderColor = worldMeta.badgeBorder;
+        token.style.borderColor = isCurrency ? '#ffd700' : worldMeta.badgeBorder;
         token.innerHTML = `
           <span class="token-icon">${unit.icon}</span>
+          ${isCurrency ? `<span class="token-coin-pip" title="${t('producesCurrency') || 'Produces Currency'}">🪙</span>` : ''}
           <span class="slot-num">${i + 1}</span>
           <span class="token-remove-hint">✕</span>
         `;
@@ -449,7 +528,7 @@ export class DefenderSelectionModal {
           <div>
             <div class="section-title-line">
               <h3 class="section-title" style="color:${world.color};">${localizedWorldName}</h3>
-              ${group.isHomeWorld ? `<span class="section-home-badge">🛡️ ${t('hostRealmDefenses') || 'Host Realm'}</span>` : ''}
+              ${group.isHomeWorld ? `<span class="section-home-badge">🛡️ ${t('hostRealmDefenses') || 'Host realm'}</span>` : ''}
             </div>
             <p class="section-subtitle">${localizedWorldSub}</p>
           </div>
@@ -470,44 +549,58 @@ export class DefenderSelectionModal {
         const slotIdx = isSelected ? this.selected.indexOf(def.id) + 1 : 0;
         const isDisabled = !isSelected && isFull;
 
-        const card = document.createElement('div');
-        card.className = `roster-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled-cap' : ''} card-world-${world.id}`;
-        card.dataset.unit = def.id;
-        card.dataset.world = world.id;
-        card.dataset.category = def.category;
-        card.setAttribute('role', 'button');
-        card.setAttribute('tabindex', '0');
-        card.title = def.tooltip;
-
+        const isCurrency = isCurrencyProducer(def);
         const currency = getRealmCurrency(currentRealm);
         const currencyName = getRealmCurrencyName(currentRealm);
         const catKey = def.category;
         const catMeta = CATEGORIES[catKey];
-        const catName = t(`cat_${catKey}_title`) || catMeta?.name || def.categoryName;
+        const catName = isCurrency
+          ? (t('cat_economy_title') || 'Economy')
+          : (t(`cat_${catKey}_title`) || catMeta?.name || def.categoryName);
+
+        const card = document.createElement('div');
+        card.className = `roster-card ${isCurrency ? 'is-currency-producer' : ''} ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled-cap' : ''} card-world-${world.id}`;
+        card.dataset.unit = def.id;
+        card.dataset.world = world.id;
+        card.dataset.category = def.category;
+        if (isCurrency) {
+          card.dataset.currencyProducer = 'true';
+        }
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.title = def.tooltip;
 
         card.innerHTML = `
           ${isSelected ? `<span class="card-slot-badge">#${slotIdx}</span>` : ''}
           <div class="card-check">✓</div>
 
+          ${isCurrency ? `
+            <div class="currency-producer-badge-header">
+              <span class="currency-pip-glow">🪙</span>
+              <span class="currency-tag-text">${currencyName} ${t('currencyProducer') || 'Producer'}</span>
+              <span class="currency-rate">+25 / 10s</span>
+            </div>
+          ` : ''}
+
           <div class="card-top-row">
-            <div class="card-icon-frame" style="border-color:${world.badgeBorder}">
+            <div class="card-icon-frame" style="border-color:${isCurrency ? '#ffd700' : world.badgeBorder}">
               <span class="card-icon">${def.icon}</span>
             </div>
             <div class="card-identity">
               <span class="card-name">${def.name}</span>
               <span class="card-origin" style="color:${world.color}">✦ ${def.origin}</span>
             </div>
-            <div class="card-cost" title="${currencyName} Cost">
+            <div class="card-cost ${isCurrency ? 'currency-producer-cost' : ''}" title="${currencyName} Cost">
               <span class="currency-icon">${currency.symbol}</span> ${def.cost}
             </div>
           </div>
 
           <div class="card-role-row">
-            <span class="role-pill" style="border-color:${world.badgeBorder}; background:${world.badgeBg}; color:${world.color};">
+            <span class="role-pill ${isCurrency ? 'role-pill-currency' : ''}" style="border-color:${isCurrency ? '#ffd700' : world.badgeBorder}; background:${isCurrency ? 'rgba(255, 215, 0, 0.14)' : world.badgeBg}; color:${isCurrency ? '#ffd700' : world.color};">
               ${def.role}
             </span>
-            <span class="category-mini-pill cat-${catKey}">
-              ${catKey === 'plants' ? '🌿' : '🏰'} ${catName}
+            <span class="category-mini-pill ${isCurrency ? 'cat-economy' : `cat-${catKey}`}">
+              ${isCurrency ? '🪙' : (catKey === 'plants' ? '🌿' : '🏰')} ${catName}
             </span>
           </div>
 

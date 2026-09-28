@@ -85,6 +85,10 @@
   --modal-section-title: #f8fafc;
   --modal-section-sub: #94a3b8;
   --modal-section-divider: rgba(255, 255, 255, 0.08);
+  --modal-home-badge-bg: rgba(255, 215, 0, 0.16);
+  --modal-home-badge-border: rgba(255, 215, 0, 0.55);
+  --modal-home-badge-color: #ffd700;
+  --modal-home-badge-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
 
   --modal-card-bg: rgba(255, 255, 255, 0.04);
   --modal-card-border: rgba(255, 255, 255, 0.12);
@@ -207,6 +211,10 @@ body[data-active-theme="light"],
   --modal-section-title: #0f172a;
   --modal-section-sub: #475569;
   --modal-section-divider: rgba(202, 138, 4, 0.25);
+  --modal-home-badge-bg: #fef3c7;
+  --modal-home-badge-border: #ca8a04;
+  --modal-home-badge-color: #854d0e;
+  --modal-home-badge-shadow: 0 1px 4px rgba(202, 138, 4, 0.2);
 
   --modal-card-bg: #ffffff;
   --modal-card-border: rgba(202, 138, 4, 0.3);
@@ -748,6 +756,11 @@ body[data-active-theme="light"],
           color: #92400e;
           font-weight: 800;
         }
+
+        .hl-currency {
+          color: #b45309;
+          font-weight: 800;
+        }
       }
 
       .warning-slot-strip {
@@ -759,12 +772,30 @@ body[data-active-theme="light"],
             background: #e0f2fe;
             border: 1.5px solid #0284c7;
             color: #0369a1;
+
+            &.is-currency-producer {
+              background: #fffbeb;
+              border: 1.5px solid #ca8a04;
+              color: #854d0e;
+              box-shadow: 0 0 8px rgba(202, 138, 4, 0.25);
+            }
           }
 
           &.empty {
             background: #fee2e2;
             border: 1.5px dashed #dc2626;
             color: #b91c1c;
+          }
+        }
+
+        .warning-producer-callout {
+          background: #fef3c7;
+          border: 1.5px solid #ca8a04;
+          color: #854d0e;
+          box-shadow: 0 2px 8px rgba(202, 138, 4, 0.15);
+
+          .callout-text strong {
+            color: #78350f;
           }
         }
       }
@@ -967,6 +998,94 @@ body[data-active-theme="light"],
     color: #0369a1 !important;
     background: #e0f2fe !important;
     border-color: #7dd3fc !important;
+  }
+  .section-home-badge {
+    color: #854d0e !important;
+    background: #fef3c7 !important;
+    border-color: #ca8a04 !important;
+    box-shadow: 0 1px 4px rgba(202, 138, 4, 0.2) !important;
+  }
+
+  /* Currency Producer Distinct Light Mode Styles */
+  .slot-token.is-currency-producer {
+    border-color: #ca8a04 !important;
+    box-shadow: 0 0 10px rgba(202, 138, 4, 0.35) !important;
+  }
+
+  .roster-card.is-currency-producer {
+    border: 2px solid #ca8a04 !important;
+    background: linear-gradient(145deg, #fffdf2 0%, #fefcf3 100%) !important;
+    box-shadow: 0 4px 16px rgba(202, 138, 4, 0.22), 0 0 0 1px rgba(202, 138, 4, 0.15) !important;
+
+    .card-icon-frame {
+      border-color: #ca8a04 !important;
+      background: radial-gradient(circle, #fef3c7 0%, #ffffff 100%) !important;
+      box-shadow: 0 2px 8px rgba(202, 138, 4, 0.25);
+    }
+
+    .currency-producer-cost {
+      background: #fef3c7 !important;
+      border-color: #ca8a04 !important;
+      color: #854d0e !important;
+      box-shadow: none !important;
+    }
+
+    &:hover:not(.disabled-cap) {
+      border-color: #b45309 !important;
+      box-shadow: 0 6px 20px rgba(202, 138, 4, 0.35) !important;
+    }
+
+    &.selected {
+      border-color: #b45309 !important;
+      box-shadow: 0 0 20px rgba(202, 138, 4, 0.45) !important;
+    }
+  }
+
+  .currency-producer-badge-header {
+    background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%) !important;
+    border-color: #ca8a04 !important;
+    color: #854d0e !important;
+
+    .currency-rate {
+      background: #ffffff !important;
+      border-color: #ca8a04 !important;
+      color: #854d0e !important;
+    }
+  }
+
+  .category-mini-pill.cat-economy {
+    background: #fef3c7 !important;
+    border-color: #ca8a04 !important;
+    color: #854d0e !important;
+  }
+
+  .role-pill.role-pill-currency {
+    background: #fef3c7 !important;
+    border-color: #ca8a04 !important;
+    color: #854d0e !important;
+  }
+
+  #unit-selection .unit-card.is-currency-producer {
+    border: 1.5px solid #ca8a04 !important;
+    background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%) !important;
+    box-shadow: 0 2px 8px rgba(202, 138, 4, 0.25) !important;
+
+    .card-art {
+      border-color: rgba(202, 138, 4, 0.45) !important;
+      background: radial-gradient(circle, rgba(254, 243, 199, 0.9) 0%, #ffffff 100%) !important;
+    }
+
+    .unit-currency-badge {
+      background: #fef3c7 !important;
+      border-color: #ca8a04 !important;
+      color: #854d0e !important;
+      box-shadow: 0 1px 3px rgba(202, 138, 4, 0.2) !important;
+    }
+
+    &:hover {
+      border-color: #b45309 !important;
+      box-shadow: 0 3px 12px rgba(202, 138, 4, 0.35) !important;
+    }
   }
 
   /* Center Realm Tablet (Light Mode) */
@@ -1557,8 +1676,7 @@ body.theme-muspelheim {
                   padding: 2px 7px;
                   border-radius: 6px;
                   font-weight: 700;
-                  text-transform: uppercase;
-                  letter-spacing: 0.5px;
+                  letter-spacing: 0.3px;
 
                   &.is-default {
                     background: rgba(255, 255, 255, 0.08);
@@ -2008,8 +2126,7 @@ body.theme-muspelheim {
             font-weight: 800;
             padding: 4px 12px;
             border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
           }
         }
 
@@ -2056,6 +2173,22 @@ body.theme-muspelheim {
                 .token-remove-hint {
                   opacity: 1;
                 }
+              }
+            }
+
+            &.is-currency-producer {
+              border-color: #ffd700 !important;
+              box-shadow: 0 0 14px rgba(255, 215, 0, 0.45);
+
+              .token-coin-pip {
+                position: absolute;
+                bottom: -4px;
+                left: -4px;
+                font-size: 0.7rem;
+                line-height: 1;
+                filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.7));
+                pointer-events: none;
+                z-index: 3;
               }
             }
 
@@ -2239,16 +2372,15 @@ body.theme-muspelheim {
                 flex-wrap: wrap;
 
                 .section-home-badge {
-                  font-size: 0.68rem;
-                  font-weight: 800;
-                  text-transform: uppercase;
-                  letter-spacing: 0.8px;
+                  font-size: 0.72rem;
+                  font-weight: 700;
+                  letter-spacing: 0.3px;
                   padding: 3px 8px;
                   border-radius: 6px;
-                  background: rgba(255, 215, 0, 0.16);
-                  border: 1px solid rgba(255, 215, 0, 0.55);
-                  color: #ffd700;
-                  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+                  background: var(--modal-home-badge-bg, rgba(255, 215, 0, 0.16));
+                  border: 1px solid var(--modal-home-badge-border, rgba(255, 215, 0, 0.55));
+                  color: var(--modal-home-badge-color, #ffd700);
+                  box-shadow: var(--modal-home-badge-shadow, 0 0 12px rgba(255, 215, 0, 0.25));
                 }
               }
 
@@ -2329,6 +2461,74 @@ body.theme-muspelheim {
             .card-check {
               opacity: 1;
               transform: scale(1);
+            }
+          }
+
+          &.is-currency-producer {
+            border: 2px solid rgba(255, 215, 0, 0.7);
+            background: linear-gradient(145deg, rgba(255, 215, 0, 0.08) 0%, var(--modal-card-bg) 100%);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), 0 0 16px rgba(255, 215, 0, 0.22);
+
+            .card-icon-frame {
+              border-color: #ffd700 !important;
+              background: radial-gradient(circle, rgba(255, 215, 0, 0.22) 0%, rgba(0, 0, 0, 0.4) 100%) !important;
+              box-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
+            }
+
+            .currency-producer-cost {
+              background: linear-gradient(135deg, rgba(255, 215, 0, 0.28) 0%, rgba(245, 158, 11, 0.18) 100%);
+              border-color: #ffd700;
+              color: #ffd700;
+              box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            }
+
+            &:hover:not(.disabled-cap) {
+              border-color: #ffd700;
+              box-shadow: var(--modal-card-shadow), 0 0 24px rgba(255, 215, 0, 0.45);
+            }
+
+            &.selected {
+              border-color: #ffd700;
+              box-shadow: 0 0 24px rgba(255, 215, 0, 0.55), inset 0 0 12px rgba(255, 215, 0, 0.25);
+            }
+          }
+
+          .currency-producer-badge-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.2) 0%, rgba(245, 158, 11, 0.08) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.45);
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #ffd700;
+            letter-spacing: 0.4px;
+            box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.1);
+
+            .currency-pip-glow {
+              font-size: 0.85rem;
+              line-height: 1;
+              filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6));
+            }
+
+            .currency-tag-text {
+              flex: 1;
+              font-family: var(--font-heading);
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+
+            .currency-rate {
+              font-size: 0.68rem;
+              font-weight: 800;
+              background: rgba(0, 0, 0, 0.45);
+              padding: 2px 6px;
+              border-radius: 6px;
+              border: 1px solid rgba(255, 215, 0, 0.35);
+              color: #ffe082;
             }
           }
 
@@ -2425,8 +2625,7 @@ body.theme-muspelheim {
                 font-size: 0.72rem;
                 color: var(--modal-card-origin);
                 font-weight: 600;
-                letter-spacing: 0.5px;
-                text-transform: uppercase;
+                letter-spacing: 0.3px;
               }
             }
 
@@ -2459,11 +2658,16 @@ body.theme-muspelheim {
             .role-pill {
               font-size: 0.68rem;
               font-weight: 700;
-              letter-spacing: 0.8px;
-              text-transform: uppercase;
+              letter-spacing: 0.4px;
               padding: 3px 8px;
               border-radius: 6px;
               border: 1px solid transparent;
+
+              &.role-pill-currency {
+                border-color: rgba(255, 215, 0, 0.5) !important;
+                background: rgba(255, 215, 0, 0.15) !important;
+                color: #ffd700 !important;
+              }
             }
 
             .category-mini-pill {
@@ -2489,6 +2693,14 @@ body.theme-muspelheim {
                 background: rgba(33, 150, 243, 0.14);
                 border-color: rgba(33, 150, 243, 0.35);
                 color: #90caf9;
+              }
+
+              &.cat-economy {
+                background: rgba(255, 215, 0, 0.18);
+                border-color: rgba(255, 215, 0, 0.5);
+                color: #ffd700;
+                font-weight: 800;
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
               }
             }
           }
@@ -2617,11 +2829,11 @@ body.theme-muspelheim {
     .squad-warning-content {
       position: relative;
       width: 90%;
-      max-width: 480px;
+      max-width: 520px;
       background: var(--modal-bg);
       border: 2px solid #f59e0b;
       border-radius: 20px;
-      padding: 32px 30px 26px 30px;
+      padding: 32px 28px 26px 28px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(245, 158, 11, 0.35);
       z-index: 10;
       color: var(--text-color);
@@ -2713,6 +2925,12 @@ body.theme-muspelheim {
           color: #f59e0b;
           font-weight: 800;
         }
+
+        .hl-currency {
+          color: #ffd700;
+          font-weight: 800;
+          text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+        }
       }
 
       .warning-slot-strip {
@@ -2750,12 +2968,48 @@ body.theme-muspelheim {
             background: rgba(56, 189, 248, 0.18);
             border: 1px solid rgba(56, 189, 248, 0.45);
             color: #7dd3fc;
+
+            &.is-currency-producer {
+              background: rgba(255, 215, 0, 0.16);
+              border-color: #ffd700 !important;
+              color: #ffd700;
+              box-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
+
+              .pill-coin-pip {
+                font-size: 0.72rem;
+                filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.8));
+              }
+            }
           }
 
           &.empty {
             background: rgba(239, 68, 68, 0.12);
             border: 1px dashed rgba(239, 68, 68, 0.45);
             color: #fca5a5;
+          }
+        }
+
+        .warning-producer-callout {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 6px;
+          padding: 7px 12px;
+          background: rgba(255, 215, 0, 0.12);
+          border: 1px solid rgba(255, 215, 0, 0.45);
+          border-radius: 8px;
+          font-size: 0.82rem;
+          color: #ffe082;
+          font-weight: 600;
+
+          .callout-icon {
+            font-size: 0.95rem;
+          }
+
+          .callout-text strong {
+            color: #ffd700;
           }
         }
       }
@@ -2766,19 +3020,42 @@ body.theme-muspelheim {
         width: 100%;
         margin-top: 8px;
 
+        @media (max-width: 480px) {
+          flex-direction: column;
+          gap: 10px;
+
+          .warning-btn {
+            width: 100%;
+          }
+        }
+
         .warning-btn {
           flex: 1;
-          display: flex;
+          display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          padding: 12px 16px;
+          padding: 12px 14px;
           border-radius: 12px;
           font-family: var(--font-ui);
           font-weight: 700;
           font-size: 0.95rem;
+          white-space: nowrap;
           cursor: pointer;
           transition: all 0.25s ease;
+
+          .btn-icon {
+            font-size: 0.95rem;
+            line-height: 1;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+          }
+
+          .btn-text {
+            white-space: nowrap;
+            display: inline-block;
+          }
 
           &.btn-secondary {
             background: rgba(255, 255, 255, 0.08);
@@ -3189,6 +3466,38 @@ body.theme-muspelheim {
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             pointer-events: none;
             z-index: 2;
+          }
+
+          &.is-currency-producer {
+            border: 1.5px solid #ffd700;
+            background: linear-gradient(180deg, rgba(255, 215, 0, 0.14) 0%, rgba(20, 24, 32, 0.95) 100%);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3), var(--sidebar-card-shadow);
+
+            .card-art {
+              border-color: rgba(255, 215, 0, 0.45);
+              background: radial-gradient(circle, rgba(255, 215, 0, 0.22) 0%, rgba(0, 0, 0, 0.35) 100%);
+            }
+
+            .unit-currency-badge {
+              position: absolute;
+              top: 3px;
+              right: 4px;
+              font-size: 0.62rem;
+              line-height: 1;
+              background: rgba(255, 215, 0, 0.25);
+              border: 1px solid rgba(255, 215, 0, 0.6);
+              border-radius: 4px;
+              padding: 1px 3px;
+              color: #ffd700;
+              box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+              pointer-events: none;
+              z-index: 2;
+            }
+
+            &:hover {
+              border-color: #ffe082;
+              box-shadow: 0 0 16px rgba(255, 215, 0, 0.55), var(--sidebar-card-shadow);
+            }
           }
 
           .card-art {

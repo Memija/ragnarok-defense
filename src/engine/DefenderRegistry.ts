@@ -173,6 +173,7 @@ export interface DefenderInfo {
   origin: string;
   world: WorldId;
   hotkey?: string;
+  isCurrencyProducer?: boolean;
 }
 
 export const REALM_SUNFLOWERS: Record<string, DefenderInfo> = {
@@ -187,113 +188,127 @@ export const REALM_SUNFLOWERS: Record<string, DefenderInfo> = {
     tooltip: 'Solflower: Essential economy generator producing golden Hacksilver over time.',
     role: 'Solar Flora',
     origin: 'Midgard',
-    world: 'midgard'
+    world: 'midgard',
+    isCurrencyProducer: true
   },
   asgard: {
     id: 'sunflower_asgard',
     name: 'Draupnir Font',
     category: 'towers',
-    categoryName: 'Tower',
+    categoryName: 'Celestial Shrine',
     cost: 50,
     icon: DEFENDER_ICONS.sunflower_asgard,
     desc: 'Celestial Aesir font blessed by Odin that drips +25 Draupnir Gold every 10 seconds.',
     tooltip: 'Draupnir Font: Sacred celestial pedestal multiplying Draupnir Gold over time.',
     role: 'Celestial Shrine',
     origin: 'Asgard',
-    world: 'asgard'
+    world: 'asgard',
+    isCurrencyProducer: true
   },
   svartalfheim: {
     id: 'sunflower_svartalfheim',
     name: 'Forge Bellows',
     category: 'towers',
-    categoryName: 'Tower',
+    categoryName: 'Forge Mechanism',
     cost: 50,
     icon: DEFENDER_ICONS.sunflower_svartalfheim,
     desc: 'Geothermal dwarven crucible and bellows casting +25 Dwarven Ingots every 10 seconds.',
     tooltip: 'Forge Bellows: Subterranean smelting furnace producing Dwarven Ingots over time.',
     role: 'Smelting Foundry',
     origin: 'Svartalfheim',
-    world: 'svartalfheim'
+    world: 'svartalfheim',
+    isCurrencyProducer: true
   },
   alfheim: {
     id: 'sunflower_alfheim',
     name: 'Sunstone Prism',
     category: 'plants',
-    categoryName: 'Sacred Flora',
+    categoryName: 'Crystal Condenser',
     cost: 50,
     icon: DEFENDER_ICONS.sunflower_alfheim,
     desc: 'Luminous crystalline lotus refracting aurora rays into +25 Sunstones every 10 seconds.',
     tooltip: 'Sunstone Prism: Luminous crystalline lotus condensing Sunstones over time.',
     role: 'Crystal Condenser',
     origin: 'Alfheim',
-    world: 'alfheim'
+    world: 'alfheim',
+    isCurrencyProducer: true
   },
   vanaheim: {
     id: 'sunflower_vanaheim',
     name: 'Amber Sapling',
     category: 'plants',
-    categoryName: 'Sacred Flora',
+    categoryName: 'Living Grove',
     cost: 50,
     icon: DEFENDER_ICONS.sunflower_vanaheim,
     desc: 'Sacred Yggdrasil sapling from Freyja’s groves weeping +25 Golden Amber every 10 seconds.',
     tooltip: 'Amber Sapling: Blessed golden tree sprout producing Golden Amber over time.',
     role: 'Living Grove',
     origin: 'Vanaheim',
-    world: 'vanaheim'
+    world: 'vanaheim',
+    isCurrencyProducer: true
   },
   jotunheim: {
     id: 'sunflower_jotunheim',
     name: 'Rime Geyser',
     category: 'towers',
-    categoryName: 'Tower',
+    categoryName: 'Glacial Obelisk',
     cost: 50,
     icon: DEFENDER_ICONS.sunflower_jotunheim,
     desc: 'Glacial Utgard ice monolith venting blizzard energy into +25 Rime Shards every 10 seconds.',
     tooltip: 'Rime Geyser: Frozen elemental monolith producing Rime Shards over time.',
     role: 'Glacial Obelisk',
     origin: 'Jötunheim',
-    world: 'jotunheim'
+    world: 'jotunheim',
+    isCurrencyProducer: true
   },
   niflheim: {
     id: 'sunflower_niflheim',
     name: 'Hvergelmir Well',
     category: 'towers',
-    categoryName: 'Tower',
+    categoryName: 'Vapor Shrine',
     cost: 50,
     icon: DEFENDER_ICONS.sunflower_niflheim,
     desc: 'Primordial dark-slate well tapping ancient springs to distill +25 Mist Crystals every 10 seconds.',
     tooltip: 'Hvergelmir Well: Primordial vapor shrine distilling Mist Crystals over time.',
     role: 'Vapor Shrine',
     origin: 'Niflheim',
-    world: 'niflheim'
+    world: 'niflheim',
+    isCurrencyProducer: true
   },
   muspelheim: {
     id: 'sunflower_muspelheim',
     name: 'Magma Font',
     category: 'towers',
-    categoryName: 'Tower',
+    categoryName: 'Molten Brazier',
     cost: 50,
     icon: DEFENDER_ICONS.sunflower_muspelheim,
     desc: 'Obsidian brazier brimming with Surtr’s magma that manifests +25 Fire Embers every 10 seconds.',
     tooltip: 'Magma Font: Volcanic fire cauldron forging Fire Embers over time.',
     role: 'Molten Brazier',
     origin: 'Muspelheim',
-    world: 'muspelheim'
+    world: 'muspelheim',
+    isCurrencyProducer: true
   },
   helheim: {
     id: 'sunflower_helheim',
     name: 'Soul Beacon',
     category: 'towers',
-    categoryName: 'Tower',
+    categoryName: 'Soul Beacon',
     cost: 50,
     icon: DEFENDER_ICONS.sunflower_helheim,
     desc: 'Chained underworld cemetery lantern gathering departed spirits for +25 Soul Obols every 10 seconds.',
     tooltip: 'Soul Beacon: Spectral underworld lantern collecting Soul Obols over time.',
     role: 'Spirit Beacon',
     origin: 'Helheim',
-    world: 'helheim'
+    world: 'helheim',
+    isCurrencyProducer: true
   }
 };
+
+export function isCurrencyProducer(def?: DefenderInfo | null): boolean {
+  if (!def) return false;
+  return def.isCurrencyProducer === true || def.id === 'sunflower' || def.id.startsWith('sunflower_');
+}
 
 export function getSunflowerForRealm(realm?: string): DefenderInfo {
   const norm = (realm || 'midgard').toLowerCase().trim();
@@ -313,7 +328,8 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
     tooltip: 'Solflower: Essential economy generator producing golden Hacksilver over time.',
     role: 'Solar Flora',
     origin: 'Midgard',
-    world: 'midgard'
+    world: 'midgard',
+    isCurrencyProducer: true
   },
   {
     id: 'peashooter',
@@ -550,7 +566,7 @@ export function saveLoadout(defenders: string[]) {
 }
 
 export function getLocalizedDefender(def: DefenderInfo, realm?: string): DefenderInfo {
-  const isSunflower = def.id === 'sunflower' || def.id.startsWith('sunflower_');
+  const isSunflower = isCurrencyProducer(def);
   const effectiveRealm = realm ? realm.toLowerCase().trim() : (def.origin ? def.origin.toLowerCase().trim() : 'midgard');
 
   const nameKey = isSunflower ? `def_sunflower_${effectiveRealm}_name` : `def_${def.id}_name`;
@@ -577,10 +593,13 @@ export function getLocalizedDefender(def: DefenderInfo, realm?: string): Defende
     role = t(`def_${def.id}_role`) !== `def_${def.id}_role` ? t(`def_${def.id}_role`) : def.role;
   }
   const origin = t(originKey) !== originKey ? t(originKey) : def.origin;
-  const categoryName = t(catKey) !== catKey ? t(catKey) : def.categoryName;
+  const categoryName = isSunflower
+    ? def.categoryName
+    : (t(catKey) !== catKey ? t(catKey) : def.categoryName);
 
   return {
     ...def,
+    isCurrencyProducer: isSunflower,
     name,
     desc,
     tooltip,
@@ -596,7 +615,8 @@ export function getDefendersListForRealm(realm?: string): DefenderInfo[] {
   const contextualSunflower: DefenderInfo = {
     ...realmSunflower,
     id: 'sunflower',
-    world: normRealm
+    world: normRealm,
+    isCurrencyProducer: true
   };
   return DEFENDERS_LIST.map(def => {
     if (def.id === 'sunflower') {

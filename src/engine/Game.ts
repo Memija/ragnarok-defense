@@ -26,7 +26,7 @@ import { Troll } from '../units/Troll';
 import { SmallTroll } from '../units/SmallTroll';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
-import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo } from './DefenderRegistry';
+import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo, isCurrencyProducer } from './DefenderRegistry';
 import { DEFENDER_ICONS } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
@@ -385,15 +385,18 @@ export class Game {
     this.selectedDefenders.forEach((unitId, idx) => {
       const info = getDefenderInfo(unitId, this.realm);
       if (!info) return;
+      const isCurrency = isCurrencyProducer(info);
+      const currencyName = getRealmCurrencyName(this.realm);
       const hotkey = idx < 9 ? (idx + 1).toString() : idx === 9 ? '0' : '';
       const card = document.createElement('div');
-      card.className = 'unit-card';
+      card.className = `unit-card ${isCurrency ? 'is-currency-producer' : ''}`;
       card.dataset.unit = unitId;
       card.dataset.cost = info.cost.toString();
       card.dataset.tooltip = info.tooltip;
 
       card.innerHTML = `
         <span class="hotkey-badge">${hotkey}</span>
+        ${isCurrency ? `<span class="unit-currency-badge" title="${info.name}: +25 ${currency.symbol} ${currencyName}">🪙</span>` : ''}
         <div class="card-art">
           <span class="icon">${info.icon}</span>
         </div>

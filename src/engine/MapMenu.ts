@@ -2004,7 +2004,7 @@ export class MapMenu {
     ctx.textAlign = 'right';
     ctx.fillStyle = isLight ? '#92400e' : '#f59e0b';
     ctx.font = 'bold 11px "Cinzel", "Outfit", sans-serif';
-    const chapterTag = locChapter.toUpperCase();
+    const chapterTag = locChapter;
     ctx.fillText(`✦ ${chapterTag} ✦`, cardX + cardW - 22, cardY + 31);
 
     // 5. Clean Gold Divider Line
@@ -2055,7 +2055,7 @@ export class MapMenu {
     // Mandate Header Label
     ctx.fillStyle = isLight ? '#92400e' : '#fde047';
     ctx.font = 'bold 10px "Cinzel", "Outfit", sans-serif';
-    ctx.fillText(`ᛏ ${t('defense_mandate').toUpperCase()}`, boxX + 12, boxY + 16);
+    ctx.fillText(`ᛏ ${t('defense_mandate')}`, boxX + 12, boxY + 16);
 
     // Mandate Description (No wave counts, no enemy types, no tips!)
     ctx.fillStyle = isLight ? '#292524' : '#e2e8f0';
@@ -2095,7 +2095,7 @@ export class MapMenu {
     ctx.textAlign = 'center';
     ctx.fillStyle = isLight ? '#ffffff' : (isBtnHovered ? '#ffffff' : '#fef08a');
     ctx.font = 'bold 12.5px "Cinzel", "Outfit", sans-serif';
-    ctx.fillText(t('commence_defense').toUpperCase(), btnX + btnW * 0.5, btnY + 22);
+    ctx.fillText(t('commence_defense'), btnX + btnW * 0.5, btnY + 22);
 
     ctx.restore();
   }
