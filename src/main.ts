@@ -32,6 +32,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   let game: Game | null = null;
   let mapMenu: MapMenu | null = null;
   const defenderModal = new DefenderSelectionModal();
+  (window as any).__defenderSelectionModal = defenderModal;
   
   let mainMenu: MainMenu;
 
@@ -134,7 +135,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       gameContainer.classList.remove('hidden');
 
       const targetLevel = city && CITY_LEVELS[city] ? CITY_LEVELS[city] : 1;
-      const squad = chosenDefenders && chosenDefenders.length > 0 ? chosenDefenders : getSavedLoadout(targetLevel);
+      const squad = chosenDefenders && chosenDefenders.length > 0 ? chosenDefenders : getSavedLoadout(targetLevel, realm);
       
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.parentElement?.getBoundingClientRect();
@@ -157,20 +158,21 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
     }
   };
 
-  const promptDefenderSelection = (realm: string, city?: string) => {
+  const promptDefenderSelection = (realm?: string, city?: string) => {
+    const activeRealm = realm || 'svartalfheim';
     const targetLevel = city && CITY_LEVELS[city] ? CITY_LEVELS[city] : 1;
-    const initialSelected = getSavedLoadout(targetLevel);
+    const initialSelected = getSavedLoadout(targetLevel, activeRealm);
     const previousBodyClass = document.body.className;
-    document.body.className = city ? `theme-${realm} location-${city}` : `theme-${realm}`;
+    document.body.className = city ? `theme-${activeRealm} location-${city}` : `theme-${activeRealm}`;
 
     defenderModal.open({
-      realm,
+      realm: activeRealm,
       city,
       level: targetLevel,
       initialSelected,
       isMidGame: false,
       onConfirm: (chosen) => {
-        launchGame(realm, city, chosen);
+        launchGame(activeRealm, city, chosen);
       },
       onCancel: () => {
         document.body.className = previousBodyClass;

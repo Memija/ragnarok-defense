@@ -11,8 +11,11 @@ import {
   getDefendersListForRealm,
   getDefendersGroupedByWorld,
   getWorldMeta,
-  isCurrencyProducer
+  isCurrencyProducer,
+  isDefenderAllowedInRealm
 } from './DefenderRegistry';
+import { getForeignUnitsMode, getLimitedForeignWorlds, isForeignWorldAllowedInLimited } from './GameConfig';
+import { ForeignWorldsModal } from './ForeignWorldsModal';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
@@ -40,6 +43,7 @@ export class DefenderSelectionModal {
   private confirmBtn: HTMLElement | null;
   private confirmPillEl: HTMLElement | null;
   private tabsContainerEl: HTMLElement | null;
+  private foreignUnitsBadgeEl: HTMLElement | null;
 
   // Warning Modal Elements
   private warningModalEl: HTMLElement | null;
@@ -71,6 +75,7 @@ export class DefenderSelectionModal {
     this.confirmBtn = document.getElementById('confirm-defenders-btn');
     this.confirmPillEl = document.getElementById('confirm-slots-pill');
     this.tabsContainerEl = document.getElementById('category-tabs');
+    this.foreignUnitsBadgeEl = document.getElementById('foreign-units-rule-badge');
 
     this.warningModalEl = document.getElementById('squad-warning-modal');
     this.warningBackdropEl = this.warningModalEl?.querySelector('.squad-warning-backdrop') || null;
@@ -100,7 +105,7 @@ export class DefenderSelectionModal {
     this.autoPickBtn?.addEventListener('click', () => {
       if (!this.currentOptions) return;
       SoundManager.getInstance().playClick();
-      this.selected = getRecommendedLoadout(this.currentOptions.level);
+      this.selected = getRecommendedLoadout(this.currentOptions.level, this.currentOptions.realm);
       this.render();
     });
 
@@ -164,6 +169,25 @@ export class DefenderSelectionModal {
       }
       if (this.warningModalEl && !this.warningModalEl.classList.contains('hidden')) {
         this.updateWarningModalContent();
+      }
+    });
+
+    this.foreignUnitsBadgeEl?.addEventListener('click', () => {
+      SoundManager.getInstance().playClick();
+      ForeignWorldsModal.getInstance()?.open();
+    });
+
+    window.addEventListener('foreignunitssettingchanged', () => {
+      if (this.currentOptions) {
+        const realm = this.currentOptions.realm;
+        if (getForeignUnitsMode() !== 'allow') {
+          this.selected = this.selected.filter(id => isDefenderAllowedInRealm(id, realm));
+        }
+      }
+      this.renderWorldTabs();
+      this.updateModalHeaderAndButton();
+      if (this.modalEl && !this.modalEl.classList.contains('hidden')) {
+        this.render();
       }
     });
   }
@@ -280,15 +304,19 @@ export class DefenderSelectionModal {
     const currentRealm = this.currentOptions?.realm || 'midgard';
     const defendersList = getDefendersListForRealm(currentRealm);
     const groups = getDefendersGroupedByWorld(currentRealm);
+    const mode = getForeignUnitsMode();
 
     // All Worlds Tab
     const allTab = document.createElement('button');
     allTab.className = `cat-tab ${this.activeWorldFilter === 'all' ? 'active' : ''}`;
     allTab.dataset.world = 'all';
+    const totalAvailableCount = mode === 'allow'
+      ? defendersList.length
+      : defendersList.filter(d => isDefenderAllowedInRealm(d.id, currentRealm)).length;
     allTab.innerHTML = `
       <span class="tab-icon">🌐</span>
       <span class="tab-label">${t('allWorlds') || 'All Worlds'}</span>
-      <span class="tab-count">${defendersList.length}</span>
+      <span class="tab-count">${totalAvailableCount}</span>
     `;
     allTab.addEventListener('click', () => {
       this.activeWorldFilter = 'all';
@@ -301,16 +329,22 @@ export class DefenderSelectionModal {
     // World Tabs (Active Home Realm first!)
     groups.forEach(group => {
       const world = group.world;
+      const allowedCountInGroup = group.defenders.filter(d => isDefenderAllowedInRealm(d.id, currentRealm)).length;
+      const isLockedTab = !group.isHomeWorld && allowedCountInGroup === 0;
       const btn = document.createElement('button');
-      btn.className = `cat-tab ${group.isHomeWorld ? 'home-tab' : ''} ${this.activeWorldFilter === world.id ? 'active' : ''}`;
+      btn.className = `cat-tab ${group.isHomeWorld ? 'home-tab' : ''} ${isLockedTab ? 'foreign-locked-tab' : ''} ${this.activeWorldFilter === world.id ? 'active' : ''}`;
       btn.dataset.world = world.id;
       btn.style.setProperty('--world-color', world.color);
       const worldName = t(`world_${world.id}`) || world.name;
+      const availableUnitsCount = isLockedTab ? 0 : allowedCountInGroup;
       btn.innerHTML = `
         <span class="tab-icon">${world.icon}</span>
-        <span class="tab-label">${worldName}${group.isHomeWorld ? ' 🛡️' : ''}</span>
-        <span class="tab-count">${group.defenders.length}</span>
+        <span class="tab-label">${worldName}${group.isHomeWorld ? ' 🛡️' : (isLockedTab ? ' 🔒' : '')}</span>
+        <span class="tab-count">${availableUnitsCount}</span>
       `;
+      if (isLockedTab) {
+        btn.title = t('foreignUnitRestrictedTooltip') || 'Foreign defenders restricted when defending the home world';
+      }
       btn.addEventListener('click', () => {
         this.activeWorldFilter = world.id;
         this.updateActiveTabStyles();
@@ -338,22 +372,51 @@ export class DefenderSelectionModal {
     if (!this.currentOptions) return;
     const options = this.currentOptions;
     if (this.levelBadgeEl) {
+      const realmNameStr = options.realm || 'svartalfheim';
+      const levelNum = options.level ?? 1;
       if (options.city) {
         const cityKey = `loc_${options.city.replace(/-/g, '_')}_name`;
         const transCity = t(cityKey);
         const cityFormatted = transCity !== cityKey ? transCity : options.city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
-        this.levelBadgeEl.textContent = `${cityFormatted} · ${t('level')} ${options.level}`;
+        this.levelBadgeEl.textContent = `${cityFormatted} · ${t('level')} ${levelNum}`;
       } else {
-        const realmKey = `world_${options.realm}`;
+        const realmKey = `world_${realmNameStr}`;
         const transRealm = t(realmKey);
-        const realmFormatted = transRealm !== realmKey ? transRealm : options.realm.replace(/\b\w/g, c => c.toUpperCase());
-        this.levelBadgeEl.textContent = `${realmFormatted} · ${t('level')} ${options.level}`;
+        const realmFormatted = transRealm !== realmKey ? transRealm : realmNameStr.replace(/\b\w/g, c => c.toUpperCase());
+        this.levelBadgeEl.textContent = `${realmFormatted} · ${t('level')} ${levelNum}`;
       }
     }
 
     const confirmBtnText = this.confirmBtn?.querySelector('.btn-text');
     if (confirmBtnText) {
       confirmBtnText.textContent = options.isMidGame ? (t('updateSquad') || 'Update Squad ⚔️') : (t('toBattle') || 'To Battle ⚔️');
+    }
+
+    if (this.foreignUnitsBadgeEl) {
+      const mode = getForeignUnitsMode();
+      if (mode === 'allow') {
+        this.foreignUnitsBadgeEl.className = 'foreign-units-rule-badge is-allowed';
+        this.foreignUnitsBadgeEl.innerHTML = `
+          <span class="badge-icon">⚔️</span>
+          <span class="badge-text">${t('foreignUnitsAllowedBadge') || 'Foreign Units: Allowed'}</span>
+        `;
+        this.foreignUnitsBadgeEl.title = t('foreignUnitsSubtitle') || 'Foreign realm defenders allowed during home world defense';
+      } else if (mode === 'limited') {
+        const limitedWorlds = getLimitedForeignWorlds();
+        this.foreignUnitsBadgeEl.className = 'foreign-units-rule-badge is-limited';
+        this.foreignUnitsBadgeEl.innerHTML = `
+          <span class="badge-icon">⚖️</span>
+          <span class="badge-text">${t('foreignUnitsLimitedBadge') || 'Foreign Units: Limited'} (${limitedWorlds.length} ${t('realms') || 'Realms'})</span>
+        `;
+        this.foreignUnitsBadgeEl.title = t('foreignWorldsModalSubtitle') || 'Click to customize allowed foreign realms';
+      } else {
+        this.foreignUnitsBadgeEl.className = 'foreign-units-rule-badge is-restricted';
+        this.foreignUnitsBadgeEl.innerHTML = `
+          <span class="badge-icon">🔒</span>
+          <span class="badge-text">${t('foreignUnitsRestrictedBadge') || 'Foreign Units: Disabled'}</span>
+        `;
+        this.foreignUnitsBadgeEl.title = t('foreignUnitRestrictedTooltip') || 'Foreign defenders restricted when defending the home world';
+      }
     }
   }
 
@@ -364,11 +427,15 @@ export class DefenderSelectionModal {
     if (options.initialSelected && options.initialSelected.length > 0) {
       this.selected = options.initialSelected.slice(0, this.limit);
     } else {
-      this.selected = getSavedLoadout(options.level);
+      this.selected = getSavedLoadout(options.level, options.realm);
+    }
+
+    if (getForeignUnitsMode() !== 'allow') {
+      this.selected = this.selected.filter(id => isDefenderAllowedInRealm(id, options.realm));
     }
 
     if (this.selected.length === 0) {
-      this.selected = getRecommendedLoadout(options.level);
+      this.selected = getRecommendedLoadout(options.level, options.realm);
     }
 
     // Ensure we don't exceed the limit
@@ -411,6 +478,11 @@ export class DefenderSelectionModal {
   }
 
   private toggleDefender(id: string) {
+    const currentRealm = this.currentOptions?.realm || 'midgard';
+    if (!isDefenderAllowedInRealm(id, currentRealm)) {
+      SoundManager.getInstance().playExplosion();
+      return;
+    }
     const idx = this.selected.indexOf(id);
     if (idx !== -1) {
       // Deselect
@@ -501,14 +573,19 @@ export class DefenderSelectionModal {
     const groupsToRender = this.activeWorldFilter === 'all'
       ? allGroups
       : allGroups.filter(g => g.world.id === this.activeWorldFilter);
+    const mode = getForeignUnitsMode();
 
     groupsToRender.forEach(group => {
       const world = group.world;
       const units = group.defenders;
       if (units.length === 0) return;
 
+      const isForeignRealm = !group.isHomeWorld;
+      const isWorldAllowed = mode === 'allow' || (mode === 'limited' && isForeignWorldAllowedInLimited(world.id));
+      const isRealmLocked = isForeignRealm && !isWorldAllowed;
+
       const section = document.createElement('section');
-      section.className = `roster-section section-world section-${world.id} ${group.isHomeWorld ? 'is-home-realm' : ''}`;
+      section.className = `roster-section section-world section-${world.id} ${group.isHomeWorld ? 'is-home-realm' : ''} ${isRealmLocked ? 'is-foreign-restricted' : ''}`;
       section.style.setProperty('--world-accent', world.color);
       section.style.setProperty('--world-border', world.badgeBorder);
       section.style.setProperty('--world-bg', world.badgeBg);
@@ -528,13 +605,16 @@ export class DefenderSelectionModal {
           <div>
             <div class="section-title-line">
               <h3 class="section-title" style="color:${world.color};">${localizedWorldName}</h3>
-              ${group.isHomeWorld ? `<span class="section-home-badge">🛡️ ${t('hostRealmDefenses') || 'Host realm'}</span>` : ''}
+              ${group.isHomeWorld
+                ? `<span class="section-home-badge">🛡️ ${t('hostRealmDefenses') || 'Host realm'}</span>`
+                : (isRealmLocked ? `<span class="section-foreign-badge">🔒 ${t('foreignRealmRestricted') || 'Foreign realm · Restricted'}</span>` : '')
+              }
             </div>
             <p class="section-subtitle">${localizedWorldSub}</p>
           </div>
         </div>
-        <span class="section-badge" style="border-color:${world.badgeBorder}; background:${world.badgeBg}; color:${world.color};">
-          ${units.length} ${t('available') || 'Available'}
+        <span class="section-badge ${isRealmLocked ? 'is-locked-badge' : ''}" style="border-color:${world.badgeBorder}; background:${world.badgeBg}; color:${world.color};">
+          ${isRealmLocked ? `0 / ${units.length} ${t('available') || 'Available'}` : `${units.length} ${t('available') || 'Available'}`}
         </span>
       `;
       section.appendChild(header);
@@ -545,9 +625,11 @@ export class DefenderSelectionModal {
 
       units.forEach(rawDef => {
         const def = getLocalizedDefender(rawDef, currentRealm);
+        const isAllowed = isDefenderAllowedInRealm(def.id, currentRealm);
         const isSelected = this.selected.includes(def.id);
         const slotIdx = isSelected ? this.selected.indexOf(def.id) + 1 : 0;
-        const isDisabled = !isSelected && isFull;
+        const isDisabled = (!isSelected && isFull) || !isAllowed;
+        const isForeignLocked = !isAllowed;
 
         const isCurrency = isCurrencyProducer(def);
         const currency = getRealmCurrency(currentRealm);
@@ -559,7 +641,7 @@ export class DefenderSelectionModal {
           : (t(`cat_${catKey}_title`) || catMeta?.name || def.categoryName);
 
         const card = document.createElement('div');
-        card.className = `roster-card ${isCurrency ? 'is-currency-producer' : ''} ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled-cap' : ''} card-world-${world.id}`;
+        card.className = `roster-card ${isCurrency ? 'is-currency-producer' : ''} ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled-cap' : ''} ${isForeignLocked ? 'foreign-locked' : ''} card-world-${world.id}`;
         card.dataset.unit = def.id;
         card.dataset.world = world.id;
         card.dataset.category = def.category;
@@ -567,10 +649,18 @@ export class DefenderSelectionModal {
           card.dataset.currencyProducer = 'true';
         }
         card.setAttribute('role', 'button');
-        card.setAttribute('tabindex', '0');
-        card.title = def.tooltip;
+        card.setAttribute('tabindex', isForeignLocked ? '-1' : '0');
+        card.title = isForeignLocked
+          ? `${def.name} (${localizedWorldName}) — ${t('foreignUnitRestrictedTooltip') || 'Foreign defender restricted when defending the home world. Enable in Settings to unlock.'}`
+          : def.tooltip;
 
         card.innerHTML = `
+          ${isForeignLocked ? `
+            <div class="card-foreign-lock-tag" title="${t('foreignUnitRestrictedTooltip') || 'Foreign defender restricted when defending the home world'}">
+              <span class="lock-icon">🔒</span>
+              <span class="lock-text">${t('foreignUnitLocked') || 'Foreign Realm'}</span>
+            </div>
+          ` : ''}
           ${isSelected ? `<span class="card-slot-badge">#${slotIdx}</span>` : ''}
           <div class="card-check">✓</div>
 

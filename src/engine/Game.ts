@@ -25,12 +25,12 @@ import { Butter } from '../units/Butter';
 import { Troll } from '../units/Troll';
 import { SmallTroll } from '../units/SmallTroll';
 import { SoundManager } from './SoundManager';
-import { t } from '../i18n';
-import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo, isCurrencyProducer } from './DefenderRegistry';
+import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDefenderAllowedInRealm } from './DefenderRegistry';
 import { DEFENDER_ICONS } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
 import { getStartingCurrencyForLevel, getDefaultStartingCurrency } from './GameConfig';
+import { t } from '../i18n';
 
 interface WeatherParticle {
   x: number; y: number; vx: number; vy: number;
@@ -153,9 +153,13 @@ export class Game {
     }
     this.sun = getStartingCurrencyForLevel(this.level);
     this.onOpenRoster = onOpenRoster;
-    this.selectedDefenders = selectedDefenders && selectedDefenders.length > 0
+    const initialSquad = selectedDefenders && selectedDefenders.length > 0
       ? [...selectedDefenders]
-      : getSavedLoadout(this.level);
+      : getSavedLoadout(this.level, this.realm);
+    this.selectedDefenders = initialSquad.filter(id => isDefenderAllowedInRealm(id, this.realm));
+    if (this.selectedDefenders.length === 0) {
+      this.selectedDefenders = getSavedLoadout(this.level, this.realm);
+    }
 
     const cssW = canvas.clientWidth || (canvas.width / (window.devicePixelRatio || 1));
     const cssH = canvas.clientHeight || (canvas.height / (window.devicePixelRatio || 1));
@@ -480,7 +484,7 @@ export class Game {
         this.zombiesTotal = 10 + this.level * 5;
         const maxSlots = getDefenderSlotLimit(this.level);
         if (this.selectedDefenders.length < maxSlots) {
-          this.selectedDefenders = getSavedLoadout(this.level);
+          this.selectedDefenders = getSavedLoadout(this.level, this.realm);
           this.renderSidebar();
         }
         this.updateUI();
@@ -504,6 +508,7 @@ export class Game {
     }
 
     window.addEventListener('levelconfigchanged', this.handleLevelConfigChange);
+    window.addEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
   }
 
   handleRosterClick = () => {
@@ -573,11 +578,17 @@ export class Game {
       if (this.selectedDefenders.length > maxSlots) {
         this.selectedDefenders = this.selectedDefenders.slice(0, maxSlots);
       } else if (this.selectedDefenders.length < maxSlots) {
-        this.selectedDefenders = getSavedLoadout(this.level);
+        this.selectedDefenders = getSavedLoadout(this.level, this.realm);
       }
       this.renderSidebar();
       this.updateUI();
     }
+  };
+
+  handleForeignUnitsSettingChange = () => {
+    this.selectedDefenders = getSavedLoadout(this.level, this.realm);
+    this.renderSidebar();
+    this.updateUI();
   };
 
   handleLanguageChange = () => {
@@ -3963,6 +3974,7 @@ export class Game {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('languagechange', this.handleLanguageChange);
     window.removeEventListener('levelconfigchanged', this.handleLevelConfigChange);
+    window.removeEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
     this.canvas.removeEventListener('mousemove', this.handleMouseMove);
     this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.removeEventListener('click', this.handleCanvasClick);

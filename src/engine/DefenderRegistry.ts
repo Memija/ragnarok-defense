@@ -1,6 +1,6 @@
 import { t } from '../i18n';
 import { DEFENDER_ICONS } from './DefenderIcons';
-import { getSlotLimitForLevel } from './GameConfig';
+import { getSlotLimitForLevel, getForeignUnitsMode, isForeignWorldAllowedInLimited } from './GameConfig';
 
 export type DefenderCategory = 'plants' | 'towers';
 
@@ -529,22 +529,74 @@ const PRIORITY_ORDER = [
   'jalapeno'
 ];
 
-export function getRecommendedLoadout(level: number): string[] {
-  const limit = getDefenderSlotLimit(level);
-  return PRIORITY_ORDER.slice(0, limit);
+/**
+ * Checks whether a defender is allowed to be used when defending a specific realm.
+ * If foreign units are allowed via settings, all units are permitted.
+ * Otherwise, only defenders belonging to the home world / defending realm are permitted.
+ */
+export function isDefenderAllowedInRealm(defenderId: string, realm?: string): boolean {
+  const mode = getForeignUnitsMode();
+  if (mode === 'allow') {
+    return true;
+  }
+  const normRealm = (realm || 'midgard').toLowerCase().trim() as WorldId;
+  const def = getDefenderInfo(defenderId, normRealm) || DEFENDERS_MAP[defenderId];
+  if (!def) return false;
+  if (isCurrencyProducer(def) && (def.id === 'sunflower' || def.id === `sunflower_${normRealm}`)) {
+    return true;
+  }
+  const unitWorld = (def.world || def.origin.toLowerCase().trim()) as WorldId;
+  const isNative = unitWorld === normRealm;
+  if (isNative) {
+    return true;
+  }
+  if (mode === 'disable') {
+    return false;
+  }
+  return isForeignWorldAllowedInLimited(unitWorld);
 }
 
-export function getSavedLoadout(level: number): string[] {
+export function getRecommendedLoadout(level: number, realm?: string): string[] {
   const limit = getDefenderSlotLimit(level);
+  const normRealm = (realm || 'midgard').toLowerCase().trim();
+  const mode = getForeignUnitsMode();
+
+  if (mode === 'allow') {
+    return PRIORITY_ORDER.slice(0, limit);
+  }
+
+  // Filter prioritized defenders to only those allowed in this realm
+  const allowed = PRIORITY_ORDER.filter(id => isDefenderAllowedInRealm(id, normRealm));
+
+  // If there are other allowed defenders not in PRIORITY_ORDER, include them
+  const defendersList = getDefendersListForRealm(normRealm);
+  for (const def of defendersList) {
+    if (isDefenderAllowedInRealm(def.id, normRealm) && !allowed.includes(def.id)) {
+      allowed.push(def.id);
+    }
+  }
+
+  return allowed.slice(0, limit);
+}
+
+export function getSavedLoadout(level: number, realm?: string): string[] {
+  const limit = getDefenderSlotLimit(level);
+  const normRealm = (realm || 'midgard').toLowerCase().trim();
+  const mode = getForeignUnitsMode();
+  const recommended = getRecommendedLoadout(level, normRealm);
+
   try {
     const raw = localStorage.getItem('ragnarok_selected_defenders');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const valid = parsed.filter(id => DEFENDERS_MAP[id]);
+        let valid = parsed.filter(id => DEFENDERS_MAP[id]);
+        if (mode !== 'allow') {
+          valid = valid.filter(id => isDefenderAllowedInRealm(id, normRealm));
+        }
         if (valid.length > 0) {
           if (valid.length < limit) {
-            for (const rec of PRIORITY_ORDER) {
+            for (const rec of recommended) {
               if (!valid.includes(rec)) {
                 valid.push(rec);
                 if (valid.length >= limit) break;
@@ -556,7 +608,7 @@ export function getSavedLoadout(level: number): string[] {
       }
     }
   } catch (e) {}
-  return getRecommendedLoadout(level);
+  return recommended;
 }
 
 export function saveLoadout(defenders: string[]) {

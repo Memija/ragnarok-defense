@@ -77,6 +77,37 @@
               </button>
             </div>
 
+            <!-- Foreign Units Policy Row -->
+            <div class="settings-row foreign-units-settings-row">
+              <div class="setting-label-group">
+                <span class="setting-icon">🛡️</span>
+                <div class="setting-text-group">
+                  <span class="setting-name" data-i18n="foreignUnitsTitle">Defending Home World</span>
+                  <span class="setting-subdesc" data-i18n="foreignUnitsSubtitle">Foreign realm defenders allowed during home world defense</span>
+                </div>
+              </div>
+              <div class="foreign-units-control-group">
+                <div class="foreign-units-segmented" role="radiogroup" aria-label="Foreign Units Policy">
+                  <button type="button" class="segmented-opt" data-mode="disable" aria-checked="true" title="Disable foreign units (Native defenders only)">
+                    <span class="seg-icon">🔒</span>
+                    <span class="seg-label" data-i18n="foreignUnitsDisable">Disable</span>
+                  </button>
+                  <button type="button" class="segmented-opt" data-mode="limited" aria-checked="false" title="Allow custom selected foreign units">
+                    <span class="seg-icon">⚖️</span>
+                    <span class="seg-label" data-i18n="foreignUnitsLimited">Limited</span>
+                  </button>
+                  <button type="button" class="segmented-opt" data-mode="allow" aria-checked="false" title="Allow all foreign units">
+                    <span class="seg-icon">⚔️</span>
+                    <span class="seg-label" data-i18n="foreignUnitsAllow">Allow</span>
+                  </button>
+                </div>
+                <button type="button" id="configure-foreign-units-btn" class="configure-foreign-units-btn" title="Customize Allowed Realms" aria-label="Customize Allowed Realms">
+                  <span class="cfg-icon">⚙️</span>
+                  <span class="cfg-text" data-i18n="configureForeignWorlds">Customize Realms</span>
+                </button>
+              </div>
+            </div>
+
             <!-- Level Configuration Section -->
             <div class="settings-section level-config-section">
               <div class="settings-section-header">
@@ -184,6 +215,10 @@
               <span class="capacity-label" data-i18n="squadCapacity">Squad Capacity:</span>
               <span id="capacity-count" class="capacity-value">0 / 4</span>
               <span class="capacity-level-badge" id="capacity-level-badge">Level 1</span>
+              <span class="foreign-units-rule-badge" id="foreign-units-rule-badge" role="button" tabindex="0" title="Click to open settings">
+                <span class="badge-icon">🔒</span>
+                <span class="badge-text" data-i18n="foreignUnitsRestrictedBadge">Foreign Units: Restricted</span>
+              </span>
             </div>
             <div class="equipped-slots" id="equipped-slots-preview">
               <!-- Equipped defender tokens rendered dynamically -->
@@ -235,6 +270,54 @@
               <span class="btn-icon btn-icon-left">⚔️</span>
               <span class="btn-text" data-i18n="proceedAnyway">Continue Anyway</span>
               <span class="btn-icon btn-icon-right">⚔️</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Limited Foreign Realms Selection Modal -->
+      <div id="foreign-worlds-modal" class="foreign-worlds-modal hidden" role="dialog" aria-modal="true" aria-labelledby="foreign-worlds-title">
+        <div class="foreign-worlds-backdrop"></div>
+        <div class="foreign-worlds-content">
+          <button id="close-foreign-worlds-btn" class="close-btn" aria-label="Close" title="Close">&times;</button>
+          
+          <div class="modal-header">
+            <div class="runic-tag">ᛟ ᚱ ᛖ ᛊ ᛏ ᚱ ᛁ ᚲ ᛏ ᛟ</div>
+            <div class="logo">
+              <span class="logo-title" id="foreign-worlds-title" data-i18n="foreignWorldsModalTitle">Allowed Foreign Realms</span>
+            </div>
+            <p class="selection-subtitle" data-i18n="foreignWorldsModalSubtitle">Select which foreign realms can lend their warriors when defending the home world</p>
+            <div class="gold-divider"><span>✧ ᚱ ✧</span></div>
+          </div>
+
+          <!-- Filter / Action Toolbar -->
+          <div class="foreign-worlds-toolbar">
+            <div class="foreign-worlds-count-info">
+              <span class="toolbar-label" data-i18n="foreignWorldsSelectedLabel">Allowed Realms:</span>
+              <span id="foreign-worlds-selected-count" class="toolbar-count">9 / 9</span>
+            </div>
+            <div class="foreign-worlds-toolbar-actions">
+              <button type="button" id="select-all-foreign-worlds-btn" class="troops-tool-btn">
+                <span class="btn-icon">✓</span>
+                <span data-i18n="selectAll">Select All</span>
+              </button>
+              <button type="button" id="deselect-all-foreign-worlds-btn" class="troops-tool-btn">
+                <span class="btn-icon">✕</span>
+                <span data-i18n="deselectAll">Deselect All</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Realms Scrollable Grid -->
+          <div class="foreign-worlds-grid" id="foreign-worlds-grid">
+            <!-- Dynamically populated by ForeignWorldsModal -->
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="foreign-worlds-footer">
+            <button type="button" id="done-foreign-worlds-btn" class="foreign-worlds-done-btn">
+              <span class="btn-icon">⚔️</span>
+              <span data-i18n="saveAndApply">Save & Apply</span>
             </button>
           </div>
         </div>

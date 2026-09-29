@@ -11,8 +11,12 @@ import {
   MIN_STARTING_CURRENCY,
   MAX_STARTING_CURRENCY,
   MIN_SLOTS,
-  MAX_SLOTS
+  MAX_SLOTS,
+  getForeignUnitsMode,
+  setForeignUnitsMode,
+  type ForeignUnitsMode
 } from './engine/GameConfig';
+import { ForeignWorldsModal } from './engine/ForeignWorldsModal';
 
 export function initUI() {
   const soundToggleBtn = document.getElementById('sound-toggle');
@@ -45,6 +49,7 @@ export function initUI() {
   let closeTimeout: number | null = null;
   let currentSettingsLevel: number = 1;
   let updateLevelSettingsUI: () => void = () => {};
+  let updateForeignUnitsUI: () => void = () => {};
 
   const openSettings = () => {
     if (closeTimeout) {
@@ -60,6 +65,7 @@ export function initUI() {
       currentSettingsLevel = Math.min(10, Math.max(1, game.level));
     }
     updateLevelSettingsUI();
+    updateForeignUnitsUI();
     if (settingsModal) {
       settingsModal.classList.remove('hidden');
       settingsModal.style.pointerEvents = 'auto';
@@ -93,6 +99,7 @@ export function initUI() {
   };
 
   (window as any).__closeSettings = closeSettings;
+  (window as any).__openSettings = openSettings;
 
   const toggleSettings = () => {
     if (settingsModal && !settingsModal.classList.contains('hidden')) {
@@ -207,6 +214,7 @@ export function initUI() {
     }
 
     updateLevelSettingsUI();
+    updateForeignUnitsUI();
 
     window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
   };
@@ -240,6 +248,53 @@ export function initUI() {
       applyTheme();
     });
   }
+
+  // Foreign Worlds Modal Instance
+  const foreignWorldsModal = new ForeignWorldsModal();
+  (window as any).__foreignWorldsModal = foreignWorldsModal;
+  (window as any).__openForeignWorldsModal = () => foreignWorldsModal.open();
+  (window as any).__foreignTroopsModal = foreignWorldsModal;
+  (window as any).__openForeignTroopsModal = () => foreignWorldsModal.open();
+
+  // Foreign Units Policy Controls in Settings
+  const segmentedOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('.foreign-units-segmented .segmented-opt'));
+  const configureForeignUnitsBtn = document.getElementById('configure-foreign-units-btn') as HTMLButtonElement | null;
+
+  updateForeignUnitsUI = () => {
+    const mode = getForeignUnitsMode();
+    segmentedOptions.forEach(opt => {
+      const optMode = opt.dataset.mode;
+      const isActive = optMode === mode;
+      opt.classList.toggle('active', isActive);
+      opt.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    });
+
+    if (configureForeignUnitsBtn) {
+      configureForeignUnitsBtn.classList.toggle('is-active-limited', mode === 'limited');
+    }
+  };
+
+  segmentedOptions.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const mode = (opt.dataset.mode || 'disable') as ForeignUnitsMode;
+      soundManager.playClick();
+      setForeignUnitsMode(mode);
+      updateForeignUnitsUI();
+      if (mode === 'limited') {
+        foreignWorldsModal.open();
+      }
+    });
+  });
+
+  if (configureForeignUnitsBtn) {
+    configureForeignUnitsBtn.addEventListener('click', () => {
+      soundManager.playClick();
+      foreignWorldsModal.open();
+    });
+  }
+
+  updateForeignUnitsUI();
+  window.addEventListener('foreignunitssettingchanged', updateForeignUnitsUI);
 
   // Custom Select (i18n)
   const customSelect = document.getElementById('lang-select');

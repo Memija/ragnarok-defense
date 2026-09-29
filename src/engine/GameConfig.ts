@@ -146,3 +146,107 @@ export function resetAllLevelConfigs(): void {
 function notifyConfigChange(level?: number) {
   window.dispatchEvent(new CustomEvent('levelconfigchanged', { detail: { level } }));
 }
+
+export type ForeignUnitsMode = 'allow' | 'disable' | 'limited';
+
+export const ALLOW_FOREIGN_UNITS_STORAGE_KEY = 'ragnarok_allow_foreign_units';
+export const FOREIGN_UNITS_MODE_STORAGE_KEY = 'ragnarok_foreign_units_mode';
+export const LIMITED_FOREIGN_WORLDS_STORAGE_KEY = 'ragnarok_limited_foreign_worlds';
+
+export const DEFAULT_FOREIGN_UNITS_MODE: ForeignUnitsMode = 'disable';
+
+export const ALL_WORLD_IDS: string[] = [
+  'asgard',
+  'vanaheim',
+  'midgard',
+  'svartalfheim',
+  'jotunheim',
+  'niflheim',
+  'muspelheim',
+  'helheim',
+  'alfheim'
+];
+
+/**
+ * Get current policy for foreign units when defending the home world:
+ * - 'allow': all foreign realm defenders permitted
+ * - 'disable': foreign realm defenders disabled (only native home world defenders)
+ * - 'limited': defenders from selected foreign realms permitted
+ */
+export function getForeignUnitsMode(): ForeignUnitsMode {
+  try {
+    const mode = localStorage.getItem(FOREIGN_UNITS_MODE_STORAGE_KEY) as ForeignUnitsMode | null;
+    if (mode === 'allow' || mode === 'disable' || mode === 'limited') {
+      return mode;
+    }
+    const legacy = localStorage.getItem(ALLOW_FOREIGN_UNITS_STORAGE_KEY);
+    if (legacy !== null) {
+      return legacy === 'true' ? 'allow' : 'disable';
+    }
+  } catch (e) {}
+  return DEFAULT_FOREIGN_UNITS_MODE;
+}
+
+/**
+ * Save foreign units policy ('allow' | 'disable' | 'limited').
+ */
+export function setForeignUnitsMode(mode: ForeignUnitsMode): void {
+  try {
+    localStorage.setItem(FOREIGN_UNITS_MODE_STORAGE_KEY, mode);
+    localStorage.setItem(ALLOW_FOREIGN_UNITS_STORAGE_KEY, mode === 'allow' ? 'true' : 'false');
+  } catch (e) {}
+  window.dispatchEvent(new CustomEvent('foreignunitssettingchanged', {
+    detail: { mode, allowed: mode === 'allow', limitedWorlds: getLimitedForeignWorlds() }
+  }));
+}
+
+/**
+ * Backward-compatible helper for boolean checks.
+ */
+export function getAllowForeignUnits(): boolean {
+  return getForeignUnitsMode() === 'allow';
+}
+
+/**
+ * Backward-compatible helper for boolean setter.
+ */
+export function setAllowForeignUnits(allowed: boolean): void {
+  setForeignUnitsMode(allowed ? 'allow' : 'disable');
+}
+
+/**
+ * Get list of world IDs allowed when in 'limited' mode.
+ * Defaults to all nine realms if not customized yet.
+ */
+export function getLimitedForeignWorlds(): string[] {
+  try {
+    const raw = localStorage.getItem(LIMITED_FOREIGN_WORLDS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return [...ALL_WORLD_IDS];
+}
+
+/**
+ * Save list of world IDs allowed in 'limited' mode.
+ */
+export function setLimitedForeignWorlds(worldIds: string[]): void {
+  try {
+    localStorage.setItem(LIMITED_FOREIGN_WORLDS_STORAGE_KEY, JSON.stringify(worldIds));
+  } catch (e) {}
+  window.dispatchEvent(new CustomEvent('foreignunitssettingchanged', {
+    detail: { mode: getForeignUnitsMode(), allowed: getForeignUnitsMode() === 'allow', limitedWorlds: worldIds }
+  }));
+}
+
+/**
+ * Check if a specific world is allowed in 'limited' mode.
+ */
+export function isForeignWorldAllowedInLimited(worldId: string): boolean {
+  const allowedList = getLimitedForeignWorlds();
+  return allowedList.includes(worldId.toLowerCase().trim());
+}
