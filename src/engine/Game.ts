@@ -701,7 +701,8 @@ export class Game {
     if (unitType === 'peashooter' && this.sun >= 100) {
       unit = new PeaShooter(x, y, row, col);
     } else if ((unitType === 'sunflower' || unitType.startsWith('sunflower_')) && this.sun >= 50) {
-      unit = new SunFlower(x, y, row, col, this.realm);
+      const flowerRealm = unitType.startsWith('sunflower_') ? unitType.replace('sunflower_', '') : this.realm;
+      unit = new SunFlower(x, y, row, col, flowerRealm);
     } else if (unitType === 'wallnut' && this.sun >= 50) {
       unit = new WallNut(x, y, row, col);
     } else if (unitType === 'torchwood' && this.sun >= 175) {

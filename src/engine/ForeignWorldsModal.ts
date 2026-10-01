@@ -169,7 +169,7 @@ export class ForeignWorldsModal {
       const troops = this.getTroopsForWorld(world.id);
       const troopsText = troops.length > 0
         ? troops.join(', ')
-        : (world.id === 'midgard' ? 'Solflower' : t('sacredSanctuary') || 'Realm Defenders');
+        : (world.id === 'midgard' ? 'Solflower' : (world.id === 'alfheim' ? 'Sunstone Prism' : (t('sacredSanctuary') || 'Realm Defenders')));
 
       const card = document.createElement('div');
       card.className = `world-select-card ${isSelected ? 'is-selected' : ''}`;

@@ -444,15 +444,28 @@ body[data-active-theme="light"],
             }
           }
 
+          &.foreign-units-settings-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+
+            .setting-label-group {
+              width: 100%;
+            }
+          }
+
           .foreign-units-control-group {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 8px;
-            flex-wrap: wrap;
+            width: 100%;
+            box-sizing: border-box;
           }
 
           .foreign-units-segmented {
-            display: inline-flex;
+            display: flex;
+            width: 100%;
+            box-sizing: border-box;
             background: #fef3c7;
             border: 1.5px solid #ca8a04;
             border-radius: 9999px;
@@ -460,10 +473,12 @@ body[data-active-theme="light"],
             gap: 2px;
 
             .segmented-opt {
+              flex: 1;
+              min-width: 0;
               background: transparent;
               border: none;
               color: #92400e;
-              padding: 5px 12px;
+              padding: 6px 4px;
               border-radius: 9999px;
               font-family: var(--font-ui);
               font-size: 0.82rem;
@@ -471,8 +486,17 @@ body[data-active-theme="light"],
               cursor: pointer;
               display: inline-flex;
               align-items: center;
+              justify-content: center;
+              text-align: center;
+              white-space: nowrap;
               gap: 5px;
               transition: all 0.2s ease;
+
+              .seg-label {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
 
               &:hover {
                 background: #fde68a;
@@ -509,8 +533,11 @@ body[data-active-theme="light"],
           .configure-foreign-units-btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
             gap: 6px;
-            padding: 6px 12px;
+            padding: 7px 12px;
             border-radius: 8px;
             border: 1.5px solid #ca8a04;
             background: #fefce8;
@@ -1539,15 +1566,28 @@ body.theme-muspelheim {
             }
           }
 
+          &.foreign-units-settings-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+
+            .setting-label-group {
+              width: 100%;
+            }
+          }
+
           .foreign-units-control-group {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            box-sizing: border-box;
           }
 
           .foreign-units-segmented {
-            display: inline-flex;
+            display: flex;
+            width: 100%;
+            box-sizing: border-box;
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid var(--panel-border);
             border-radius: 9999px;
@@ -1555,10 +1595,12 @@ body.theme-muspelheim {
             gap: 3px;
 
             .segmented-opt {
+              flex: 1;
+              min-width: 0;
               background: transparent;
               border: none;
               color: var(--text-muted);
-              padding: 6px 14px;
+              padding: 6px 4px;
               border-radius: 9999px;
               font-family: var(--font-ui);
               font-size: 0.82rem;
@@ -1566,8 +1608,17 @@ body.theme-muspelheim {
               cursor: pointer;
               display: inline-flex;
               align-items: center;
+              justify-content: center;
+              text-align: center;
+              white-space: nowrap;
               gap: 5px;
               transition: all 0.2s ease;
+
+              .seg-label {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
 
               &:hover {
                 color: var(--text-color);
@@ -1603,8 +1654,11 @@ body.theme-muspelheim {
           .configure-foreign-units-btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
             gap: 6px;
-            padding: 6px 14px;
+            padding: 7px 12px;
             border-radius: 8px;
             border: 1px solid var(--panel-border);
             background: var(--select-bg);

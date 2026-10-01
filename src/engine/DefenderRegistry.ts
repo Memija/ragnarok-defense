@@ -487,7 +487,11 @@ export const DEFENDERS_MAP: Record<string, DefenderInfo> = {
     acc[def.id] = def;
     return acc;
   }, {} as Record<string, DefenderInfo>),
-  sunflower_midgard: REALM_SUNFLOWERS.midgard
+  sunflower_midgard: {
+    ...REALM_SUNFLOWERS.midgard,
+    id: 'sunflower_midgard',
+    world: 'midgard'
+  }
 };
 
 export const CITY_LEVELS: Record<string, number> = {
@@ -619,13 +623,19 @@ export function saveLoadout(defenders: string[]) {
 
 export function getLocalizedDefender(def: DefenderInfo, realm?: string): DefenderInfo {
   const isSunflower = isCurrencyProducer(def);
-  const effectiveRealm = realm ? realm.toLowerCase().trim() : (def.origin ? def.origin.toLowerCase().trim() : 'midgard');
+  let effectiveRealm = realm ? realm.toLowerCase().trim() : (def.origin ? def.origin.toLowerCase().trim() : 'midgard');
+
+  // If this is a specific realm's sunflower (e.g. sunflower_midgard), localize by its target realm
+  if (def.id.startsWith('sunflower_')) {
+    effectiveRealm = def.id.replace('sunflower_', '');
+  }
 
   const nameKey = isSunflower ? `def_sunflower_${effectiveRealm}_name` : `def_${def.id}_name`;
   const descKey = isSunflower ? `def_sunflower_${effectiveRealm}_desc` : `def_${def.id}_desc`;
   const tooltipKey = isSunflower ? `def_sunflower_${effectiveRealm}_tooltip` : `def_${def.id}_tooltip`;
   const roleKey = isSunflower ? `def_sunflower_${effectiveRealm}_role` : `def_${def.id}_role`;
-  const originKey = `world_${def.origin.toLowerCase()}`;
+  const targetWorld = (def.world || (def.id.startsWith('sunflower_') ? effectiveRealm : '') || def.origin || 'midgard').toLowerCase();
+  const originKey = `world_${targetWorld}`;
   const catKey = `cat_${def.category}_title`;
 
   let name = t(nameKey) !== nameKey ? t(nameKey) : def.name;
@@ -651,6 +661,7 @@ export function getLocalizedDefender(def: DefenderInfo, realm?: string): Defende
 
   return {
     ...def,
+    world: targetWorld as WorldId,
     isCurrencyProducer: isSunflower,
     name,
     desc,
@@ -670,12 +681,33 @@ export function getDefendersListForRealm(realm?: string): DefenderInfo[] {
     world: normRealm,
     isCurrencyProducer: true
   };
-  return DEFENDERS_LIST.map(def => {
+  const list = DEFENDERS_LIST.map(def => {
     if (def.id === 'sunflower') {
       return contextualSunflower;
     }
     return def;
   });
+
+  // Ensure Midgard and Alfheim have their unique defenders represented when defending other realms
+  if (normRealm !== 'midgard') {
+    list.push({
+      ...REALM_SUNFLOWERS.midgard,
+      id: 'sunflower_midgard',
+      world: 'midgard',
+      isCurrencyProducer: true
+    });
+  }
+
+  if (normRealm !== 'alfheim') {
+    list.push({
+      ...REALM_SUNFLOWERS.alfheim,
+      id: 'sunflower_alfheim',
+      world: 'alfheim',
+      isCurrencyProducer: true
+    });
+  }
+
+  return list;
 }
 
 export function getLocalizedDefendersList(realm?: string): DefenderInfo[] {
@@ -694,12 +726,13 @@ export function getLocalizedDefendersMap(realm?: string): Record<string, Defende
 
 export function getDefenderInfo(id: string, realm?: string): DefenderInfo | undefined {
   let base: DefenderInfo | undefined;
-  if (id === 'sunflower' || id.startsWith('sunflower_')) {
+  if (id.startsWith('sunflower_')) {
+    const targetRealm = id.replace('sunflower_', '');
+    base = { ...getSunflowerForRealm(targetRealm), id, world: targetRealm as WorldId };
+    return getLocalizedDefender(base, targetRealm);
+  } else if (id === 'sunflower') {
     if (realm) {
-      base = { ...getSunflowerForRealm(realm), id };
-    } else if (id.startsWith('sunflower_')) {
-      const targetRealm = id.replace('sunflower_', '');
-      base = { ...getSunflowerForRealm(targetRealm), id };
+      base = { ...getSunflowerForRealm(realm), id, world: realm.toLowerCase().trim() as WorldId };
     } else {
       base = DEFENDERS_MAP[id] || REALM_SUNFLOWERS.midgard;
     }

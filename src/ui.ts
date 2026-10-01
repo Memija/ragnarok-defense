@@ -270,7 +270,9 @@ export function initUI() {
     });
 
     if (configureForeignUnitsBtn) {
-      configureForeignUnitsBtn.classList.toggle('is-active-limited', mode === 'limited');
+      const isLimited = mode === 'limited';
+      configureForeignUnitsBtn.style.display = isLimited ? 'inline-flex' : 'none';
+      configureForeignUnitsBtn.classList.toggle('is-active-limited', isLimited);
     }
   };
 
@@ -282,6 +284,8 @@ export function initUI() {
       updateForeignUnitsUI();
       if (mode === 'limited') {
         foreignWorldsModal.open();
+      } else if (foreignWorldsModal.isOpen()) {
+        foreignWorldsModal.close();
       }
     });
   });

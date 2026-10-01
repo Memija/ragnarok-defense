@@ -115,7 +115,7 @@ export class MainMenu {
     { id: 'alfheim',      name: 'Alfheim',      title: 'Realm of Light Elves',     sub: 'Luminous Fairy Meadows',    x: 0.22, y: 0.26, color: '#f472b6', rune: 'ᛉ', radius: 0.056, pulse: 0, locked: true },
     { id: 'vanaheim',     name: 'Vanaheim',     title: 'Realm of Nature',          sub: 'Wild Primordial Sanctuary', x: 0.78, y: 0.26, color: '#4ade80', rune: 'ᚹ', radius: 0.056, pulse: 0, locked: true },
     { id: 'svartalfheim', name: 'Svartalfheim', title: 'Realm of Dwarves',         sub: 'Great Subterranean Forges', x: 0.14, y: 0.46, color: '#f97316', rune: 'ᚲ', radius: 0.062, pulse: 0, locked: false },
-    { id: 'midgard',      name: 'Midgard',      title: 'Realm of Mortals',         sub: 'Heart of the World Tree',   x: 0.50, y: 0.48, color: '#38bdf8', rune: 'ᛗ', radius: 0.062, pulse: 0, locked: true },
+    { id: 'midgard',      name: 'Midgard',      title: 'Realm of Mortals',         sub: 'Heart of the World Tree',   x: 0.50, y: 0.48, color: '#38bdf8', rune: 'ᛗ', radius: 0.062, pulse: 0, locked: false },
     { id: 'jotunheim',    name: 'Jotunheim',    title: 'Realm of Frost Giants',    sub: 'Barren Glacial Peaks',      x: 0.86, y: 0.46, color: '#22d3ee', rune: 'ᚦ', radius: 0.056, pulse: 0, locked: true },
     { id: 'niflheim',     name: 'Niflheim',     title: 'Realm of Ice and Mist',    sub: 'Primordial Frozen Mist',    x: 0.24, y: 0.70, color: '#a5f3fc', rune: 'ᛁ', radius: 0.056, pulse: 0, locked: true },
     { id: 'muspelheim',   name: 'Muspelheim',   title: 'Realm of Fire',            sub: 'Domain of Lord Surtr',      x: 0.76, y: 0.70, color: '#ef4444', rune: 'ᛊ', radius: 0.056, pulse: 0, locked: true },

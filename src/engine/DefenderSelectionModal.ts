@@ -174,7 +174,11 @@ export class DefenderSelectionModal {
 
     this.foreignUnitsBadgeEl?.addEventListener('click', () => {
       SoundManager.getInstance().playClick();
-      ForeignWorldsModal.getInstance()?.open();
+      if (getForeignUnitsMode() === 'limited') {
+        ForeignWorldsModal.getInstance()?.open();
+      } else {
+        (window as any).__openSettings?.();
+      }
     });
 
     window.addEventListener('foreignunitssettingchanged', () => {
@@ -305,6 +309,13 @@ export class DefenderSelectionModal {
     const defendersList = getDefendersListForRealm(currentRealm);
     const groups = getDefendersGroupedByWorld(currentRealm);
     const mode = getForeignUnitsMode();
+
+    if (mode === 'disable') {
+      this.activeWorldFilter = 'all';
+      this.tabsContainerEl.style.display = 'none';
+      return;
+    }
+    this.tabsContainerEl.style.display = 'flex';
 
     // All Worlds Tab
     const allTab = document.createElement('button');
