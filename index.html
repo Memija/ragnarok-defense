@@ -223,6 +223,18 @@
             <div class="equipped-slots" id="equipped-slots-preview">
               <!-- Equipped defender tokens rendered dynamically -->
             </div>
+
+            <!-- Tactical Synergy Breakdown Bar -->
+            <div class="squad-synergy-bar" id="squad-synergy-bar">
+              <div class="synergy-title-group">
+                <span class="synergy-rune">ᛊ</span>
+                <span class="synergy-title" data-i18n="squadSynergyOptimal">Squad Synergy:</span>
+                <span id="synergy-score-badge" class="synergy-score-badge">0%</span>
+              </div>
+              <div class="synergy-tokens-list" id="synergy-tokens-list">
+                <!-- Dynamically rendered synergy chips -->
+              </div>
+            </div>
           </div>
 
           <!-- World Filter Tabs (Populated dynamically by DefenderSelectionModal) -->
@@ -233,9 +245,53 @@
             <!-- Rendered dynamically by DefenderRegistry -->
           </div>
 
+          <!-- Squad Toast / Feedback Notification -->
+          <div id="squad-toast" class="squad-toast hidden"></div>
+
           <!-- Modal Action Footer -->
           <div class="selection-footer">
             <div class="footer-aux-actions">
+              <div class="best-mix-action-group">
+                <button id="best-mix-btn" class="aux-btn aux-btn-best-mix" title="Set up the highest synergy optimal defender team">
+                  <span class="btn-icon">⚡</span>
+                  <span class="btn-text" data-i18n="bestPossibleMix">Best Possible Mix</span>
+                  <span class="mix-tag">Optimal</span>
+                </button>
+                <button id="mix-presets-btn" class="aux-btn mix-presets-trigger-btn" aria-haspopup="true" aria-expanded="false" title="Tactical Squad Presets">
+                  <span class="btn-icon">⚙️</span>
+                  <span class="btn-arrow">▾</span>
+                </button>
+                <div id="mix-presets-menu" class="mix-presets-menu hidden" role="menu">
+                  <button class="preset-menu-item" data-preset="best" role="menuitem">
+                    <span class="preset-icon">⚡</span>
+                    <div class="preset-details">
+                      <span class="preset-name" data-i18n="presetBestName">Best Possible Mix</span>
+                      <span class="preset-desc" data-i18n="presetBestDesc">Ideal synergy of Economy, Tank, DPS & Crowd Control</span>
+                    </div>
+                  </button>
+                  <button class="preset-menu-item" data-preset="heavy_attack" role="menuitem">
+                    <span class="preset-icon">⚔️</span>
+                    <div class="preset-details">
+                      <span class="preset-name" data-i18n="presetHeavyName">Heavy Firepower</span>
+                      <span class="preset-desc" data-i18n="presetHeavyDesc">Maximum sustained DPS, fireballs & explosive burst</span>
+                    </div>
+                  </button>
+                  <button class="preset-menu-item" data-preset="fortified" role="menuitem">
+                    <span class="preset-icon">🛡️</span>
+                    <div class="preset-details">
+                      <span class="preset-name" data-i18n="presetFortifiedName">Fortified Bastion</span>
+                      <span class="preset-desc" data-i18n="presetFortifiedDesc">High HP stone walls, icy slow & paralyzing butter</span>
+                    </div>
+                  </button>
+                  <button class="preset-menu-item" data-preset="balanced" role="menuitem">
+                    <span class="preset-icon">⚖️</span>
+                    <div class="preset-details">
+                      <span class="preset-name" data-i18n="presetBalancedName">Balanced Squad</span>
+                      <span class="preset-desc" data-i18n="presetBalancedDesc">Standard versatile defensive loadout</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
               <button id="auto-pick-btn" class="aux-btn"><span class="btn-icon">⚖️</span> <span class="btn-text" data-i18n="balancedSquad">Balanced Squad</span></button>
               <button id="clear-roster-btn" class="aux-btn"><span class="btn-icon">✕</span> <span class="btn-text" data-i18n="clearRoster">Clear</span></button>
             </div>

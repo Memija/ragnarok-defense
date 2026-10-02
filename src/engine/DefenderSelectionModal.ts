@@ -3,7 +3,9 @@ import {
   CATEGORIES,
   type WorldId,
   getDefenderSlotLimit,
-  getRecommendedLoadout,
+  getBestPossibleMixLoadout,
+  getSquadSynergies,
+  type SquadMixPreset,
   getSavedLoadout,
   saveLoadout,
   getLocalizedDefender,
@@ -39,6 +41,14 @@ export class DefenderSelectionModal {
   private capacityCountEl: HTMLElement | null;
   private levelBadgeEl: HTMLElement | null;
   private autoPickBtn: HTMLElement | null;
+  private bestMixBtn: HTMLElement | null;
+  private mixPresetsBtn: HTMLElement | null;
+  private mixPresetsMenu: HTMLElement | null;
+  private synergyBarEl: HTMLElement | null;
+  private synergyTokensListEl: HTMLElement | null;
+  private synergyScoreBadgeEl: HTMLElement | null;
+  private toastEl: HTMLElement | null;
+  private toastTimeout: any = null;
   private clearBtn: HTMLElement | null;
   private confirmBtn: HTMLElement | null;
   private confirmPillEl: HTMLElement | null;
@@ -71,6 +81,13 @@ export class DefenderSelectionModal {
     this.capacityCountEl = document.getElementById('capacity-count');
     this.levelBadgeEl = document.getElementById('capacity-level-badge');
     this.autoPickBtn = document.getElementById('auto-pick-btn');
+    this.bestMixBtn = document.getElementById('best-mix-btn');
+    this.mixPresetsBtn = document.getElementById('mix-presets-btn');
+    this.mixPresetsMenu = document.getElementById('mix-presets-menu');
+    this.synergyBarEl = document.getElementById('squad-synergy-bar');
+    this.synergyTokensListEl = this.synergyBarEl?.querySelector('#synergy-tokens-list') || document.getElementById('synergy-tokens-list');
+    this.synergyScoreBadgeEl = this.synergyBarEl?.querySelector('#synergy-score-badge') || document.getElementById('synergy-score-badge');
+    this.toastEl = document.getElementById('squad-toast');
     this.clearBtn = document.getElementById('clear-roster-btn');
     this.confirmBtn = document.getElementById('confirm-defenders-btn');
     this.confirmPillEl = document.getElementById('confirm-slots-pill');
@@ -102,11 +119,37 @@ export class DefenderSelectionModal {
       this.currentOptions?.onCancel?.();
     });
 
+    this.bestMixBtn?.addEventListener('click', () => {
+      this.applyMixPreset('best');
+    });
+
+    this.mixPresetsBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      SoundManager.getInstance().playClick();
+      this.togglePresetsMenu();
+    });
+
+    this.mixPresetsMenu?.querySelectorAll<HTMLElement>('.preset-menu-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const preset = (item.dataset.preset as SquadMixPreset) || 'best';
+        this.applyMixPreset(preset);
+        this.closePresetsMenu();
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (this.mixPresetsMenu && !this.mixPresetsMenu.classList.contains('hidden')) {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.best-mix-action-group')) {
+          this.closePresetsMenu();
+        }
+      }
+    });
+
     this.autoPickBtn?.addEventListener('click', () => {
       if (!this.currentOptions) return;
-      SoundManager.getInstance().playClick();
-      this.selected = getRecommendedLoadout(this.currentOptions.level, this.currentOptions.realm);
-      this.render();
+      this.applyMixPreset('balanced');
     });
 
     this.clearBtn?.addEventListener('click', () => {
@@ -150,6 +193,10 @@ export class DefenderSelectionModal {
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (this.mixPresetsMenu && !this.mixPresetsMenu.classList.contains('hidden')) {
+          this.closePresetsMenu();
+          return;
+        }
         if (this.warningModalEl && !this.warningModalEl.classList.contains('hidden')) {
           this.closeWarningModal();
           return;
@@ -403,6 +450,43 @@ export class DefenderSelectionModal {
       confirmBtnText.textContent = options.isMidGame ? (t('updateSquad') || 'Update Squad ⚔️') : (t('toBattle') || 'To Battle ⚔️');
     }
 
+    const bestMixText = this.bestMixBtn?.querySelector('.btn-text');
+    if (bestMixText) {
+      bestMixText.textContent = t('bestPossibleMix') || 'Best Possible Mix';
+    }
+
+    const autoPickText = this.autoPickBtn?.querySelector('.btn-text');
+    if (autoPickText) {
+      autoPickText.textContent = t('balancedSquad') || 'Balanced Squad';
+    }
+
+    const clearText = this.clearBtn?.querySelector('.btn-text');
+    if (clearText) {
+      clearText.textContent = t('clearRoster') || 'Clear';
+    }
+
+    if (this.mixPresetsMenu) {
+      const bestName = this.mixPresetsMenu.querySelector('[data-preset="best"] .preset-name');
+      if (bestName) bestName.textContent = t('presetBestName') || 'Best Possible Mix';
+      const bestDesc = this.mixPresetsMenu.querySelector('[data-preset="best"] .preset-desc');
+      if (bestDesc) bestDesc.textContent = t('presetBestDesc') || 'Ideal synergy of Economy, Tank, DPS & CC';
+
+      const heavyName = this.mixPresetsMenu.querySelector('[data-preset="heavy_attack"] .preset-name');
+      if (heavyName) heavyName.textContent = t('presetHeavyName') || 'Heavy Firepower';
+      const heavyDesc = this.mixPresetsMenu.querySelector('[data-preset="heavy_attack"] .preset-desc');
+      if (heavyDesc) heavyDesc.textContent = t('presetHeavyDesc') || 'Maximum sustained DPS, fireballs & explosive burst';
+
+      const fortName = this.mixPresetsMenu.querySelector('[data-preset="fortified"] .preset-name');
+      if (fortName) fortName.textContent = t('presetFortifiedName') || 'Fortified Bastion';
+      const fortDesc = this.mixPresetsMenu.querySelector('[data-preset="fortified"] .preset-desc');
+      if (fortDesc) fortDesc.textContent = t('presetFortifiedDesc') || 'High HP stone walls, icy slow & paralyzing butter';
+
+      const balName = this.mixPresetsMenu.querySelector('[data-preset="balanced"] .preset-name');
+      if (balName) balName.textContent = t('presetBalancedName') || 'Balanced Squad';
+      const balDesc = this.mixPresetsMenu.querySelector('[data-preset="balanced"] .preset-desc');
+      if (balDesc) balDesc.textContent = t('presetBalancedDesc') || 'Standard versatile defensive loadout';
+    }
+
     if (this.foreignUnitsBadgeEl) {
       const mode = getForeignUnitsMode();
       if (mode === 'allow') {
@@ -446,7 +530,7 @@ export class DefenderSelectionModal {
     }
 
     if (this.selected.length === 0) {
-      this.selected = getRecommendedLoadout(options.level, options.realm);
+      this.selected = getBestPossibleMixLoadout(options.level, options.realm);
     }
 
     // Ensure we don't exceed the limit
@@ -473,6 +557,7 @@ export class DefenderSelectionModal {
   }
 
   public close() {
+    this.closePresetsMenu();
     if (this.modalEl) {
       this.modalEl.classList.add('hidden');
     }
@@ -536,6 +621,111 @@ export class DefenderSelectionModal {
 
     // Render Grid with categorized sections
     this.renderGrid();
+
+    // Render Tactical Synergy Breakdown Bar
+    this.renderSynergyBar();
+  }
+
+  private applyMixPreset(preset: SquadMixPreset = 'best') {
+    if (!this.currentOptions) return;
+    SoundManager.getInstance().playPlant();
+    this.selected = getBestPossibleMixLoadout(this.currentOptions.level, this.currentOptions.realm, preset);
+
+    let toastMsg = t('bestMixApplied') || '⚡ Best Possible Mix Applied!';
+    if (preset === 'heavy_attack') {
+      toastMsg = `⚔️ ${t('presetHeavyName') || 'Heavy Firepower'} Applied!`;
+    } else if (preset === 'fortified') {
+      toastMsg = `🛡️ ${t('presetFortifiedName') || 'Fortified Bastion'} Applied!`;
+    } else if (preset === 'balanced') {
+      toastMsg = `⚖️ ${t('presetBalancedName') || 'Balanced Squad'} Applied!`;
+    }
+
+    this.showToast(toastMsg);
+    this.render();
+  }
+
+  private togglePresetsMenu() {
+    if (!this.mixPresetsMenu) return;
+    const isHidden = this.mixPresetsMenu.classList.contains('hidden');
+    if (isHidden) {
+      this.mixPresetsMenu.classList.remove('hidden');
+      this.mixPresetsBtn?.setAttribute('aria-expanded', 'true');
+    } else {
+      this.mixPresetsMenu.classList.add('hidden');
+      this.mixPresetsBtn?.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  private closePresetsMenu() {
+    this.mixPresetsMenu?.classList.add('hidden');
+    this.mixPresetsBtn?.setAttribute('aria-expanded', 'false');
+  }
+
+  private showToast(msg: string) {
+    if (!this.toastEl) return;
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    this.toastEl.textContent = msg;
+    this.toastEl.classList.remove('hidden');
+    this.toastTimeout = setTimeout(() => {
+      this.toastEl?.classList.add('hidden');
+    }, 2400);
+  }
+
+  private renderSynergyBar() {
+    if (!this.synergyTokensListEl || !this.currentOptions) return;
+    const currentRealm = this.currentOptions.realm || 'midgard';
+    const report = getSquadSynergies(this.selected, currentRealm);
+
+    if (this.synergyScoreBadgeEl) {
+      this.synergyScoreBadgeEl.textContent = `${report.synergyScore}%`;
+      if (report.synergyScore >= 100) {
+        this.synergyScoreBadgeEl.classList.add('is-perfect');
+      } else {
+        this.synergyScoreBadgeEl.classList.remove('is-perfect');
+      }
+    }
+
+    this.synergyTokensListEl.innerHTML = `
+      <div class="synergy-chip ${report.hasEconomy ? 'is-active' : 'is-inactive'}" title="${report.hasEconomy ? 'Produces realm currency (+25/10s)' : 'Missing currency producer!'}">
+        <span class="chip-icon">🪙</span>
+        <span class="chip-label">${t('synergyEconomy') || 'Economy'}</span>
+        <span class="chip-check">${report.hasEconomy ? '✓' : '✕'}</span>
+      </div>
+      <div class="synergy-chip ${report.hasTank ? 'is-active' : 'is-inactive'}" title="${report.hasTank ? 'Frontline wall/stalling defense' : 'No defensive walls or mines!'}">
+        <span class="chip-icon">🛡️</span>
+        <span class="chip-label">${t('synergyDefense') || 'Defense'}</span>
+        <span class="chip-check">${report.hasTank ? '✓' : '✕'}</span>
+      </div>
+      <div class="synergy-chip ${report.hasDPS ? 'is-active' : 'is-inactive'}" title="${report.hasDPS ? 'Continuous ranged firepower' : 'No ranged DPS units!'}">
+        <span class="chip-icon">🏹</span>
+        <span class="chip-label">${t('synergyDPS') || 'Ranged DPS'}</span>
+        <span class="chip-check">${report.hasDPS ? '✓' : '✕'}</span>
+      </div>
+      <div class="synergy-chip ${report.hasCrowdControl ? 'is-active' : 'is-inactive'}" title="${report.hasCrowdControl ? 'Slowing frost or butter stun' : 'No crowd control slows/stuns!'}">
+        <span class="chip-icon">❄️</span>
+        <span class="chip-label">${t('synergyCrowdControl') || 'Crowd Control'}</span>
+        <span class="chip-check">${report.hasCrowdControl ? '✓' : '✕'}</span>
+      </div>
+      <div class="synergy-chip ${report.hasBurstAOE ? 'is-active' : 'is-inactive'}" title="${report.hasBurstAOE ? 'Instant emergency blast demolition' : 'No emergency area clear!'}">
+        <span class="chip-icon">💥</span>
+        <span class="chip-label">${t('synergyBurst') || 'Area Blast'}</span>
+        <span class="chip-check">${report.hasBurstAOE ? '✓' : '✕'}</span>
+      </div>
+      ${report.hasFlameBoost ? `
+        <div class="synergy-chip is-bonus" title="Torchwood ignites repeater/peashooter projectiles into 2x damage fireballs!">
+          <span class="chip-icon">🔥</span>
+          <span class="chip-label">${t('synergyFlameBoost') || 'Flame Boost'}</span>
+          <span class="chip-check">2x</span>
+        </div>
+      ` : ''}
+      ${report.hasFreezeCombo ? `
+        <div class="synergy-chip is-bonus" title="Snow Pea slow + Kernel-Pult butter stun combo creates impenetrable crowd control!">
+          <span class="chip-icon">🧊</span>
+          <span class="chip-label">${t('synergyFreezeCombo') || 'Freeze & Stun'}</span>
+          <span class="chip-check">✦</span>
+        </div>
+      ` : ''}
+    `;
   }
 
   private renderEquippedSlots() {

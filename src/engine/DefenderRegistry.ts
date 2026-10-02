@@ -560,6 +560,222 @@ export function isDefenderAllowedInRealm(defenderId: string, realm?: string): bo
   return isForeignWorldAllowedInLimited(unitWorld);
 }
 
+export type SquadMixPreset = 'best' | 'heavy_attack' | 'fortified' | 'balanced';
+
+export interface SquadSynergyReport {
+  hasEconomy: boolean;
+  hasTank: boolean;
+  hasDPS: boolean;
+  hasCrowdControl: boolean;
+  hasBurstAOE: boolean;
+  hasFlameBoost: boolean;
+  hasFreezeCombo: boolean;
+  synergyScore: number;
+  coveredCount: number;
+  totalPillars: number;
+}
+
+export function getSquadSynergies(selectedIds: string[], realm?: string): SquadSynergyReport {
+  const normRealm = (realm || 'midgard').toLowerCase().trim() as WorldId;
+  const defenders = selectedIds.map(id => getDefenderInfo(id, normRealm) || DEFENDERS_MAP[id]).filter(Boolean);
+
+  const hasEconomy = defenders.some(d => isCurrencyProducer(d));
+  const hasTank = defenders.some(d => d.id === 'wallnut' || d.id === 'potatomine');
+  const hasDPS = defenders.some(d => d.id === 'peashooter' || d.id === 'repeater' || d.id === 'einherjar' || d.id === 'kernelpult');
+  const hasCrowdControl = defenders.some(d => d.id === 'snowpea' || d.id === 'kernelpult');
+  const hasBurstAOE = defenders.some(d => d.id === 'cherrybomb' || d.id === 'jalapeno' || d.id === 'chomper');
+
+  const hasFlameBoost = defenders.some(d => d.id === 'torchwood') && defenders.some(d => d.id === 'repeater' || d.id === 'peashooter');
+  const hasFreezeCombo = defenders.some(d => d.id === 'snowpea') && defenders.some(d => d.id === 'kernelpult');
+
+  const pillars = [hasEconomy, hasTank, hasDPS, hasCrowdControl, hasBurstAOE];
+  const coveredCount = pillars.filter(Boolean).length;
+  const totalPillars = 5;
+  const synergyScore = Math.round((coveredCount / totalPillars) * 100);
+
+  return {
+    hasEconomy,
+    hasTank,
+    hasDPS,
+    hasCrowdControl,
+    hasBurstAOE,
+    hasFlameBoost,
+    hasFreezeCombo,
+    synergyScore,
+    coveredCount,
+    totalPillars
+  };
+}
+
+export function getBestPossibleMixLoadout(level: number, realm?: string, mixType: SquadMixPreset = 'best'): string[] {
+  const limit = getDefenderSlotLimit(level);
+  const normRealm = (realm || 'midgard').toLowerCase().trim() as WorldId;
+  const defendersList = getDefendersListForRealm(normRealm);
+
+  // Filter to defenders allowed in this realm
+  const allowedDefenders = defendersList.filter(d => isDefenderAllowedInRealm(d.id, normRealm));
+  const allowedIds = new Set(allowedDefenders.map(d => d.id));
+
+  // Determine host realm currency producer
+  const hostSunflower = getSunflowerForRealm(normRealm);
+  let preferredSunflowerId = 'sunflower';
+  if (allowedIds.has(hostSunflower.id)) {
+    preferredSunflowerId = hostSunflower.id;
+  } else if (allowedIds.has('sunflower')) {
+    preferredSunflowerId = 'sunflower';
+  } else {
+    const anySunflower = Array.from(allowedIds).find(id => id.startsWith('sunflower'));
+    if (anySunflower) preferredSunflowerId = anySunflower;
+  }
+
+  if (mixType === 'balanced') {
+    return getRecommendedLoadout(level, normRealm);
+  }
+
+  if (mixType === 'heavy_attack') {
+    const heavyOrder = [
+      preferredSunflowerId,
+      'repeater',
+      'torchwood',
+      'peashooter',
+      'wallnut',
+      'cherrybomb',
+      'einherjar',
+      'jalapeno',
+      'potatomine',
+      'kernelpult',
+      'snowpea',
+      'chomper'
+    ];
+
+    const result: string[] = [];
+    for (const id of heavyOrder) {
+      if (allowedIds.has(id) && !result.includes(id)) {
+        result.push(id);
+        if (result.length >= limit) break;
+      }
+    }
+    for (const def of allowedDefenders) {
+      if (result.length >= limit) break;
+      if (!result.includes(def.id)) result.push(def.id);
+    }
+    return result.slice(0, limit);
+  }
+
+  if (mixType === 'fortified') {
+    const fortOrder = [
+      preferredSunflowerId,
+      'wallnut',
+      'snowpea',
+      'kernelpult',
+      'potatomine',
+      'repeater',
+      'peashooter',
+      'chomper',
+      'cherrybomb',
+      'einherjar',
+      'jalapeno',
+      'torchwood'
+    ];
+
+    const result: string[] = [];
+    for (const id of fortOrder) {
+      if (allowedIds.has(id) && !result.includes(id)) {
+        result.push(id);
+        if (result.length >= limit) break;
+      }
+    }
+    for (const def of allowedDefenders) {
+      if (result.length >= limit) break;
+      if (!result.includes(def.id)) result.push(def.id);
+    }
+    return result.slice(0, limit);
+  }
+
+  // --- 'best' (Best Possible Mix) ---
+  // Strategically balanced, high synergy mix across Economy, Tank, DPS, Crowd Control, and Burst AOE
+  let bestOrder: string[] = [];
+  if (limit <= 4) {
+    bestOrder = [
+      preferredSunflowerId,
+      'potatomine',
+      'wallnut',
+      'peashooter',
+      'snowpea',
+      'kernelpult',
+      'repeater',
+      'cherrybomb',
+      'einherjar',
+      'jalapeno',
+      'chomper',
+      'torchwood'
+    ];
+  } else if (limit <= 6) {
+    bestOrder = [
+      preferredSunflowerId,
+      'potatomine',
+      'wallnut',
+      'peashooter',
+      'snowpea',
+      'repeater',
+      'cherrybomb',
+      'kernelpult',
+      'einherjar',
+      'jalapeno',
+      'chomper',
+      'torchwood'
+    ];
+  } else if (limit <= 8) {
+    bestOrder = [
+      preferredSunflowerId,
+      'potatomine',
+      'wallnut',
+      'repeater',
+      'snowpea',
+      'cherrybomb',
+      'kernelpult',
+      'einherjar',
+      'peashooter',
+      'jalapeno',
+      'torchwood',
+      'chomper'
+    ];
+  } else {
+    bestOrder = [
+      preferredSunflowerId,
+      'potatomine',
+      'wallnut',
+      'repeater',
+      'snowpea',
+      'cherrybomb',
+      'kernelpult',
+      'einherjar',
+      'jalapeno',
+      'torchwood',
+      'peashooter',
+      'chomper'
+    ];
+  }
+
+  const result: string[] = [];
+  for (const id of bestOrder) {
+    if (allowedIds.has(id) && !result.includes(id)) {
+      result.push(id);
+      if (result.length >= limit) break;
+    }
+  }
+
+  // Backfill any remaining slots from allowed defenders
+  for (const def of allowedDefenders) {
+    if (result.length >= limit) break;
+    if (!result.includes(def.id)) {
+      result.push(def.id);
+    }
+  }
+
+  return result.slice(0, limit);
+}
+
 export function getRecommendedLoadout(level: number, realm?: string): string[] {
   const limit = getDefenderSlotLimit(level);
   const normRealm = (realm || 'midgard').toLowerCase().trim();
