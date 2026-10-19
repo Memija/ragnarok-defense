@@ -1703,10 +1703,24 @@ export class Game {
     }
 
     if (!(this.realm === 'svartalfheim' && (this.city === 'nidavellir' || this.city === 'althjofs-wheel'))) {
-      // Outer Fortress Border Beam
-      ctx.fillStyle = this.realm === 'jotunheim' ? '#00e5ff' : '#ffc107'; 
+      // Outer Fortress Border Beam - Realm-Adaptive with Frost / Element Accents
+      const beamColor =
+        this.realm === 'jotunheim' || this.realm === 'niflheim' ? '#38bdf8' :
+        this.realm === 'svartalfheim' ? (this.city === 'althjofs-wheel' ? '#2dd4bf' : '#f59e0b') :
+        this.realm === 'helheim' || this.realm === 'muspelheim' ? '#ef4444' :
+        this.realm === 'vanaheim' || this.realm === 'midgard' ? '#4ade80' :
+        '#38bdf8'; // Asgard / Celestial Frost
+
+      const beamHighlight =
+        this.realm === 'jotunheim' || this.realm === 'niflheim' ? '#bae6fd' :
+        this.realm === 'svartalfheim' ? (this.city === 'althjofs-wheel' ? '#99f6e4' : '#fde68a') :
+        this.realm === 'helheim' || this.realm === 'muspelheim' ? '#fecaca' :
+        this.realm === 'vanaheim' || this.realm === 'midgard' ? '#bbf7d0' :
+        '#bae6fd';
+
+      ctx.fillStyle = beamColor; 
       ctx.fillRect(wallW - 8, 0, 8, height);
-      ctx.fillStyle = this.realm === 'jotunheim' ? '#e0f7fa' : '#ffe082';
+      ctx.fillStyle = beamHighlight;
       ctx.fillRect(wallW - 3, 0, 3, height);
 
       // Watchtower Window

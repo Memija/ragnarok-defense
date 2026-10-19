@@ -22,23 +22,105 @@ export function initUI() {
   const soundToggleBtn = document.getElementById('sound-toggle');
   const soundManager = SoundManager.getInstance();
 
-  if (soundToggleBtn) {
-    const updateSoundIcon = () => {
-      soundToggleBtn.innerHTML = `
-        <span class="sound-icon">${soundManager.isMuted ? '🔇' : '🔊'}</span>
-        <span class="settings-pulse"></span>
-      `;
-    };
-    updateSoundIcon();
+  const volumeSlider = document.getElementById('master-volume-slider') as HTMLInputElement | null;
+  const volumePercentDisplay = document.getElementById('volume-percent-display');
+  const volumeMuteBtn = document.getElementById('volume-mute-btn');
 
+  const updateSoundUI = () => {
+    const isMuted = soundManager.isMuted;
+    const volPct = Math.round(soundManager.volume * 100);
+
+    if (soundToggleBtn) {
+      soundToggleBtn.classList.toggle('is-muted', isMuted);
+      soundToggleBtn.setAttribute('title', isMuted ? 'Unmute Sound (M)' : 'Mute Sound (M)');
+      soundToggleBtn.setAttribute('aria-label', isMuted ? 'Unmute Sound' : 'Mute Sound');
+    }
+
+    if (volumeMuteBtn) {
+      volumeMuteBtn.classList.toggle('is-muted', isMuted);
+      volumeMuteBtn.setAttribute('title', isMuted ? 'Unmute Sound' : 'Mute Sound');
+    }
+
+    if (volumeSlider) {
+      volumeSlider.value = isMuted ? '0' : volPct.toString();
+      volumeSlider.style.setProperty('--vol-percent', `${isMuted ? 0 : volPct}%`);
+    }
+
+    if (volumePercentDisplay) {
+      volumePercentDisplay.textContent = isMuted ? '0%' : `${volPct}%`;
+    }
+  };
+
+  if (soundToggleBtn) {
+    updateSoundUI();
     soundToggleBtn.addEventListener('click', () => {
       soundManager.toggleMute();
       if (!soundManager.isMuted) {
         soundManager.playClick();
       }
-      updateSoundIcon();
+      updateSoundUI();
     });
   }
+
+  if (volumeMuteBtn) {
+    volumeMuteBtn.addEventListener('click', () => {
+      soundManager.toggleMute();
+      if (!soundManager.isMuted) {
+        soundManager.playClick();
+      }
+      updateSoundUI();
+    });
+  }
+
+  if (volumeSlider) {
+    volumeSlider.addEventListener('input', () => {
+      const pct = parseInt(volumeSlider.value, 10);
+      if (soundManager.isMuted && pct > 0) {
+        soundManager.toggleMute();
+      }
+      soundManager.setVolume(pct / 100);
+      updateSoundUI();
+    });
+  }
+
+  // Keyboard shortcut 'm' for mute
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+        return;
+      }
+      soundManager.toggleMute();
+      if (!soundManager.isMuted) {
+        soundManager.playClick();
+      }
+      updateSoundUI();
+    }
+  });
+
+  // Settings Category Tabs
+  const settingsTabButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.settings-nav-tabs .settings-tab-btn'));
+  const settingsTabPanes = Array.from(document.querySelectorAll<HTMLElement>('.settings-body .settings-tab-pane'));
+
+  settingsTabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.tab;
+      if (!targetTab) return;
+      soundManager.playClick();
+
+      settingsTabButtons.forEach(b => {
+        const isActive = b === btn;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      settingsTabPanes.forEach(pane => {
+        const paneTab = pane.id.replace('pane-', '');
+        const isActive = paneTab === targetTab;
+        pane.classList.toggle('active', isActive);
+      });
+    });
+  });
 
   const settingsBtn = document.getElementById('settings-btn');
   const closeSettingsBtn = document.getElementById('close-settings-btn');
@@ -64,6 +146,7 @@ export function initUI() {
     if (game && typeof game.level === 'number') {
       currentSettingsLevel = Math.min(10, Math.max(1, game.level));
     }
+    updateSoundUI();
     updateLevelSettingsUI();
     updateForeignUnitsUI();
     if (settingsModal) {

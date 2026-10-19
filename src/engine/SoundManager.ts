@@ -4,11 +4,20 @@
 export class SoundManager {
   private static instance: SoundManager;
   private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
   public isMuted: boolean = false;
+  public volume: number = 0.8;
 
   private constructor() {
     const saved = localStorage.getItem('ragnarok_muted');
     this.isMuted = saved === 'true';
+    const savedVol = localStorage.getItem('ragnarok_volume');
+    if (savedVol !== null) {
+      const parsed = parseFloat(savedVol);
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
+        this.volume = parsed;
+      }
+    }
   }
 
   public static getInstance(): SoundManager {
@@ -29,7 +38,29 @@ export class SoundManager {
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+    if (this.ctx && !this.masterGain) {
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+      this.masterGain.connect(this.ctx.destination);
+    }
     return this.ctx;
+  }
+
+  public getDestination(ctx: AudioContext): AudioNode {
+    if (!this.masterGain) {
+      this.masterGain = ctx.createGain();
+      this.masterGain.gain.setValueAtTime(this.volume, ctx.currentTime);
+      this.masterGain.connect(ctx.destination);
+    }
+    return this.masterGain;
+  }
+
+  public setVolume(vol: number): void {
+    this.volume = Math.max(0, Math.min(1, vol));
+    localStorage.setItem('ragnarok_volume', this.volume.toString());
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+    }
   }
 
   public toggleMute(): boolean {
@@ -72,7 +103,7 @@ export class SoundManager {
     gain.gain.setValueAtTime(0.12, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.getDestination(ctx));
     this.autoCleanup(osc, [gain]);
     osc.start();
     osc.stop(ctx.currentTime + 0.05);
@@ -91,7 +122,7 @@ export class SoundManager {
     gain.gain.setValueAtTime(0.18, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.getDestination(ctx));
     this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.09);
@@ -111,7 +142,7 @@ export class SoundManager {
     gain.gain.setValueAtTime(0.12, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.getDestination(ctx));
     this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.16);
@@ -130,7 +161,7 @@ export class SoundManager {
       gain.gain.setValueAtTime(0.15, now + i * 0.03);
       gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.03 + 0.18);
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.getDestination(ctx));
       this.autoCleanup(osc, [gain]);
       osc.start(now + i * 0.03);
       osc.stop(now + i * 0.03 + 0.18);
@@ -172,7 +203,7 @@ export class SoundManager {
     }
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.getDestination(ctx));
     this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.2);
@@ -191,7 +222,7 @@ export class SoundManager {
     gain.gain.setValueAtTime(0.18, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.getDestination(ctx));
     this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.08);
@@ -212,7 +243,7 @@ export class SoundManager {
     gain.gain.setValueAtTime(0.4, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.getDestination(ctx));
     this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.6);
@@ -236,7 +267,7 @@ export class SoundManager {
 
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
+    noiseGain.connect(this.getDestination(ctx));
     this.autoCleanup(noise, [noiseFilter, noiseGain]);
     noise.start(now);
     noise.stop(now + 0.4);
@@ -255,7 +286,7 @@ export class SoundManager {
       gain.gain.setValueAtTime(0.12, now + i * 0.04);
       gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.22);
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.getDestination(ctx));
       this.autoCleanup(osc, [gain]);
       osc.start(now + i * 0.04);
       osc.stop(now + i * 0.04 + 0.22);
@@ -284,7 +315,7 @@ export class SoundManager {
 
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.getDestination(ctx));
     this.autoCleanup(osc, [filter, gain]);
     osc.start(now);
     osc.stop(now + 1.2);
@@ -310,7 +341,7 @@ export class SoundManager {
         gain.gain.setValueAtTime(0.12, now + t);
         gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.7);
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(this.getDestination(ctx));
         this.autoCleanup(osc, [gain]);
         osc.start(now + t);
         osc.stop(now + t + 0.7);
@@ -337,7 +368,7 @@ export class SoundManager {
 
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.getDestination(ctx));
     this.autoCleanup(osc, [filter, gain]);
     osc.start(now);
     osc.stop(now + 1.5);
