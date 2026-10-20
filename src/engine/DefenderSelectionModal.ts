@@ -856,7 +856,7 @@ export class DefenderSelectionModal {
           : def.tooltip;
 
         card.innerHTML = `
-          ${isForeignLocked ? `
+          ${isForeignLocked && !isRealmLocked ? `
             <div class="card-foreign-lock-tag" title="${t('foreignUnitRestrictedTooltip') || 'Foreign defender restricted when defending the home world'}">
               <span class="lock-icon">🔒</span>
               <span class="lock-text">${t('foreignUnitLocked') || 'Foreign Realm'}</span>

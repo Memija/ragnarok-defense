@@ -25,6 +25,7 @@ export class Grid {
 
   private cachedCanvas: HTMLCanvasElement | null = null;
   private cachedDpr: number = 0;
+  private cachedTheme: string = '';
 
   invalidateCache() {
     this.cachedCanvas = null;
@@ -32,7 +33,9 @@ export class Grid {
 
   draw(ctx: CanvasRenderingContext2D) {
     const dpr = window.devicePixelRatio || 1;
-    if (!this.cachedCanvas || this.cachedDpr !== dpr) {
+    const currentTheme = (typeof document !== 'undefined' && document.body?.dataset.activeTheme) || 'dark';
+    if (!this.cachedCanvas || this.cachedDpr !== dpr || this.cachedTheme !== currentTheme) {
+      this.cachedTheme = currentTheme;
       this.buildCache(dpr);
     }
     if (this.cachedCanvas) {
@@ -56,6 +59,7 @@ export class Grid {
 
   private renderGrid(ctx: CanvasRenderingContext2D) {
     ctx.save();
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     // ── Draw Each Grid Cell with Realm-Specific Luxury Flagstone Style ──
     for (let r = 0; r < this.rows; r++) {
@@ -68,14 +72,14 @@ export class Grid {
         ctx.save();
 
         if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
-          // ── Althjof's Wheel: Subterranean Dwarven Basalt Canal Paving ──
+          // ── Althjof's Wheel: Subterranean Dwarven Basalt/Aqua Canal Paving ──
           const tileGrad = ctx.createLinearGradient(x, y, x + this.cellWidth, y + this.cellHeight);
-          if (isAlt) {
-            tileGrad.addColorStop(0, 'rgba(18, 28, 35, 0.45)');
-            tileGrad.addColorStop(1, 'rgba(10, 18, 24, 0.55)');
+          if (isLight) {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(204, 251, 241, 0.75)' : 'rgba(240, 253, 250, 0.88)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(153, 246, 228, 0.55)' : 'rgba(204, 251, 241, 0.65)');
           } else {
-            tileGrad.addColorStop(0, 'rgba(14, 22, 29, 0.35)');
-            tileGrad.addColorStop(1, 'rgba(8, 14, 20, 0.45)');
+            tileGrad.addColorStop(0, isAlt ? 'rgba(18, 28, 35, 0.45)' : 'rgba(14, 22, 29, 0.35)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(10, 18, 24, 0.55)' : 'rgba(8, 14, 20, 0.45)');
           }
           ctx.fillStyle = tileGrad;
           ctx.beginPath();
@@ -83,86 +87,127 @@ export class Grid {
           ctx.fill();
 
           // Subtle cyan-teal beveled stone trim
-          ctx.strokeStyle = isAlt ? 'rgba(45, 212, 191, 0.22)' : 'rgba(20, 184, 166, 0.12)';
+          ctx.strokeStyle = isLight
+            ? (isAlt ? 'rgba(13, 148, 136, 0.35)' : 'rgba(20, 184, 166, 0.22)')
+            : (isAlt ? 'rgba(45, 212, 191, 0.22)' : 'rgba(20, 184, 166, 0.12)');
           ctx.lineWidth = 1;
           ctx.stroke();
 
           // Tiny corner runes
           const canalRunes = ['ᚨ', 'ᛚ', 'ᛏ', 'ᛗ', 'ᚲ', 'ᚱ', 'ᚦ', 'ᛟ', 'ᚹ'];
           const runeChar = canalRunes[(r * this.cols + c) % canalRunes.length];
-          ctx.fillStyle = isAlt ? 'rgba(45, 212, 191, 0.18)' : 'rgba(20, 184, 166, 0.10)';
+          ctx.fillStyle = isLight
+            ? (isAlt ? 'rgba(13, 148, 136, 0.45)' : 'rgba(20, 184, 166, 0.30)')
+            : (isAlt ? 'rgba(45, 212, 191, 0.18)' : 'rgba(20, 184, 166, 0.10)');
           ctx.font = '9px serif';
           ctx.fillText(runeChar, x + 8, y + 14);
 
         } else if (this.realm === 'svartalfheim') {
-          // ── Svartalfheim General: Warm Amber Forge Obsidian Tiles ──
+          // ── Svartalfheim General: Warm Amber Forge Obsidian / Sandstone Tiles ──
           const tileGrad = ctx.createLinearGradient(x, y, x + this.cellWidth, y + this.cellHeight);
-          tileGrad.addColorStop(0, isAlt ? 'rgba(32, 22, 16, 0.50)' : 'rgba(22, 14, 10, 0.40)');
-          tileGrad.addColorStop(1, isAlt ? 'rgba(18, 12, 8, 0.60)' : 'rgba(14, 8, 6, 0.50)');
+          if (isLight) {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(254, 243, 199, 0.80)' : 'rgba(255, 251, 235, 0.90)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(253, 230, 138, 0.58)' : 'rgba(254, 243, 199, 0.68)');
+          } else {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(32, 22, 16, 0.50)' : 'rgba(22, 14, 10, 0.40)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(18, 12, 8, 0.60)' : 'rgba(14, 8, 6, 0.50)');
+          }
           ctx.fillStyle = tileGrad;
           ctx.beginPath();
           ctx.roundRect(x + 2, y + 2, this.cellWidth - 4, this.cellHeight - 4, 6);
           ctx.fill();
 
-          ctx.strokeStyle = isAlt ? 'rgba(245, 158, 11, 0.22)' : 'rgba(217, 119, 6, 0.12)';
+          ctx.strokeStyle = isLight
+            ? (isAlt ? 'rgba(217, 119, 6, 0.35)' : 'rgba(245, 158, 11, 0.22)')
+            : (isAlt ? 'rgba(245, 158, 11, 0.22)' : 'rgba(217, 119, 6, 0.12)');
           ctx.lineWidth = 1;
           ctx.stroke();
 
         } else if (this.realm === 'jotunheim' || this.realm === 'niflheim') {
           // ── Jötunheim / Niflheim: Glacial Permafrost & Crystalline Fissures ──
           const tileGrad = ctx.createLinearGradient(x, y, x, y + this.cellHeight);
-          tileGrad.addColorStop(0, isAlt ? 'rgba(12, 34, 52, 0.40)' : 'rgba(8, 24, 38, 0.30)');
-          tileGrad.addColorStop(1, isAlt ? 'rgba(6, 20, 32, 0.55)' : 'rgba(4, 14, 22, 0.45)');
+          if (isLight) {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(224, 242, 254, 0.82)' : 'rgba(240, 249, 255, 0.92)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(186, 230, 253, 0.62)' : 'rgba(224, 242, 254, 0.72)');
+          } else {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(12, 34, 52, 0.40)' : 'rgba(8, 24, 38, 0.30)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(6, 20, 32, 0.55)' : 'rgba(4, 14, 22, 0.45)');
+          }
           ctx.fillStyle = tileGrad;
           ctx.beginPath();
           ctx.roundRect(x + 2, y + 2, this.cellWidth - 4, this.cellHeight - 4, 6);
           ctx.fill();
 
-          ctx.strokeStyle = isAlt ? 'rgba(56, 189, 248, 0.22)' : 'rgba(14, 165, 233, 0.12)';
+          ctx.strokeStyle = isLight
+            ? (isAlt ? 'rgba(2, 132, 199, 0.35)' : 'rgba(56, 189, 248, 0.22)')
+            : (isAlt ? 'rgba(56, 189, 248, 0.22)' : 'rgba(14, 165, 233, 0.12)');
           ctx.lineWidth = 1;
           ctx.stroke();
 
           // Frost crystal accent
-          ctx.fillStyle = 'rgba(186, 230, 253, 0.16)';
+          ctx.fillStyle = isLight ? 'rgba(2, 132, 199, 0.35)' : 'rgba(186, 230, 253, 0.16)';
           ctx.font = '8px serif';
           ctx.fillText('❄', x + this.cellWidth - 14, y + 14);
 
         } else if (this.realm === 'asgard' || this.realm === 'alfheim') {
           // ── Asgard: Celestial Sunken Marble & Golden Bifrost Dust ──
           const tileGrad = ctx.createLinearGradient(x, y, x + this.cellWidth, y + this.cellHeight);
-          tileGrad.addColorStop(0, isAlt ? 'rgba(45, 36, 18, 0.42)' : 'rgba(32, 24, 12, 0.32)');
-          tileGrad.addColorStop(1, isAlt ? 'rgba(28, 20, 10, 0.55)' : 'rgba(20, 14, 8, 0.45)');
+          if (isLight) {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(254, 249, 195, 0.85)' : 'rgba(255, 253, 235, 0.94)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(254, 240, 138, 0.65)' : 'rgba(254, 249, 195, 0.75)');
+          } else {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(45, 36, 18, 0.42)' : 'rgba(32, 24, 12, 0.32)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(28, 20, 10, 0.55)' : 'rgba(20, 14, 8, 0.45)');
+          }
           ctx.fillStyle = tileGrad;
           ctx.beginPath();
           ctx.roundRect(x + 2, y + 2, this.cellWidth - 4, this.cellHeight - 4, 6);
           ctx.fill();
 
-          ctx.strokeStyle = isAlt ? 'rgba(251, 191, 36, 0.25)' : 'rgba(245, 158, 11, 0.12)';
+          ctx.strokeStyle = isLight
+            ? (isAlt ? 'rgba(202, 138, 4, 0.38)' : 'rgba(234, 179, 8, 0.22)')
+            : (isAlt ? 'rgba(251, 191, 36, 0.25)' : 'rgba(245, 158, 11, 0.12)');
           ctx.lineWidth = 1;
           ctx.stroke();
 
         } else if (this.realm === 'helheim' || this.realm === 'muspelheim') {
           // ── Helheim / Muspelheim: Scorched Volcanic Basalt ──
-          ctx.fillStyle = isAlt ? 'rgba(38, 16, 12, 0.48)' : 'rgba(24, 10, 8, 0.38)';
+          if (isLight) {
+            const tileGrad = ctx.createLinearGradient(x, y, x + this.cellWidth, y + this.cellHeight);
+            tileGrad.addColorStop(0, isAlt ? 'rgba(254, 226, 226, 0.78)' : 'rgba(255, 241, 242, 0.90)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(254, 202, 202, 0.58)' : 'rgba(254, 226, 226, 0.68)');
+            ctx.fillStyle = tileGrad;
+          } else {
+            ctx.fillStyle = isAlt ? 'rgba(38, 16, 12, 0.48)' : 'rgba(24, 10, 8, 0.38)';
+          }
           ctx.beginPath();
           ctx.roundRect(x + 2, y + 2, this.cellWidth - 4, this.cellHeight - 4, 6);
           ctx.fill();
 
-          ctx.strokeStyle = isAlt ? 'rgba(239, 68, 68, 0.25)' : 'rgba(185, 28, 28, 0.14)';
+          ctx.strokeStyle = isLight
+            ? (isAlt ? 'rgba(220, 38, 38, 0.35)' : 'rgba(239, 68, 68, 0.20)')
+            : (isAlt ? 'rgba(239, 68, 68, 0.25)' : 'rgba(185, 28, 28, 0.14)');
           ctx.lineWidth = 1;
           ctx.stroke();
 
         } else {
           // ── Midgard / Vanaheim: Ancient Nordic Mossy Flagstones ──
           const tileGrad = ctx.createLinearGradient(x, y, x + this.cellWidth, y + this.cellHeight);
-          tileGrad.addColorStop(0, isAlt ? 'rgba(20, 36, 24, 0.42)' : 'rgba(14, 26, 18, 0.32)');
-          tileGrad.addColorStop(1, isAlt ? 'rgba(12, 22, 14, 0.55)' : 'rgba(8, 16, 10, 0.45)');
+          if (isLight) {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(236, 253, 245, 0.82)' : 'rgba(240, 253, 244, 0.92)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(209, 250, 229, 0.62)' : 'rgba(236, 253, 245, 0.72)');
+          } else {
+            tileGrad.addColorStop(0, isAlt ? 'rgba(20, 36, 24, 0.42)' : 'rgba(14, 26, 18, 0.32)');
+            tileGrad.addColorStop(1, isAlt ? 'rgba(12, 22, 14, 0.55)' : 'rgba(8, 16, 10, 0.45)');
+          }
           ctx.fillStyle = tileGrad;
           ctx.beginPath();
           ctx.roundRect(x + 2, y + 2, this.cellWidth - 4, this.cellHeight - 4, 6);
           ctx.fill();
 
-          ctx.strokeStyle = isAlt ? 'rgba(74, 222, 128, 0.22)' : 'rgba(34, 197, 94, 0.12)';
+          ctx.strokeStyle = isLight
+            ? (isAlt ? 'rgba(5, 150, 105, 0.35)' : 'rgba(16, 185, 129, 0.20)')
+            : (isAlt ? 'rgba(74, 222, 128, 0.22)' : 'rgba(34, 197, 94, 0.12)');
           ctx.lineWidth = 1;
           ctx.stroke();
         }
@@ -172,13 +217,21 @@ export class Grid {
     }
 
     // ── Crisp Outer Lane Borders with Subtle Glow ──
-    const laneGlowColor =
+    const laneGlowColor = isLight ? (
+      this.realm === 'svartalfheim' && this.city === 'althjofs-wheel' ? 'rgba(13, 148, 136, 0.45)' :
+      this.realm === 'svartalfheim' ? 'rgba(217, 119, 6, 0.42)' :
+      this.realm === 'jotunheim' || this.realm === 'niflheim' ? 'rgba(2, 132, 199, 0.45)' :
+      this.realm === 'asgard' ? 'rgba(202, 138, 4, 0.45)' :
+      this.realm === 'helheim' || this.realm === 'muspelheim' ? 'rgba(220, 38, 38, 0.42)' :
+      'rgba(5, 150, 105, 0.42)'
+    ) : (
       this.realm === 'svartalfheim' && this.city === 'althjofs-wheel' ? 'rgba(45, 212, 191, 0.28)' :
       this.realm === 'svartalfheim' ? 'rgba(245, 158, 11, 0.25)' :
       this.realm === 'jotunheim' || this.realm === 'niflheim' ? 'rgba(56, 189, 248, 0.28)' :
       this.realm === 'asgard' ? 'rgba(251, 191, 36, 0.30)' :
       this.realm === 'helheim' || this.realm === 'muspelheim' ? 'rgba(239, 68, 68, 0.25)' :
-      'rgba(74, 222, 128, 0.24)';
+      'rgba(74, 222, 128, 0.24)'
+    );
 
     ctx.strokeStyle = laneGlowColor;
     ctx.lineWidth = 1.2;

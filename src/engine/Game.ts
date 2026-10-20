@@ -94,6 +94,7 @@ export class Game {
   private cachedBgHeight: number = 0;
   private cachedBgRealm: string = '';
   private cachedBgCity?: string;
+  private cachedBgTheme: string = '';
 
   // Cached Castle Wall Offscreen Canvas
   private cachedCastleCanvas: HTMLCanvasElement | null = null;
@@ -102,6 +103,7 @@ export class Game {
   private cachedCastleCity?: string;
   private cachedCastleWidth: number = 0;
   private cachedCastleHeight: number = 0;
+  private cachedCastleTheme: string = '';
 
   // Screen shake FX
   shakeTimer: number = 0;
@@ -1094,44 +1096,75 @@ export class Game {
 
     ctx.scale(dpr, dpr);
     ctx.save();
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     // Procedural stone masonry fortification wall
     const wallGrad = ctx.createLinearGradient(0, 0, wallW, 0);
-    if (this.realm === 'jotunheim' || this.realm === 'niflheim' || this.realm === 'helheim') {
-      wallGrad.addColorStop(0, '#102030');
-      wallGrad.addColorStop(0.7, '#1b334a');
-      wallGrad.addColorStop(1, '#2c4d68');
-    } else if (this.realm === 'asgard' || this.realm === 'alfheim') {
-      wallGrad.addColorStop(0, '#3a2d12');
-      wallGrad.addColorStop(0.7, '#5c481e');
-      wallGrad.addColorStop(1, '#8c6d2d');
-    } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
-      // Althjof's Wheel: Damp subterranean dwarven river masonry
-      wallGrad.addColorStop(0, '#0c151a');
-      wallGrad.addColorStop(0.4, '#152229');
-      wallGrad.addColorStop(0.75, '#1c2d36');
-      wallGrad.addColorStop(1, '#243b47');
-    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
-      // Nidavellir: rich dark stone — charcoal with warm amber seams
-      wallGrad.addColorStop(0, '#1a1510');
-      wallGrad.addColorStop(0.5, '#2e2618');
-      wallGrad.addColorStop(0.85, '#3a301e');
-      wallGrad.addColorStop(1, '#4a3c24');
-    } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
-      wallGrad.addColorStop(0, '#21100c');
-      wallGrad.addColorStop(0.7, '#381c15');
-      wallGrad.addColorStop(1, '#542b20');
+    if (isLight) {
+      if (this.realm === 'jotunheim' || this.realm === 'niflheim' || this.realm === 'helheim') {
+        wallGrad.addColorStop(0, '#e0f2fe');
+        wallGrad.addColorStop(0.7, '#bae6fd');
+        wallGrad.addColorStop(1, '#93c5fd');
+      } else if (this.realm === 'asgard' || this.realm === 'alfheim') {
+        wallGrad.addColorStop(0, '#fef9c3');
+        wallGrad.addColorStop(0.7, '#fde68a');
+        wallGrad.addColorStop(1, '#fcd34d');
+      } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+        wallGrad.addColorStop(0, '#ccfbf1');
+        wallGrad.addColorStop(0.4, '#99f6e4');
+        wallGrad.addColorStop(0.75, '#5eead4');
+        wallGrad.addColorStop(1, '#2dd4bf');
+      } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+        wallGrad.addColorStop(0, '#fef3c7');
+        wallGrad.addColorStop(0.5, '#fde68a');
+        wallGrad.addColorStop(0.85, '#fcd34d');
+        wallGrad.addColorStop(1, '#fbbf24');
+      } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
+        wallGrad.addColorStop(0, '#ffedd5');
+        wallGrad.addColorStop(0.7, '#fed7aa');
+        wallGrad.addColorStop(1, '#fdba74');
+      } else {
+        wallGrad.addColorStop(0, '#f1f5f9');
+        wallGrad.addColorStop(0.7, '#e2e8f0');
+        wallGrad.addColorStop(1, '#cbd5e1');
+      }
     } else {
-      wallGrad.addColorStop(0, '#263238');
-      wallGrad.addColorStop(0.7, '#37474f');
-      wallGrad.addColorStop(1, '#455a64');
+      if (this.realm === 'jotunheim' || this.realm === 'niflheim' || this.realm === 'helheim') {
+        wallGrad.addColorStop(0, '#102030');
+        wallGrad.addColorStop(0.7, '#1b334a');
+        wallGrad.addColorStop(1, '#2c4d68');
+      } else if (this.realm === 'asgard' || this.realm === 'alfheim') {
+        wallGrad.addColorStop(0, '#3a2d12');
+        wallGrad.addColorStop(0.7, '#5c481e');
+        wallGrad.addColorStop(1, '#8c6d2d');
+      } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+        // Althjof's Wheel: Damp subterranean dwarven river masonry
+        wallGrad.addColorStop(0, '#0c151a');
+        wallGrad.addColorStop(0.4, '#152229');
+        wallGrad.addColorStop(0.75, '#1c2d36');
+        wallGrad.addColorStop(1, '#243b47');
+      } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+        // Nidavellir: rich dark stone — charcoal with warm amber seams
+        wallGrad.addColorStop(0, '#1a1510');
+        wallGrad.addColorStop(0.5, '#2e2618');
+        wallGrad.addColorStop(0.85, '#3a301e');
+        wallGrad.addColorStop(1, '#4a3c24');
+      } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
+        wallGrad.addColorStop(0, '#21100c');
+        wallGrad.addColorStop(0.7, '#381c15');
+        wallGrad.addColorStop(1, '#542b20');
+      } else {
+        wallGrad.addColorStop(0, '#263238');
+        wallGrad.addColorStop(0.7, '#37474f');
+        wallGrad.addColorStop(1, '#455a64');
+      }
     }
     ctx.fillStyle = wallGrad;
     ctx.fillRect(0, 0, wallW, height);
 
     // Stone brick patterns
     if (!(this.realm === 'svartalfheim' && this.city === 'althjofs-wheel')) {
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.35)';
       ctx.lineWidth = 1.5;
       const brickH = 32;
       for (let y = 0; y < height; y += brickH) {
@@ -1163,21 +1196,21 @@ export class Game {
         const cH = courses[cIdx % courses.length];
         const nextY = Math.min(h, curY + cH);
 
-        // Dark course bed joint (recessed mortar groove)
-        ctx.fillStyle = 'rgba(2, 6, 8, 0.75)';
+        // Course bed joint (recessed mortar groove)
+        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(2, 6, 8, 0.75)';
         ctx.fillRect(0, nextY - 2, wallW, 3);
 
-        // Top stone edge bevel highlight (wet subterranean mineral sheen)
-        ctx.fillStyle = 'rgba(45, 212, 191, 0.08)';
+        // Top stone edge bevel highlight (mineral sheen)
+        ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.45)' : 'rgba(45, 212, 191, 0.08)';
         ctx.fillRect(0, curY, wallW, 2);
 
         // Vertical head joints between individual blocks
         const blockW = 68 + ((cIdx * 31) % 24);
         const shift = ((cIdx % 2) * (blockW * 0.5)) % blockW;
         for (let bx = shift; bx < wallW; bx += blockW) {
-          ctx.fillStyle = 'rgba(2, 6, 8, 0.65)';
+          ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.10)' : 'rgba(2, 6, 8, 0.65)';
           ctx.fillRect(bx - 1, curY, 2, cH);
-          ctx.fillStyle = 'rgba(45, 212, 191, 0.05)';
+          ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.35)' : 'rgba(45, 212, 191, 0.05)';
           ctx.fillRect(bx + 1, curY, 1, cH);
         }
 
@@ -1185,10 +1218,10 @@ export class Game {
         cIdx++;
       }
 
-      // Water Seepage & Mineral Stain Gradient on wet basalt stone
+      // Water Seepage & Mineral Stain Gradient on stone
       const seepGrad = ctx.createLinearGradient(wallW, 0, 0, 0);
-      seepGrad.addColorStop(0, 'rgba(20, 184, 166, 0.22)');
-      seepGrad.addColorStop(0.5, 'rgba(13, 148, 136, 0.10)');
+      seepGrad.addColorStop(0, isLight ? 'rgba(20, 184, 166, 0.14)' : 'rgba(20, 184, 166, 0.22)');
+      seepGrad.addColorStop(0.5, isLight ? 'rgba(13, 148, 136, 0.06)' : 'rgba(13, 148, 136, 0.10)');
       seepGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = seepGrad;
       ctx.fillRect(0, 0, wallW, h);
@@ -1207,13 +1240,20 @@ export class Game {
       }
 
       // ── 2. HEAVY DWARVEN BRONZE BORDER BEAM WITH WATER-WARD RIVETS ──
-      ctx.fillStyle = '#081216';
+      ctx.fillStyle = isLight ? '#0d9488' : '#081216';
       ctx.fillRect(wallW - 12, 0, 12, h);
       const beamG = ctx.createLinearGradient(wallW - 12, 0, wallW, 0);
-      beamG.addColorStop(0, '#0a161b');
-      beamG.addColorStop(0.35, '#14b8a6');
-      beamG.addColorStop(0.7, '#0f766e');
-      beamG.addColorStop(1, '#061014');
+      if (isLight) {
+        beamG.addColorStop(0, '#14b8a6');
+        beamG.addColorStop(0.35, '#2dd4bf');
+        beamG.addColorStop(0.7, '#0f766e');
+        beamG.addColorStop(1, '#0d9488');
+      } else {
+        beamG.addColorStop(0, '#0a161b');
+        beamG.addColorStop(0.35, '#14b8a6');
+        beamG.addColorStop(0.7, '#0f766e');
+        beamG.addColorStop(1, '#061014');
+      }
       ctx.fillStyle = beamG;
       ctx.fillRect(wallW - 10, 0, 10, h);
 
@@ -1241,7 +1281,7 @@ export class Game {
       const embTopY = Math.max(38, balconyFloorY - 85);
 
       // Carved Stone Corbel Brackets
-      ctx.fillStyle = '#060d10';
+      ctx.fillStyle = isLight ? '#94a3b8' : '#060d10';
       const corbels = [embX + 8, bastionCenterX, embX + embW - 8];
       for (const cx of corbels) {
         ctx.beginPath();
@@ -1257,7 +1297,7 @@ export class Game {
       }
 
       // Arched Embrasure Window into Mountain Foundries
-      ctx.fillStyle = '#03070a';
+      ctx.fillStyle = isLight ? '#64748b' : '#03070a';
       ctx.beginPath();
       ctx.moveTo(embX, embTopY + embW / 2);
       ctx.arc(bastionCenterX, embTopY + embW / 2, embW / 2, Math.PI, 0);
@@ -1282,7 +1322,7 @@ export class Game {
       ctx.stroke();
 
       // Embrasure Arch Keystone with Rune ᛟ
-      ctx.fillStyle = '#14252e';
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#14252e';
       ctx.beginPath();
       ctx.moveTo(bastionCenterX - 8, embTopY - 2);
       ctx.lineTo(bastionCenterX + 8, embTopY - 2);
@@ -1375,9 +1415,15 @@ export class Game {
       // Front Stone & Bronze Parapet Wall
       const parapetTop = balconyFloorY - 14;
       const parapetGrad = ctx.createLinearGradient(embX - 2, parapetTop, embX + embW + 2, balconyFloorY);
-      parapetGrad.addColorStop(0, '#0c181e');
-      parapetGrad.addColorStop(0.5, '#152a33');
-      parapetGrad.addColorStop(1, '#081216');
+      if (isLight) {
+        parapetGrad.addColorStop(0, '#e2e8f0');
+        parapetGrad.addColorStop(0.5, '#cbd5e1');
+        parapetGrad.addColorStop(1, '#94a3b8');
+      } else {
+        parapetGrad.addColorStop(0, '#0c181e');
+        parapetGrad.addColorStop(0.5, '#152a33');
+        parapetGrad.addColorStop(1, '#081216');
+      }
       ctx.fillStyle = parapetGrad;
       ctx.beginPath();
       ctx.roundRect(embX - 3, parapetTop, embW + 6, balconyFloorY - parapetTop + 4, 3);
@@ -1397,7 +1443,7 @@ export class Game {
       const gateX = bastionCenterX - gateW / 2;
 
       // Heavy Dressed Arch Keystone & Voussoirs
-      ctx.fillStyle = '#0a161c';
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#0a161c';
       ctx.beginPath();
       ctx.moveTo(gateX - 6, gateTop + 24);
       ctx.arc(bastionCenterX, gateTop + 24, gateW / 2 + 6, Math.PI, 0);
@@ -1410,7 +1456,7 @@ export class Game {
       ctx.stroke();
 
       // Deep Culvert Void
-      ctx.fillStyle = '#020507';
+      ctx.fillStyle = isLight ? '#475569' : '#020507';
       ctx.beginPath();
       ctx.moveTo(gateX, gateTop + 24);
       ctx.arc(bastionCenterX, gateTop + 24, gateW / 2, Math.PI, 0);
@@ -1420,7 +1466,7 @@ export class Game {
       ctx.fill();
 
       // Sluice Arch Keystone with Rune ᚨ
-      ctx.fillStyle = '#162830';
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#162830';
       ctx.beginPath();
       ctx.moveTo(bastionCenterX - 10, gateTop - 4);
       ctx.lineTo(bastionCenterX + 10, gateTop - 4);
@@ -1440,7 +1486,7 @@ export class Game {
       ctx.shadowBlur = 0;
 
       // Heavy Iron Portcullis Bars
-      ctx.strokeStyle = '#1e293b';
+      ctx.strokeStyle = isLight ? '#334155' : '#1e293b';
       ctx.lineWidth = 3.5;
       ctx.lineCap = 'square';
       const numBars = Math.max(3, Math.floor(gateW / 18));
@@ -1455,7 +1501,7 @@ export class Game {
       // Horizontal Reinforced Bronze Girders with Rivets
       for (let rail = 0; rail < 3; rail++) {
         const ry = gateTop + 45 + rail * (gateH * 0.26);
-        ctx.fillStyle = '#0f272e';
+        ctx.fillStyle = isLight ? '#0f766e' : '#0f272e';
         ctx.fillRect(gateX + 2, ry - 4, gateW - 4, 8);
         ctx.strokeStyle = '#0f766e';
         ctx.lineWidth = 1.2;
@@ -1483,7 +1529,7 @@ export class Game {
       ctx.fillRect(gateX + 2, spillTop, gateW - 4, 32);
 
       // Heavy Stone Culvert Base Threshold
-      ctx.fillStyle = '#081216';
+      ctx.fillStyle = isLight ? '#94a3b8' : '#081216';
       ctx.fillRect(gateX - 4, gateTop + gateH - 6, gateW + 8, 10);
       ctx.fillStyle = '#0f766e';
       ctx.fillRect(gateX - 4, gateTop + gateH - 6, gateW + 8, 2);
@@ -1495,11 +1541,11 @@ export class Game {
       ];
       for (let li = 0; li < lanterns.length; li++) {
         const lt = lanterns[li];
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle = isLight ? '#64748b' : '#1e293b';
         ctx.fillRect(lt.x - 14, lt.y - 3, 14, 6);
         ctx.fillRect(lt.x - 3, lt.y - 14, 4, 14);
 
-        ctx.fillStyle = '#081216';
+        ctx.fillStyle = isLight ? '#cbd5e1' : '#081216';
         ctx.beginPath();
         ctx.roundRect(lt.x - 10, lt.y - 24, 18, 18, 3);
         ctx.fill();
@@ -1512,18 +1558,24 @@ export class Game {
       const rows = this.grid.rows;
       const wallX = this.grid.startX;
       const quayGrad = ctx.createLinearGradient(wallX - 60, 0, wallX, 0);
-      quayGrad.addColorStop(0, '#09151a');
-      quayGrad.addColorStop(0.5, '#102229');
-      quayGrad.addColorStop(1, '#071014');
+      if (isLight) {
+        quayGrad.addColorStop(0, '#e2e8f0');
+        quayGrad.addColorStop(0.5, '#cbd5e1');
+        quayGrad.addColorStop(1, '#94a3b8');
+      } else {
+        quayGrad.addColorStop(0, '#09151a');
+        quayGrad.addColorStop(0.5, '#102229');
+        quayGrad.addColorStop(1, '#071014');
+      }
       ctx.fillStyle = quayGrad;
       ctx.fillRect(wallX - 60, 0, 60, h);
 
       // Course lines and stone corbel teeth on the quay
-      ctx.fillStyle = 'rgba(2, 6, 8, 0.7)';
+      ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(2, 6, 8, 0.7)';
       for (let r = 0; r <= rows; r++) {
         const ly = r * this.grid.cellHeight;
         ctx.fillRect(wallX - 60, ly - 1.5, 60, 3);
-        ctx.fillStyle = '#0a171d';
+        ctx.fillStyle = isLight ? '#94a3b8' : '#0a171d';
         ctx.beginPath();
         ctx.moveTo(wallX - 60, ly - 6);
         ctx.lineTo(wallX - 50, ly - 6);
@@ -1531,7 +1583,7 @@ export class Game {
         ctx.lineTo(wallX - 60, ly + 6);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = 'rgba(2, 6, 8, 0.7)';
+        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(2, 6, 8, 0.7)';
       }
 
       // Hydraulic conduit pipe running vertically behind stations
@@ -1573,7 +1625,7 @@ export class Game {
       ctx.fillRect(0, 0, wallW, height);
 
       // Dwarven iron-riveted border beam
-      ctx.fillStyle = '#2a2218';
+      ctx.fillStyle = isLight ? '#92400e' : '#2a2218';
       ctx.fillRect(wallW - 10, 0, 10, height);
       ctx.fillStyle = '#c8a050';
       ctx.shadowColor = '#ffa000';
@@ -1590,7 +1642,7 @@ export class Game {
       const torchPositions = [50, height * 0.28, height * 0.54, height * 0.80];
       for (let ti = 0; ti < torchPositions.length; ti++) {
         const ty = torchPositions[ti];
-        ctx.fillStyle = '#3a3028';
+        ctx.fillStyle = isLight ? '#78350f' : '#3a3028';
         ctx.fillRect(torchX - 30, ty - 4, 30, 8);
         ctx.fillRect(torchX - 5, ty - 16, 6, 16);
       }
@@ -1600,7 +1652,7 @@ export class Game {
       const gateH   = height * 0.40;
       const gateX   = 150;
       const gateW2  = 80;
-      ctx.fillStyle = '#1e1812';
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#1e1812';
       ctx.beginPath();
       ctx.moveTo(gateX, gateTop + 28);
       ctx.arc(gateX + gateW2 / 2, gateTop + 28, gateW2 / 2, Math.PI, 0);
@@ -1608,7 +1660,7 @@ export class Game {
       ctx.lineTo(gateX, gateTop + gateH);
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = '#4a3c24';
+      ctx.fillStyle = isLight ? '#d97706' : '#4a3c24';
       ctx.beginPath();
       ctx.moveTo(gateX + gateW2 / 2 - 10, gateTop);
       ctx.lineTo(gateX + gateW2 / 2 + 10, gateTop);
@@ -1616,7 +1668,7 @@ export class Game {
       ctx.lineTo(gateX + gateW2 / 2 - 6, gateTop + 22);
       ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = '#2e2820';
+      ctx.strokeStyle = isLight ? '#78350f' : '#2e2820';
       ctx.lineWidth = 5;
       ctx.lineCap = 'square';
       for (let bar = 0; bar < 4; bar++) {
@@ -1637,23 +1689,28 @@ export class Game {
 
       // Stone battlement wall & crenellations
       const wallX = this.grid.startX;
-      ctx.fillStyle = '#1e241c';
+      ctx.fillStyle = isLight ? '#e2e8f0' : '#1e241c';
       ctx.beginPath();
       ctx.moveTo(wallX - 60, 0); ctx.lineTo(wallX, 0); 
       ctx.lineTo(wallX, height); ctx.lineTo(wallX - 60, height); 
       ctx.fill();
       const railGrad = ctx.createLinearGradient(wallX - 60, 0, wallX, 0);
-      railGrad.addColorStop(0, '#3a4a35');
-      railGrad.addColorStop(0.5, '#6a7860');
-      railGrad.addColorStop(1, '#2a3525');
+      if (isLight) {
+        railGrad.addColorStop(0, '#e2e8f0');
+        railGrad.addColorStop(0.5, '#cbd5e1');
+        railGrad.addColorStop(1, '#94a3b8');
+      } else {
+        railGrad.addColorStop(0, '#3a4a35');
+        railGrad.addColorStop(0.5, '#6a7860');
+        railGrad.addColorStop(1, '#2a3525');
+      }
       ctx.fillStyle = railGrad;
       ctx.fillRect(wallX - 60, 0, 60, height);
-      ctx.fillStyle = '#1e241c';
       for (let y = 0; y < height; y += 45) {
+        ctx.fillStyle = isLight ? '#94a3b8' : '#1e241c';
         ctx.fillRect(wallX - 40, y, 40, 20);
-        ctx.fillStyle = '#4a5545';
+        ctx.fillStyle = isLight ? '#cbd5e1' : '#4a5545';
         ctx.fillRect(wallX - 43, y, 43, 6);
-        ctx.fillStyle = '#1e241c';
       }
 
       ctx.restore();
@@ -1665,8 +1722,8 @@ export class Game {
       ctx.fillStyle = frostGrad;
       ctx.fillRect(0, 0, wallW, height);
 
-      ctx.fillStyle = 'rgba(224, 247, 250, 0.90)';
-      ctx.shadowColor = '#00e5ff';
+      ctx.fillStyle = isLight ? 'rgba(186, 230, 253, 0.85)' : 'rgba(224, 247, 250, 0.90)';
+      ctx.shadowColor = isLight ? 'rgba(2, 132, 199, 0.4)' : '#00e5ff';
       ctx.shadowBlur = 10;
       const icicleCount = Math.max(3, Math.floor((wallW - 30) / 20));
       for (let i = 0; i < icicleCount; i++) {
@@ -1678,12 +1735,17 @@ export class Game {
         ctx.lineTo(ix, iLen);
         ctx.closePath();
         ctx.fill();
+        if (isLight) {
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
       }
 
       const jRunes = ['ᛃ', 'ᛟ', 'ᛏ', 'ᚢ', 'ᚾ', 'ᚺ', 'ᛖ'];
       ctx.font = 'bold 20px serif';
-      ctx.fillStyle = '#e0f7fa';
-      ctx.shadowColor = '#00e5ff';
+      ctx.fillStyle = isLight ? '#0284c7' : '#e0f7fa';
+      ctx.shadowColor = isLight ? 'rgba(2, 132, 199, 0.35)' : '#00e5ff';
       ctx.shadowBlur = 14;
       for (let i = 0; i < jRunes.length; i++) {
         ctx.fillText(jRunes[i], wallW - 28, 60 + i * 65);
@@ -1694,8 +1756,8 @@ export class Game {
       ctx.fillRect(0, 0, wallW, height);
       const aRunes = ['ᚨ', 'ᛊ', 'ᚷ', 'ᚨ', 'ᚱ', 'ᛞ'];
       ctx.font = 'bold 20px serif';
-      ctx.fillStyle = '#fff9c4';
-      ctx.shadowColor = '#ffd54f';
+      ctx.fillStyle = isLight ? '#b45309' : '#fff9c4';
+      ctx.shadowColor = isLight ? 'rgba(217, 119, 6, 0.4)' : '#ffd54f';
       ctx.shadowBlur = 14;
       for (let i = 0; i < aRunes.length; i++) {
         ctx.fillText(aRunes[i], wallW - 28, 70 + i * 70);
@@ -1723,16 +1785,72 @@ export class Game {
       ctx.fillStyle = beamHighlight;
       ctx.fillRect(wallW - 3, 0, 3, height);
 
-      // Watchtower Window
+      // Watchtower Window / Arched Stone Embrasure
       const winW = Math.min(130, Math.max(80, wallW - 40));
       const winX = (wallW - 8 - winW) / 2;
-      ctx.fillStyle = '#1c2529'; 
-      ctx.fillRect(winX, 30, winW, 190);
-      ctx.fillStyle = '#ffb74d'; 
-      ctx.shadowBlur = 24;
-      ctx.shadowColor = '#ffb74d';
-      ctx.fillRect(winX + 15, 45, winW - 30, 150);
+      const winArchR = winW / 2;
+
+      // Outer stone arch framing
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(winX, 30 + winArchR);
+      ctx.arc(winX + winArchR, 30 + winArchR, winArchR, Math.PI, 0);
+      ctx.lineTo(winX + winW, 220);
+      ctx.lineTo(winX, 220);
+      ctx.closePath();
+
+      const frameGrad = ctx.createLinearGradient(winX, 30, winX + winW, 220);
+      if (isLight) {
+        frameGrad.addColorStop(0, '#f8fafc');
+        frameGrad.addColorStop(0.5, '#e2e8f0');
+        frameGrad.addColorStop(1, '#cbd5e1');
+      } else {
+        frameGrad.addColorStop(0, '#1c2529');
+        frameGrad.addColorStop(1, '#0e171b');
+      }
+      ctx.fillStyle = frameGrad;
+      ctx.fill();
+      ctx.strokeStyle = isLight ? '#94a3b8' : '#0a1014';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Window Sill
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#142026';
+      ctx.fillRect(winX - 4, 218, winW + 8, 6);
+      ctx.strokeStyle = isLight ? '#94a3b8' : '#0a1014';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(winX - 4, 218, winW + 8, 6);
+
+      // Inner illuminated warm chamber
+      const innerW = winW - 24;
+      const innerX = winX + 12;
+      const innerArchR = innerW / 2;
+      ctx.beginPath();
+      ctx.moveTo(innerX, 45 + innerArchR);
+      ctx.arc(innerX + innerArchR, 45 + innerArchR, innerArchR, Math.PI, 0);
+      ctx.lineTo(innerX + innerW, 205);
+      ctx.lineTo(innerX, 205);
+      ctx.closePath();
+
+      const innerGrad = ctx.createLinearGradient(innerX, 45, innerX, 205);
+      if (isLight) {
+        innerGrad.addColorStop(0, '#fffbeb');
+        innerGrad.addColorStop(0.35, '#fef3c7');
+        innerGrad.addColorStop(1, '#fde68a');
+      } else {
+        innerGrad.addColorStop(0, '#ffcc80');
+        innerGrad.addColorStop(0.5, '#ffb74d');
+        innerGrad.addColorStop(1, '#f57c00');
+      }
+      ctx.fillStyle = innerGrad;
+      ctx.shadowBlur = isLight ? 12 : 24;
+      ctx.shadowColor = isLight ? 'rgba(245, 158, 11, 0.45)' : '#ffb74d';
+      ctx.fill();
       ctx.shadowBlur = 0;
+      ctx.strokeStyle = isLight ? '#f59e0b' : '#b45309';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.restore();
 
       // Thor
       ctx.save();
@@ -1853,19 +1971,71 @@ export class Game {
       ctx.beginPath(); ctx.moveTo(45, 125); ctx.lineTo(30, 135); ctx.stroke();
       ctx.restore();
 
-      // Odin's command balcony
+      // Odin's command balcony / Grand Battlements
       const balW = Math.min(145, Math.max(90, wallW - 24));
       const balX = (wallW - 8 - balW) / 2;
-      ctx.fillStyle = '#263238';
+
+      ctx.save();
+      // Stone Balcony Body
+      const balGrad = ctx.createLinearGradient(balX, 250, balX + balW, 450);
+      if (isLight) {
+        balGrad.addColorStop(0, '#ffffff');
+        balGrad.addColorStop(0.35, '#f1f5f9');
+        balGrad.addColorStop(0.75, '#e2e8f0');
+        balGrad.addColorStop(1, '#cbd5e1');
+      } else {
+        balGrad.addColorStop(0, '#263238');
+        balGrad.addColorStop(0.5, '#1e293b');
+        balGrad.addColorStop(1, '#0f172a');
+      }
+      ctx.fillStyle = balGrad;
       ctx.beginPath();
       ctx.moveTo(balX, 250); 
       ctx.lineTo(balX + balW, 250); 
-      ctx.lineTo(balX + balW - 10, 450); 
-      ctx.lineTo(balX + 10, 450); 
+      ctx.lineTo(balX + balW - 12, 450); 
+      ctx.lineTo(balX + 12, 450); 
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = '#ffc107'; 
-      ctx.fillRect(balX, 245, balW, 8);
+      ctx.strokeStyle = isLight ? '#94a3b8' : '#0a1014';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Stone corbels supporting balcony
+      for (let ci = 0; ci < 4; ci++) {
+        const cx = balX + 18 + ci * ((balW - 36) / 3);
+        ctx.fillStyle = isLight ? '#cbd5e1' : '#142026';
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, 450);
+        ctx.lineTo(cx + 5, 450);
+        ctx.lineTo(cx, 465);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Ornate Gold / Bronze Balustrade Railing
+      const railGrad = ctx.createLinearGradient(balX, 245, balX + balW, 253);
+      railGrad.addColorStop(0, '#d97706');
+      railGrad.addColorStop(0.5, '#f59e0b');
+      railGrad.addColorStop(1, '#b45309');
+      ctx.fillStyle = railGrad;
+      ctx.beginPath();
+      ctx.roundRect(balX - 3, 245, balW + 6, 8, 2);
+      ctx.fill();
+      ctx.strokeStyle = isLight ? '#92400e' : '#ffd54f';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Balustrade decorative slots
+      ctx.strokeStyle = isLight ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.4)';
+      ctx.lineWidth = 2;
+      for (let bi = 1; bi < 6; bi++) {
+        const bx = balX + bi * (balW / 6);
+        ctx.beginPath();
+        ctx.moveTo(bx, 257);
+        ctx.lineTo(bx, 280);
+        ctx.stroke();
+      }
+      ctx.restore();
 
       // Odin body
       ctx.save();
@@ -1924,6 +2094,7 @@ export class Game {
     this.cachedCastleCity = this.city;
     this.cachedCastleWidth = wallW;
     this.cachedCastleHeight = height;
+    this.cachedCastleTheme = isLight ? 'light' : 'dark';
   }
 
   drawCastle() {
@@ -1932,10 +2103,13 @@ export class Game {
     
     const wallW = this.grid.startX;
     const dpr = window.devicePixelRatio || 1;
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
+    const currentTheme = isLight ? 'light' : 'dark';
 
     // Fast-path: draw cached static masonry and fortification architecture
     if (
       !this.cachedCastleCanvas ||
+      this.cachedCastleTheme !== currentTheme ||
       this.cachedCastleDpr !== dpr ||
       this.cachedCastleRealm !== this.realm ||
       this.cachedCastleCity !== this.city ||
@@ -2039,15 +2213,15 @@ export class Game {
         const isReady = this.valkyrieAvailable[r];
         const isHovered = hoveredLauncherRow === r;
 
-        ctx.fillStyle = '#0a161d';
+        ctx.fillStyle = isLight ? '#f1f5f9' : '#0a161d';
         ctx.beginPath();
         ctx.ellipse(wallX - 30, by, 22, 16, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = isReady ? '#0f766e' : '#1e293b';
+        ctx.strokeStyle = isReady ? '#0f766e' : (isLight ? '#94a3b8' : '#1e293b');
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        ctx.strokeStyle = isReady ? '#d97706' : '#475569';
+        ctx.strokeStyle = isReady ? '#d97706' : (isLight ? '#cbd5e1' : '#475569');
         ctx.lineWidth = 1.6;
         ctx.beginPath();
         ctx.ellipse(wallX - 30, by, 18, 12, 0, 0, Math.PI * 2);
@@ -2055,7 +2229,7 @@ export class Game {
 
         ctx.save();
         ctx.translate(wallX - 16, by);
-        ctx.fillStyle = isReady ? 'rgba(45, 212, 191, 0.7)' : 'rgba(71, 85, 105, 0.3)';
+        ctx.fillStyle = isReady ? 'rgba(45, 212, 191, 0.7)' : (isLight ? 'rgba(148, 163, 184, 0.4)' : 'rgba(71, 85, 105, 0.3)');
         ctx.beginPath();
         ctx.moveTo(0, -6);
         ctx.lineTo(8, 0);
@@ -2084,7 +2258,7 @@ export class Game {
           ctx.lineTo(75, 0);
           ctx.stroke();
 
-          ctx.fillStyle = '#1e293b';
+          ctx.fillStyle = isLight ? '#ffffff' : '#1e293b';
           ctx.beginPath();
           ctx.roundRect(-16, -11, 22, 22, 4);
           ctx.fill();
@@ -2195,19 +2369,19 @@ export class Game {
           ctx.fillText('ᛏ', -6, 0);
           ctx.shadowBlur = 0;
         } else {
-          ctx.fillStyle = '#0f172a';
+          ctx.fillStyle = isLight ? '#f1f5f9' : '#0f172a';
           ctx.beginPath();
           ctx.roundRect(-22, -9, 28, 18, 3);
           ctx.fill();
-          ctx.strokeStyle = '#334155';
+          ctx.strokeStyle = isLight ? '#cbd5e1' : '#334155';
           ctx.lineWidth = 1.4;
           ctx.stroke();
 
-          ctx.fillStyle = '#020608';
+          ctx.fillStyle = isLight ? '#cbd5e1' : '#020608';
           ctx.beginPath();
           ctx.ellipse(6, 0, 4, 7, 0, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = '#475569';
+          ctx.strokeStyle = isLight ? '#94a3b8' : '#475569';
           ctx.lineWidth = 1.5;
           ctx.stroke();
 
@@ -2219,11 +2393,11 @@ export class Game {
             ctx.fill();
           }
 
-          ctx.fillStyle = '#0f172a';
+          ctx.fillStyle = isLight ? '#f1f5f9' : '#0f172a';
           ctx.beginPath();
           ctx.arc(-14, -14, 4.5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = '#475569';
+          ctx.strokeStyle = isLight ? '#cbd5e1' : '#475569';
           ctx.lineWidth = 1;
           ctx.stroke();
           ctx.strokeStyle = '#ef4444';
@@ -2233,7 +2407,7 @@ export class Game {
           ctx.lineTo(-14 - 3, -14);
           ctx.stroke();
 
-          ctx.fillStyle = '#64748b';
+          ctx.fillStyle = isLight ? '#94a3b8' : '#64748b';
           ctx.font = 'bold 8px sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -2243,9 +2417,9 @@ export class Game {
         ctx.restore();
 
         if (isHovered) {
-          ctx.strokeStyle = isReady ? '#2dd4bf' : '#94a3b8';
+          ctx.strokeStyle = isReady ? '#2dd4bf' : (isLight ? '#64748b' : '#94a3b8');
           ctx.lineWidth = 2;
-          ctx.shadowColor = isReady ? '#14b8a6' : '#64748b';
+          ctx.shadowColor = isReady ? '#14b8a6' : (isLight ? 'rgba(0,0,0,0.1)' : '#64748b');
           ctx.shadowBlur = 8;
           ctx.beginPath();
           ctx.ellipse(wallX - 28, by, 26, 20, 0, 0, Math.PI * 2);
@@ -2272,24 +2446,24 @@ export class Game {
         const tipW = Math.max(195, Math.ceil(Math.max(headW, descW) + 20));
         const tipH = 44;
 
-        ctx.fillStyle = 'rgba(7, 18, 24, 0.95)';
+        ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(7, 18, 24, 0.95)';
         ctx.beginPath();
         ctx.roundRect(tipX, tipY, tipW, tipH, 6);
         ctx.fill();
-        ctx.strokeStyle = isReady ? '#14b8a6' : '#64748b';
+        ctx.strokeStyle = isReady ? '#14b8a6' : (isLight ? '#cbd5e1' : '#64748b');
         ctx.lineWidth = 1.5;
-        ctx.shadowColor = isReady ? '#2dd4bf' : 'rgba(0,0,0,0.5)';
+        ctx.shadowColor = isReady ? '#2dd4bf' : (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.5)');
         ctx.shadowBlur = 10;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        ctx.fillStyle = isReady ? '#2dd4bf' : '#94a3b8';
+        ctx.fillStyle = isReady ? (isLight ? '#0f766e' : '#2dd4bf') : (isLight ? '#475569' : '#94a3b8');
         ctx.font = 'bold 11px sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         ctx.fillText(headerText, tipX + 8, tipY + 7);
 
-        ctx.fillStyle = isReady ? '#ccfbf1' : '#cbd5e1';
+        ctx.fillStyle = isReady ? (isLight ? '#134e4a' : '#ccfbf1') : (isLight ? '#334155' : '#cbd5e1');
         ctx.font = '10px sans-serif';
         ctx.fillText(descText, tipX + 8, tipY + 24);
 
@@ -2426,7 +2600,7 @@ export class Game {
         ctx.restore();
       }
       ctx.restore();
-    } else if (!(this.realm === 'svartalfheim')) {
+    } else if (!(this.realm === 'svartalfheim' && (this.city === 'nidavellir' || this.city === 'althjofs-wheel'))) {
       // Dynamic Odin Spear Pose on Command
       const balW = Math.min(145, Math.max(90, wallW - 24));
       const balX = (wallW - 8 - balW) / 2;
@@ -2440,16 +2614,16 @@ export class Game {
       ctx.beginPath();
       if (this.odinCommandTimer > 0) {
         ctx.moveTo(255, 330); ctx.lineTo(295, 190); ctx.stroke();
-        ctx.fillStyle = '#e0f7fa'; 
-        ctx.shadowBlur = 25; ctx.shadowColor = '#00e5ff';
+        ctx.fillStyle = isLight ? '#0284c7' : '#e0f7fa'; 
+        ctx.shadowBlur = 25; ctx.shadowColor = isLight ? '#38bdf8' : '#00e5ff';
         ctx.beginPath(); ctx.moveTo(290, 200); ctx.lineTo(310, 150); ctx.lineTo(300, 210); ctx.fill();
-        ctx.strokeStyle = '#ffca28'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(250,290); ctx.lineTo(275, 260); ctx.stroke();
+        ctx.strokeStyle = '#ffca28'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(250, 290); ctx.lineTo(275, 260); ctx.stroke();
       } else {
         ctx.moveTo(262, 250); ctx.lineTo(262, 410); ctx.stroke();
-        ctx.fillStyle = '#e0f7fa'; 
-        ctx.shadowBlur = 15; ctx.shadowColor = '#00e5ff';
+        ctx.fillStyle = isLight ? '#0284c7' : '#e0f7fa'; 
+        ctx.shadowBlur = 15; ctx.shadowColor = isLight ? '#38bdf8' : '#00e5ff';
         ctx.beginPath(); ctx.moveTo(256, 250); ctx.lineTo(262, 200); ctx.lineTo(268, 250); ctx.fill();
-        ctx.strokeStyle = '#ffca28'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(250,290); ctx.lineTo(262, 320); ctx.stroke();
+        ctx.strokeStyle = '#ffca28'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(250, 290); ctx.lineTo(262, 320); ctx.stroke();
       }
       ctx.shadowBlur = 0;
       ctx.restore();
@@ -2465,6 +2639,7 @@ export class Game {
     const h = this.height;
     const time = Date.now() / 1000;
     const gridX = this.grid.startX;
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     // === ALTHJOF'S WHEEL: SUBTERRANEAN DWARVEN WATERMILL & OUTER CANAL RAPIDS ===
     if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
@@ -2472,10 +2647,17 @@ export class Game {
 
       // ── 1. SKY / CAVERN GORGE AMBIENCE ──
       const skyGrad = ctx.createLinearGradient(gridX, 0, w, h * 0.7);
-      skyGrad.addColorStop(0, '#0a161b');
-      skyGrad.addColorStop(0.35, '#071015');
-      skyGrad.addColorStop(0.75, '#04090c');
-      skyGrad.addColorStop(1, '#020507');
+      if (isLight) {
+        skyGrad.addColorStop(0, '#f0fdfa');
+        skyGrad.addColorStop(0.35, '#e6fffa');
+        skyGrad.addColorStop(0.75, '#ccfbf1');
+        skyGrad.addColorStop(1, '#99f6e4');
+      } else {
+        skyGrad.addColorStop(0, '#0a161b');
+        skyGrad.addColorStop(0.35, '#071015');
+        skyGrad.addColorStop(0.75, '#04090c');
+        skyGrad.addColorStop(1, '#020507');
+      }
       ctx.fillStyle = skyGrad;
       ctx.fillRect(gridX, 0, w - gridX, h);
 
@@ -2483,10 +2665,17 @@ export class Game {
       const riverTopY = h * 0.28;
       const riverBotY = h * 0.78;
       const riverGrad = ctx.createLinearGradient(gridX, riverTopY, gridX, riverBotY);
-      riverGrad.addColorStop(0, '#04171d');
-      riverGrad.addColorStop(0.3, '#0b323c');
-      riverGrad.addColorStop(0.65, '#07242c');
-      riverGrad.addColorStop(1, '#031116');
+      if (isLight) {
+        riverGrad.addColorStop(0, '#e0f2fe');
+        riverGrad.addColorStop(0.3, '#bae6fd');
+        riverGrad.addColorStop(0.65, '#7dd3fc');
+        riverGrad.addColorStop(1, '#38bdf8');
+      } else {
+        riverGrad.addColorStop(0, '#04171d');
+        riverGrad.addColorStop(0.3, '#0b323c');
+        riverGrad.addColorStop(0.65, '#07242c');
+        riverGrad.addColorStop(1, '#031116');
+      }
       ctx.fillStyle = riverGrad;
       ctx.fillRect(gridX, riverTopY, w - gridX, riverBotY - riverTopY);
 
@@ -2512,7 +2701,7 @@ export class Game {
       ctx.restore();
 
       // ── 3. CAVERN VAULT ROCK CEILING & STALACTITES ──
-      ctx.fillStyle = '#060d10';
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#060d10';
       ctx.beginPath();
       ctx.moveTo(gridX, 0);
       ctx.lineTo(gridX, h * 0.16);
@@ -2536,7 +2725,7 @@ export class Game {
       ];
       for (let si = 0; si < stalactites.length; si++) {
         const st = stalactites[si];
-        ctx.fillStyle = '#0a1317';
+        ctx.fillStyle = isLight ? '#94a3b8' : '#0a1317';
         ctx.beginPath();
         ctx.moveTo(st.x - st.w * 0.5, 0);
         ctx.lineTo(st.x + st.w * 0.5, 0);
@@ -2564,7 +2753,7 @@ export class Game {
       // ── 4. DWARVEN AQUEDUCT BRIDGE & CATWALK (Midground) ──
       const bY = riverTopY - 14;
       // Stone bridge beam in subterranean basalt
-      ctx.fillStyle = '#0a151b';
+      ctx.fillStyle = isLight ? '#94a3b8' : '#0a151b';
       ctx.fillRect(this.grid.startX, bY, w - this.grid.startX, 14);
       // Aged bronze railing trim
       ctx.fillStyle = '#14b8a6';
@@ -2573,9 +2762,9 @@ export class Game {
       // Bridge support arch piers
       for (let pi = 0; pi < 3; pi++) {
         const px = w * (0.46 + pi * 0.20);
-        ctx.fillStyle = '#071216';
+        ctx.fillStyle = isLight ? '#cbd5e1' : '#071216';
         ctx.fillRect(px - 14, bY + 14, 28, riverBotY - bY - 14);
-        ctx.strokeStyle = '#115e59';
+        ctx.strokeStyle = isLight ? '#0d9488' : '#115e59';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(px - 14, bY + 14, 28, riverBotY - bY - 14);
 
@@ -2584,7 +2773,7 @@ export class Game {
         ctx.fillRect(px - 16, bY + 12, 32, 5);
 
         // Water culvert arch on pier
-        ctx.fillStyle = '#03080a';
+        ctx.fillStyle = isLight ? '#64748b' : '#03080a';
         ctx.beginPath();
         ctx.arc(px, riverBotY - 30, 10, Math.PI, 0);
         ctx.rect(px - 10, riverBotY - 30, 20, 30);
@@ -2613,7 +2802,7 @@ export class Game {
       const chuteX = wheelX - wheelR * 0.42;
       const chuteY = bY + 12;
       // Basalt stone & canal bronze water chute
-      ctx.fillStyle = '#081419';
+      ctx.fillStyle = isLight ? '#94a3b8' : '#081419';
       ctx.fillRect(chuteX - 30, chuteY, 50, 16);
       ctx.strokeStyle = '#14b8a6';
       ctx.lineWidth = 2;
@@ -2648,14 +2837,14 @@ export class Game {
       ctx.translate(wheelX, wheelY);
 
       // Wheel shadow on rear stone wall
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+      ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(0, 0, 0, 0.65)';
       ctx.beginPath();
       ctx.arc(6, 6, wheelR + 8, 0, Math.PI * 2);
       ctx.fill();
 
       // Outer Aged Canal Bronze Rim
       ctx.rotate(wheelRot);
-      ctx.strokeStyle = '#0a1a20';
+      ctx.strokeStyle = isLight ? '#475569' : '#0a1a20';
       ctx.lineWidth = 14;
       ctx.beginPath();
       ctx.arc(0, 0, wheelR, 0, Math.PI * 2);
@@ -2670,7 +2859,7 @@ export class Game {
       ctx.shadowBlur = 0;
 
       // Inner basalt timber rim
-      ctx.strokeStyle = '#042f2e';
+      ctx.strokeStyle = isLight ? '#0f766e' : '#042f2e';
       ctx.lineWidth = 8;
       ctx.beginPath();
       ctx.arc(0, 0, wheelR - 12, 0, Math.PI * 2);
@@ -2700,7 +2889,9 @@ export class Game {
         ctx.rotate(pAng);
 
         // Heavy Bog-Oak Spoke
-        ctx.fillStyle = pIdx % 2 === 0 ? '#111c22' : '#0b1317';
+        ctx.fillStyle = isLight
+          ? (pIdx % 2 === 0 ? '#64748b' : '#475569')
+          : (pIdx % 2 === 0 ? '#111c22' : '#0b1317');
         ctx.fillRect(-4, 0, 8, wheelR - 10);
 
         // Aged Bronze Spoke Reinforcement Ring
@@ -2720,7 +2911,7 @@ export class Game {
       }
 
       // Central Bronze Axle Hub
-      ctx.fillStyle = '#081014';
+      ctx.fillStyle = isLight ? '#475569' : '#081014';
       ctx.beginPath();
       ctx.arc(0, 0, 32, 0, Math.PI * 2);
       ctx.fill();
@@ -2736,7 +2927,7 @@ export class Game {
       }
 
       // Center Core Cap
-      ctx.fillStyle = '#042f2e';
+      ctx.fillStyle = isLight ? '#0f766e' : '#042f2e';
       ctx.beginPath();
       ctx.arc(0, 0, 16, 0, Math.PI * 2);
       ctx.fill();
@@ -2781,14 +2972,20 @@ export class Game {
 
       // Subterranean Dwarven Basalt Embankment Wall
       const rWallGrad = ctx.createLinearGradient(rWallX, 0, w, 0);
-      rWallGrad.addColorStop(0, '#0c171c');
-      rWallGrad.addColorStop(0.5, '#122026');
-      rWallGrad.addColorStop(1, '#081014');
+      if (isLight) {
+        rWallGrad.addColorStop(0, '#f1f5f9');
+        rWallGrad.addColorStop(0.5, '#e2e8f0');
+        rWallGrad.addColorStop(1, '#cbd5e1');
+      } else {
+        rWallGrad.addColorStop(0, '#0c171c');
+        rWallGrad.addColorStop(0.5, '#122026');
+        rWallGrad.addColorStop(1, '#081014');
+      }
       ctx.fillStyle = rWallGrad;
       ctx.fillRect(rWallX, 0, rWallW, h);
 
       // Stone brick lines along right embankment
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.4)';
       ctx.lineWidth = 1.2;
       for (let by = 0; by < h; by += 32) {
         ctx.beginPath();
@@ -2801,7 +2998,7 @@ export class Game {
       const rBeamG = ctx.createLinearGradient(rWallX, 0, rWallX + 8, 0);
       rBeamG.addColorStop(0, '#14b8a6');
       rBeamG.addColorStop(0.5, '#0f766e');
-      rBeamG.addColorStop(1, '#0a1419');
+      rBeamG.addColorStop(1, isLight ? '#0d9488' : '#0a1419');
       ctx.fillStyle = rBeamG;
       ctx.fillRect(rWallX, 0, 8, h);
 
@@ -2822,8 +3019,8 @@ export class Game {
       const rGateW = 42;
       const rGateX = rWallX + 6;
 
-      // Dark Canal Culvert Portal Void
-      ctx.fillStyle = '#04080a';
+      // Canal Culvert Portal Void
+      ctx.fillStyle = isLight ? '#475569' : '#04080a';
       ctx.beginPath();
       ctx.moveTo(rGateX, rGateTop + 24);
       ctx.arc(rGateX + rGateW / 2, rGateTop + 24, rGateW / 2, Math.PI, 0);
@@ -2833,7 +3030,7 @@ export class Game {
       ctx.fill();
 
       // Arch Stone Keystone with Glowing Rune ᚦ (Gateway / Threshold)
-      ctx.fillStyle = '#162830';
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#162830';
       ctx.beginPath();
       ctx.moveTo(rGateX + rGateW / 2 - 8, rGateTop);
       ctx.lineTo(rGateX + rGateW / 2 + 8, rGateTop);
@@ -2850,7 +3047,7 @@ export class Game {
       ctx.shadowBlur = 0;
 
       // Heavy Iron Portcullis Grate (Raised/breached)
-      ctx.strokeStyle = '#1e293b';
+      ctx.strokeStyle = isLight ? '#475569' : '#1e293b';
       ctx.lineWidth = 3.5;
       for (let bar = 0; bar < 2; bar++) {
         const bx = rGateX + 14 + bar * 16;
@@ -2929,11 +3126,17 @@ export class Game {
     } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
       ctx.save();
 
-      // ── 1. SKY: cool dark gorge atmosphere ──
+      // ── 1. SKY: gorge atmosphere ──
       const skyGrad = ctx.createLinearGradient(gridX, 0, w, h * 0.55);
-      skyGrad.addColorStop(0,   '#202e20');
-      skyGrad.addColorStop(0.4, '#131c13');
-      skyGrad.addColorStop(1,   '#080c08');
+      if (isLight) {
+        skyGrad.addColorStop(0,   '#fef9c3');
+        skyGrad.addColorStop(0.4, '#fef3c7');
+        skyGrad.addColorStop(1,   '#fde68a');
+      } else {
+        skyGrad.addColorStop(0,   '#202e20');
+        skyGrad.addColorStop(0.4, '#131c13');
+        skyGrad.addColorStop(1,   '#080c08');
+      }
       ctx.fillStyle = skyGrad;
       ctx.fillRect(gridX, 0, w - gridX, h);
 
@@ -3012,7 +3215,7 @@ export class Game {
 
       // ── 4. BACKGROUND CLIFF SILHOUETTES (3 depth layers, mossy grey-green) ──
       // Layer 3 — most distant
-      ctx.fillStyle = '#1a2218';
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#1a2218';
       ctx.beginPath();
       ctx.moveTo(gridX, h);
       ctx.lineTo(gridX, h * 0.55);
@@ -3023,7 +3226,7 @@ export class Game {
       ctx.closePath();
       ctx.fill();
       // Layer 2 — mid-distance
-      ctx.fillStyle = '#121810';
+      ctx.fillStyle = isLight ? '#94a3b8' : '#121810';
       ctx.beginPath();
       ctx.moveTo(gridX, h);
       ctx.lineTo(gridX, h * 0.62);
@@ -3035,7 +3238,7 @@ export class Game {
       ctx.closePath();
       ctx.fill();
       // Layer 1 — closest
-      ctx.fillStyle = '#0b100a';
+      ctx.fillStyle = isLight ? '#64748b' : '#0b100a';
       ctx.beginPath();
       ctx.moveTo(gridX, h);
       ctx.lineTo(gridX, h * 0.72);
@@ -3061,8 +3264,8 @@ export class Game {
         ctx.fill();
       }
 
-      // ── 5. FOREST SILHOUETTE — dark fir trees on clifftops ──
-      ctx.fillStyle = '#0c0e06';
+      // ── 5. FOREST SILHOUETTE — fir trees on clifftops ──
+      ctx.fillStyle = isLight ? '#14532d' : '#0c0e06';
       const treeBases: {x: number, y: number, s: number}[] = [
         {x: w*0.38, y: h*0.44, s: 1.0}, {x: w*0.41, y: h*0.42, s: 1.3},
         {x: w*0.44, y: h*0.40, s: 0.9}, {x: w*0.56, y: h*0.30, s: 1.1},
@@ -3087,7 +3290,7 @@ export class Game {
 
       // ── 6. DWARVEN STONE AQUEDUCT BRIDGE ──
       // Bridge deck
-      ctx.fillStyle = '#2a1e0c';
+      ctx.fillStyle = isLight ? '#92400e' : '#2a1e0c';
       ctx.beginPath();
       ctx.moveTo(w * 0.48, h * 0.50);
       ctx.lineTo(w * 0.48, h * 0.52);
@@ -3099,7 +3302,7 @@ export class Game {
       for (let ai = 0; ai < 3; ai++) {
         const ax = w * (0.51 + ai * 0.075);
         const ay = h * (0.500 - ai * 0.005);
-        ctx.fillStyle = '#1c1408';
+        ctx.fillStyle = isLight ? '#b45309' : '#1c1408';
         ctx.beginPath();
         ctx.arc(ax, ay, 12, Math.PI, 0);
         ctx.rect(ax - 12, ay, 24, 18);
@@ -3113,7 +3316,7 @@ export class Game {
       ctx.lineTo(w * 0.74, h * 0.45);
       ctx.stroke();
       // Stone pillars holding bridge
-      ctx.fillStyle = '#1a1208';
+      ctx.fillStyle = isLight ? '#92400e' : '#1a1208';
       ctx.fillRect(w * 0.548 - 5, h * 0.50, 10, h * 0.18);
       ctx.fillRect(w * 0.623 - 5, h * 0.47, 10, h * 0.20);
 
@@ -3134,7 +3337,7 @@ export class Game {
         ctx.fillStyle = caveGlow;
         ctx.beginPath(); ctx.arc(cv.x, cv.y, cv.r * 2.8, 0, Math.PI * 2); ctx.fill();
         // Cave mouth (dark arch)
-        ctx.fillStyle = '#060402';
+        ctx.fillStyle = isLight ? '#451a03' : '#060402';
         ctx.beginPath();
         ctx.arc(cv.x, cv.y, cv.r * cavePulse, Math.PI, 0);
         ctx.rect(cv.x - cv.r, cv.y, cv.r * 2, cv.r * 0.8);
@@ -3202,8 +3405,8 @@ export class Game {
       }
       ctx.globalCompositeOperation = 'source-over';
 
-      // 2. Far Mountain Range (Deep dark icy peaks)
-      ctx.fillStyle = '#081829';
+      // 2. Far Mountain Range (Icy peaks)
+      ctx.fillStyle = isLight ? '#bfdbfe' : '#081829';
       ctx.beginPath();
       ctx.moveTo(gridX, h);
       ctx.lineTo(gridX + 50, h * 0.40);
@@ -3217,7 +3420,7 @@ export class Game {
       ctx.fill();
 
       // 3. Mid Mountain Range (Snow-capped glaciers)
-      ctx.fillStyle = '#10273f';
+      ctx.fillStyle = isLight ? '#93c5fd' : '#10273f';
       ctx.beginPath();
       ctx.moveTo(gridX, h);
       ctx.lineTo(gridX + 110, h * 0.48);
@@ -3519,11 +3722,12 @@ export class Game {
       const defenderInfo = getDefenderInfo(this.selectedUnit, this.realm);
       const isTower = defenderInfo?.category === 'towers';
       const pulse = (Math.sin(now * 4) + 1) / 2;
+      const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
       const ringColor = isTower
-        ? `rgba(56, 189, 248, ${0.6 + pulse * 0.4})`
-        : `rgba(129, 199, 132, ${0.6 + pulse * 0.4})`;
-      const glowColor = isTower ? '#38bdf8' : '#81c784';
+        ? (isLight ? `rgba(2, 132, 199, ${0.7 + pulse * 0.3})` : `rgba(56, 189, 248, ${0.6 + pulse * 0.4})`)
+        : (isLight ? `rgba(22, 163, 74, ${0.7 + pulse * 0.3})` : `rgba(129, 199, 132, ${0.6 + pulse * 0.4})`);
+      const glowColor = isTower ? (isLight ? '#0284c7' : '#38bdf8') : (isLight ? '#16a34a' : '#81c784');
 
       ctx.shadowColor = glowColor;
       ctx.shadowBlur = 14 + pulse * 10;
@@ -3532,8 +3736,8 @@ export class Game {
 
       // Outer tile highlight
       ctx.fillStyle = isTower
-        ? `rgba(56, 189, 248, ${0.12 + pulse * 0.08})`
-        : `rgba(76, 175, 80, ${0.12 + pulse * 0.08})`;
+        ? (isLight ? `rgba(2, 132, 199, ${0.08 + pulse * 0.06})` : `rgba(56, 189, 248, ${0.12 + pulse * 0.08})`)
+        : (isLight ? `rgba(22, 163, 74, ${0.08 + pulse * 0.06})` : `rgba(76, 175, 80, ${0.12 + pulse * 0.08})`);
       ctx.beginPath();
       ctx.roundRect(cx + 6, cy + 6, cellW - 12, cellH - 12, 10);
       ctx.fill();
@@ -3549,12 +3753,16 @@ export class Game {
       ctx.rotate(now * 0.8);
       ctx.beginPath();
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = isTower ? 'rgba(56, 189, 248, 0.75)' : 'rgba(212, 175, 55, 0.7)';
+      ctx.strokeStyle = isTower
+        ? (isLight ? 'rgba(2, 132, 199, 0.75)' : 'rgba(56, 189, 248, 0.75)')
+        : (isLight ? 'rgba(180, 83, 9, 0.75)' : 'rgba(212, 175, 55, 0.7)');
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
       // Elder Futhark compass runes
-      ctx.fillStyle = isTower ? 'rgba(224, 242, 254, 0.9)' : 'rgba(255, 215, 0, 0.85)';
+      ctx.fillStyle = isLight
+        ? (isTower ? '#0369a1' : '#854d0e')
+        : (isTower ? 'rgba(224, 242, 254, 0.9)' : 'rgba(255, 215, 0, 0.85)');
       ctx.font = 'bold 11px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -3569,7 +3777,9 @@ export class Game {
       // Attack Trajectory Guide Arrow down the row
       if (!this.selectedUnit.startsWith('sunflower') && this.selectedUnit !== 'wallnut' && this.selectedUnit !== 'potatomine') {
         ctx.save();
-        ctx.strokeStyle = isTower ? 'rgba(56, 189, 248, 0.4)' : 'rgba(129, 199, 132, 0.35)';
+        ctx.strokeStyle = isTower
+          ? (isLight ? 'rgba(2, 132, 199, 0.45)' : 'rgba(56, 189, 248, 0.4)')
+          : (isLight ? 'rgba(22, 163, 74, 0.4)' : 'rgba(129, 199, 132, 0.35)');
         ctx.lineWidth = 2;
         ctx.setLineDash([8, 8]);
         ctx.beginPath();
@@ -3580,8 +3790,10 @@ export class Game {
       }
 
       // Ethereal Ghost Silhouette of Defender / Tower Name
-      ctx.globalAlpha = 0.7 + pulse * 0.25;
-      ctx.fillStyle = isTower ? '#38bdf8' : '#81c784';
+      ctx.globalAlpha = 0.85 + pulse * 0.15;
+      ctx.fillStyle = isLight
+        ? (isTower ? '#0369a1' : '#15803d')
+        : (isTower ? '#38bdf8' : '#81c784');
       ctx.font = 'bold 12px "Outfit", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -3916,8 +4128,11 @@ export class Game {
   }
 
   getBgGradient(ctx: CanvasRenderingContext2D): CanvasGradient {
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
+    const currentTheme = isLight ? 'light' : 'dark';
     if (
       this.cachedBgGradient &&
+      this.cachedBgTheme === currentTheme &&
       this.cachedBgWidth === this.width &&
       this.cachedBgHeight === this.height &&
       this.cachedBgRealm === this.realm &&
@@ -3930,29 +4145,59 @@ export class Game {
       this.width / 2, this.height / 2, 0,
       this.width / 2, this.height / 2, this.width
     );
-    if (this.realm === 'asgard') {
-      bgGradient.addColorStop(0, '#2e2410');
-      bgGradient.addColorStop(1, '#0e0b04');
-    } else if (this.realm === 'helheim') {
-      bgGradient.addColorStop(0, '#192730');
-      bgGradient.addColorStop(1, '#05080a');
-    } else if (this.realm === 'vanaheim') {
-      bgGradient.addColorStop(0, '#152d1d');
-      bgGradient.addColorStop(1, '#051108');
-    } else if (this.realm === 'jotunheim') {
-      bgGradient.addColorStop(0, '#0c2338');
-      bgGradient.addColorStop(1, '#030b13');
-    } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
-      bgGradient.addColorStop(0, '#0d191d');
-      bgGradient.addColorStop(0.5, '#081013');
-      bgGradient.addColorStop(1, '#030608');
-    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
-      bgGradient.addColorStop(0, '#1a2218');
-      bgGradient.addColorStop(0.6, '#101610');
-      bgGradient.addColorStop(1, '#070c07');
+    if (isLight) {
+      if (this.realm === 'asgard') {
+        bgGradient.addColorStop(0, '#fef9c3');
+        bgGradient.addColorStop(1, '#fde68a');
+      } else if (this.realm === 'helheim') {
+        bgGradient.addColorStop(0, '#f1f5f9');
+        bgGradient.addColorStop(1, '#cbd5e1');
+      } else if (this.realm === 'vanaheim') {
+        bgGradient.addColorStop(0, '#ecfdf5');
+        bgGradient.addColorStop(1, '#a7f3d0');
+      } else if (this.realm === 'jotunheim') {
+        bgGradient.addColorStop(0, '#f0f9ff');
+        bgGradient.addColorStop(1, '#bae6fd');
+      } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+        bgGradient.addColorStop(0, '#f0fdfa');
+        bgGradient.addColorStop(0.5, '#ccfbf1');
+        bgGradient.addColorStop(1, '#99f6e4');
+      } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+        bgGradient.addColorStop(0, '#fffbeb');
+        bgGradient.addColorStop(0.6, '#fef3c7');
+        bgGradient.addColorStop(1, '#fde68a');
+      } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
+        bgGradient.addColorStop(0, '#fff7ed');
+        bgGradient.addColorStop(1, '#fed7aa');
+      } else {
+        bgGradient.addColorStop(0, '#f8fafc');
+        bgGradient.addColorStop(1, '#e2e8f0');
+      }
     } else {
-      bgGradient.addColorStop(0, '#1b2838');
-      bgGradient.addColorStop(1, '#0b131c');
+      if (this.realm === 'asgard') {
+        bgGradient.addColorStop(0, '#2e2410');
+        bgGradient.addColorStop(1, '#0e0b04');
+      } else if (this.realm === 'helheim') {
+        bgGradient.addColorStop(0, '#192730');
+        bgGradient.addColorStop(1, '#05080a');
+      } else if (this.realm === 'vanaheim') {
+        bgGradient.addColorStop(0, '#152d1d');
+        bgGradient.addColorStop(1, '#051108');
+      } else if (this.realm === 'jotunheim') {
+        bgGradient.addColorStop(0, '#0c2338');
+        bgGradient.addColorStop(1, '#030b13');
+      } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+        bgGradient.addColorStop(0, '#0d191d');
+        bgGradient.addColorStop(0.5, '#081013');
+        bgGradient.addColorStop(1, '#030608');
+      } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+        bgGradient.addColorStop(0, '#1a2218');
+        bgGradient.addColorStop(0.6, '#101610');
+        bgGradient.addColorStop(1, '#070c07');
+      } else {
+        bgGradient.addColorStop(0, '#1b2838');
+        bgGradient.addColorStop(1, '#0b131c');
+      }
     }
 
     this.cachedBgGradient = bgGradient;
@@ -3960,6 +4205,7 @@ export class Game {
     this.cachedBgHeight = this.height;
     this.cachedBgRealm = this.realm;
     this.cachedBgCity = this.city;
+    this.cachedBgTheme = currentTheme;
     return bgGradient;
   }
 
