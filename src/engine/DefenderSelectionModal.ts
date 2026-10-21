@@ -887,7 +887,7 @@ export class DefenderSelectionModal {
           </div>
 
           <div class="card-role-row">
-            <span class="role-pill ${isCurrency ? 'role-pill-currency' : ''}" style="border-color:${isCurrency ? '#ffd700' : world.badgeBorder}; background:${isCurrency ? 'rgba(255, 215, 0, 0.14)' : world.badgeBg}; color:${isCurrency ? '#ffd700' : world.color};">
+            <span class="role-pill ${isCurrency ? 'role-pill-currency' : ''}" style="${isCurrency ? '' : `border-color:${world.badgeBorder}; background:${world.badgeBg}; color:${world.color};`}">
               ${def.role}
             </span>
             <span class="category-mini-pill ${isCurrency ? 'cat-economy' : `cat-${catKey}`}">

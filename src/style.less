@@ -1339,6 +1339,7 @@ body[data-active-theme="light"],
   }
 
   /* High-Contrast Category Badges and Role Pills in Light Theme */
+  .section-badge,
   .section-plants .section-badge,
   .roster-card[data-category="plants"] .role-pill {
     color: #15803d !important;
@@ -1350,6 +1351,13 @@ body[data-active-theme="light"],
     color: #0369a1 !important;
     background: #e0f2fe !important;
     border-color: #7dd3fc !important;
+  }
+  .roster-card.is-currency-producer .role-pill,
+  .roster-card .role-pill.role-pill-currency,
+  .role-pill.role-pill-currency {
+    color: #92400e !important;
+    background: #fef3c7 !important;
+    border-color: #d97706 !important;
   }
   .section-home-badge {
     color: #854d0e !important;
@@ -1782,10 +1790,16 @@ body[data-active-theme="light"],
               color: #475569 !important;
             }
 
-            .section-badge.is-locked-badge {
-              background: #fee2e2 !important;
-              border-color: rgba(239, 68, 68, 0.4) !important;
-              color: #b91c1c !important;
+            .section-badge {
+              background: #e0f2fe !important;
+              border: 1px solid rgba(2, 132, 199, 0.4) !important;
+              color: #0369a1 !important;
+
+              &.is-locked-badge {
+                background: #fee2e2 !important;
+                border-color: rgba(239, 68, 68, 0.4) !important;
+                color: #b91c1c !important;
+              }
             }
           }
 
@@ -1881,6 +1895,13 @@ body[data-active-theme="light"],
                 }
               }
 
+              .role-pill,
+              .role-pill.role-pill-currency {
+                background: #fef3c7 !important;
+                border: 1px solid #d97706 !important;
+                color: #92400e !important;
+              }
+
               &:hover:not(.disabled-cap) {
                 border-color: #d97706 !important;
                 box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3) !important;
@@ -1966,6 +1987,24 @@ body[data-active-theme="light"],
               border: 1px solid rgba(2, 132, 199, 0.3) !important;
               background: #e0f2fe !important;
               color: #0369a1 !important;
+
+              &.role-pill-currency {
+                background: #fef3c7 !important;
+                border-color: #d97706 !important;
+                color: #92400e !important;
+              }
+            }
+
+            &[data-category="plants"] .role-pill:not(.role-pill-currency) {
+              background: #dcfce7 !important;
+              border-color: rgba(34, 197, 94, 0.45) !important;
+              color: #15803d !important;
+            }
+
+            &[data-category="towers"] .role-pill:not(.role-pill-currency) {
+              background: #e0f2fe !important;
+              border-color: rgba(2, 132, 199, 0.4) !important;
+              color: #0369a1 !important;
             }
 
             .category-mini-pill {
@@ -1999,6 +2038,34 @@ body[data-active-theme="light"],
 
         .footer-aux-actions {
           .best-mix-action-group {
+            &:hover {
+              box-shadow: 0 4px 14px rgba(2, 132, 199, 0.22) !important;
+
+              .aux-btn-best-mix {
+                border-color: #0284c7 !important;
+              }
+              .mix-presets-trigger-btn {
+                border-color: #0284c7 !important;
+                border-left-color: rgba(255, 255, 255, 0.35) !important;
+              }
+            }
+
+            .aux-btn,
+            .aux-btn-best-mix,
+            .mix-presets-trigger-btn,
+            button {
+              transform: none !important;
+              box-shadow: none !important;
+              margin: 0 !important;
+
+              &:hover,
+              &:focus,
+              &:active {
+                transform: none !important;
+                box-shadow: none !important;
+              }
+            }
+
             .aux-btn-best-mix {
               background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
               border: 1.5px solid #0284c7 !important;
@@ -2024,8 +2091,14 @@ body[data-active-theme="light"],
               border-left: 1px solid rgba(255, 255, 255, 0.3) !important;
               color: #ffffff !important;
 
-              &:hover {
+              &:hover,
+              &[aria-expanded="true"] {
                 background: #0c4a6e !important;
+                border-color: #0284c7 !important;
+              }
+
+              &[aria-expanded="true"] .btn-arrow {
+                transform: rotate(180deg);
               }
             }
 
@@ -4284,9 +4357,9 @@ body.theme-muspelheim {
               border: 1px solid transparent;
 
               &.role-pill-currency {
-                border-color: rgba(245, 158, 11, 0.5) !important;
-                background: rgba(245, 158, 11, 0.15) !important;
-                color: #fde047 !important;
+                border-color: rgba(245, 158, 11, 0.5);
+                background: rgba(245, 158, 11, 0.15);
+                color: #fde047;
               }
             }
 
@@ -4363,7 +4436,36 @@ body.theme-muspelheim {
 
             &:hover {
               transform: translateY(-1px);
-              box-shadow: 0 0 20px rgba(245, 158, 11, 0.45);
+              box-shadow: 0 4px 16px rgba(2, 132, 199, 0.35), 0 0 16px rgba(56, 189, 248, 0.25);
+
+              .aux-btn-best-mix {
+                border-color: #38bdf8;
+              }
+              .mix-presets-trigger-btn {
+                border-color: #38bdf8;
+                border-left-color: rgba(56, 189, 248, 0.4);
+              }
+            }
+
+            &:active {
+              transform: translateY(0);
+            }
+
+            // Ensure the two split parts always stay perfectly flush and aligned on hover, focus, active
+            .aux-btn,
+            .aux-btn-best-mix,
+            .mix-presets-trigger-btn,
+            button {
+              transform: none !important;
+              box-shadow: none !important;
+              margin: 0;
+
+              &:hover,
+              &:focus,
+              &:active {
+                transform: none !important;
+                box-shadow: none !important;
+              }
             }
 
             .aux-btn-best-mix {
@@ -4452,10 +4554,15 @@ body.theme-muspelheim {
                 transition: transform 0.2s ease;
               }
 
-              &:hover {
+              &:hover,
+              &[aria-expanded="true"] {
                 background: rgba(14, 165, 233, 0.38);
                 border-color: #38bdf8;
                 color: #ffffff;
+              }
+
+              &[aria-expanded="true"] .btn-arrow {
+                transform: rotate(180deg);
               }
             }
 
