@@ -155,6 +155,7 @@ export class DefenderSelectionModal {
     this.clearBtn?.addEventListener('click', () => {
       SoundManager.getInstance().playClick();
       this.selected = [];
+      this.showToast(t('rosterCleared') || '✕ Squad Cleared');
       this.render();
     });
 
@@ -257,6 +258,38 @@ export class DefenderSelectionModal {
     return defendersList.some(def => isCurrencyProducer(def));
   }
 
+  private isSameDefender(idA: string, idB: string): boolean {
+    if (idA === idB) return true;
+    const currentRealm = (this.currentOptions?.realm || 'midgard').toLowerCase().trim();
+    if (
+      (idA === 'sunflower' && idB === `sunflower_${currentRealm}`) ||
+      (idB === 'sunflower' && idA === `sunflower_${currentRealm}`)
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  private pulseEquippedSlots() {
+    if (!this.slotsPreviewEl) return;
+    this.slotsPreviewEl.classList.remove('slots-pulse-anim');
+    void this.slotsPreviewEl.offsetWidth;
+    this.slotsPreviewEl.classList.add('slots-pulse-anim');
+    setTimeout(() => {
+      this.slotsPreviewEl?.classList.remove('slots-pulse-anim');
+    }, 450);
+  }
+
+  private pulseCapacityInfo() {
+    if (!this.capacityCountEl) return;
+    this.capacityCountEl.classList.remove('capacity-alert-anim');
+    void this.capacityCountEl.offsetWidth;
+    this.capacityCountEl.classList.add('capacity-alert-anim');
+    setTimeout(() => {
+      this.capacityCountEl?.classList.remove('capacity-alert-anim');
+    }, 500);
+  }
+
   private openWarningModal(isIncomplete: boolean = false, isMissingProducer: boolean = false) {
     SoundManager.getInstance().playClick();
     this.warningState = { isIncomplete, isMissingProducer };
@@ -357,14 +390,33 @@ export class DefenderSelectionModal {
     const groups = getDefendersGroupedByWorld(currentRealm);
     const mode = getForeignUnitsMode();
 
-    if (mode === 'disable') {
-      this.activeWorldFilter = 'all';
-      this.tabsContainerEl.style.display = 'none';
-      return;
-    }
     this.tabsContainerEl.style.display = 'flex';
 
-    // All Worlds Tab
+    // 1. Active Home Realm Tab First!
+    const hostGroup = groups.find(g => g.isHomeWorld);
+    if (hostGroup) {
+      const world = hostGroup.world;
+      const count = hostGroup.defenders.length;
+      const hostTab = document.createElement('button');
+      hostTab.className = `cat-tab home-tab ${this.activeWorldFilter === world.id ? 'active' : ''}`;
+      hostTab.dataset.world = world.id;
+      hostTab.style.setProperty('--world-color', world.color);
+      const worldName = t(`world_${world.id}`) || world.name;
+      hostTab.innerHTML = `
+        <span class="tab-icon">${world.icon}</span>
+        <span class="tab-label">${worldName} 🛡️</span>
+        <span class="tab-count">${count}</span>
+      `;
+      hostTab.addEventListener('click', () => {
+        this.activeWorldFilter = world.id;
+        this.updateActiveTabStyles();
+        SoundManager.getInstance().playClick();
+        this.renderGrid();
+      });
+      this.tabsContainerEl.appendChild(hostTab);
+    }
+
+    // 2. All Worlds Tab
     const allTab = document.createElement('button');
     allTab.className = `cat-tab ${this.activeWorldFilter === 'all' ? 'active' : ''}`;
     allTab.dataset.world = 'all';
@@ -384,21 +436,20 @@ export class DefenderSelectionModal {
     });
     this.tabsContainerEl.appendChild(allTab);
 
-    // World Tabs (Active Home Realm first!)
-    groups.forEach(group => {
+    // 3. Other World Tabs
+    groups.filter(g => !g.isHomeWorld).forEach(group => {
       const world = group.world;
       const allowedCountInGroup = group.defenders.filter(d => isDefenderAllowedInRealm(d.id, currentRealm)).length;
-      const isLockedTab = !group.isHomeWorld && allowedCountInGroup === 0;
+      const isLockedTab = allowedCountInGroup === 0;
       const btn = document.createElement('button');
-      btn.className = `cat-tab ${group.isHomeWorld ? 'home-tab' : ''} ${isLockedTab ? 'foreign-locked-tab' : ''} ${this.activeWorldFilter === world.id ? 'active' : ''}`;
+      btn.className = `cat-tab ${isLockedTab ? 'foreign-locked-tab' : ''} ${this.activeWorldFilter === world.id ? 'active' : ''}`;
       btn.dataset.world = world.id;
       btn.style.setProperty('--world-color', world.color);
       const worldName = t(`world_${world.id}`) || world.name;
-      const availableUnitsCount = isLockedTab ? 0 : allowedCountInGroup;
       btn.innerHTML = `
         <span class="tab-icon">${world.icon}</span>
-        <span class="tab-label">${worldName}${group.isHomeWorld ? ' 🛡️' : (isLockedTab ? ' 🔒' : '')}</span>
-        <span class="tab-count">${availableUnitsCount}</span>
+        <span class="tab-label">${worldName}${isLockedTab ? ' 🔒' : ''}</span>
+        <span class="tab-count">${isLockedTab ? 0 : allowedCountInGroup}</span>
       `;
       if (isLockedTab) {
         btn.title = t('foreignUnitRestrictedTooltip') || 'Foreign defenders restricted when defending the home world';
@@ -432,7 +483,7 @@ export class DefenderSelectionModal {
     if (this.levelBadgeEl) {
       const realmNameStr = options.realm || 'svartalfheim';
       const levelNum = options.level ?? 1;
-      if (options.city) {
+      if (options.city && typeof options.city === 'string') {
         const cityKey = `loc_${options.city.replace(/-/g, '_')}_name`;
         const transCity = t(cityKey);
         const cityFormatted = transCity !== cityKey ? transCity : options.city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -525,12 +576,16 @@ export class DefenderSelectionModal {
       this.selected = getSavedLoadout(options.level, options.realm);
     }
 
+    const hostRealm = (options.realm || 'svartalfheim').toLowerCase().trim() as WorldId;
+    this.selected = this.selected.map(id => (id === `sunflower_${hostRealm}` ? 'sunflower' : id));
+
     if (getForeignUnitsMode() !== 'allow') {
       this.selected = this.selected.filter(id => isDefenderAllowedInRealm(id, options.realm));
     }
 
     if (this.selected.length === 0) {
-      this.selected = getBestPossibleMixLoadout(options.level, options.realm);
+      this.selected = getBestPossibleMixLoadout(options.level, options.realm)
+        .map(id => (id === `sunflower_${hostRealm}` ? 'sunflower' : id));
     }
 
     // Ensure we don't exceed the limit
@@ -538,8 +593,8 @@ export class DefenderSelectionModal {
       this.selected = this.selected.slice(0, this.limit);
     }
 
-    // Reset active world filter to 'all'
-    this.activeWorldFilter = 'all';
+    // Default active world filter to current host realm so players see immediately relevant units
+    this.activeWorldFilter = hostRealm;
     this.renderWorldTabs();
     this.updateModalHeaderAndButton();
     this.render();
@@ -577,9 +632,14 @@ export class DefenderSelectionModal {
     const currentRealm = this.currentOptions?.realm || 'midgard';
     if (!isDefenderAllowedInRealm(id, currentRealm)) {
       SoundManager.getInstance().playExplosion();
+      const defInfo = getDefenderInfo(id, currentRealm) || DEFENDERS_MAP[id];
+      const unitName = defInfo ? defInfo.name : id;
+      const template = t('foreignUnitRestrictedToast') || '🔒 {name} is restricted to its home realm in Settings';
+      this.showToast(template.replace('{name}', unitName));
       return;
     }
-    const idx = this.selected.indexOf(id);
+
+    const idx = this.selected.findIndex(selId => this.isSameDefender(selId, id));
     if (idx !== -1) {
       // Deselect
       this.selected.splice(idx, 1);
@@ -589,9 +649,13 @@ export class DefenderSelectionModal {
       if (this.selected.length < this.limit) {
         this.selected.push(id);
         SoundManager.getInstance().playClick();
+        this.pulseEquippedSlots();
       } else {
         // At limit feedback
         SoundManager.getInstance().playExplosion();
+        const template = t('squadCapacityFullToast') || 'Squad capacity full ({max}/{max})! Click an equipped defender above to remove.';
+        this.showToast(template.replace(/{max}/g, String(this.limit)));
+        this.pulseCapacityInfo();
         return;
       }
     }
@@ -628,19 +692,29 @@ export class DefenderSelectionModal {
 
   private applyMixPreset(preset: SquadMixPreset = 'best') {
     if (!this.currentOptions) return;
-    SoundManager.getInstance().playPlant();
-    this.selected = getBestPossibleMixLoadout(this.currentOptions.level, this.currentOptions.realm, preset);
+    const currentRealm = (this.currentOptions.realm || 'midgard').toLowerCase().trim();
+    const newLoadout = getBestPossibleMixLoadout(this.currentOptions.level, this.currentOptions.realm, preset)
+      .map(id => (id === `sunflower_${currentRealm}` ? 'sunflower' : id));
 
-    let toastMsg = t('bestMixApplied') || '⚡ Best Possible Mix Applied!';
+    const isAlreadyEquipped =
+      this.selected.length === newLoadout.length &&
+      this.selected.every((id, idx) => this.isSameDefender(id, newLoadout[idx]));
+
+    this.selected = newLoadout;
+    SoundManager.getInstance().playPlant();
+    this.pulseEquippedSlots();
+
+    let presetName = t('bestPossibleMix') || 'Best Possible Mix';
     if (preset === 'heavy_attack') {
-      toastMsg = `⚔️ ${t('presetHeavyName') || 'Heavy Firepower'} Applied!`;
+      presetName = t('presetHeavyName') || 'Heavy Firepower';
     } else if (preset === 'fortified') {
-      toastMsg = `🛡️ ${t('presetFortifiedName') || 'Fortified Bastion'} Applied!`;
+      presetName = t('presetFortifiedName') || 'Fortified Bastion';
     } else if (preset === 'balanced') {
-      toastMsg = `⚖️ ${t('presetBalancedName') || 'Balanced Squad'} Applied!`;
+      presetName = t('presetBalancedName') || 'Balanced Squad';
     }
 
-    this.showToast(toastMsg);
+    const statusLabel = isAlreadyEquipped ? (t('alreadyEquipped') || 'Already Equipped') : (t('applied') || 'Applied');
+    this.showToast(`✦ ${presetName} · ${statusLabel}`);
     this.render();
   }
 
@@ -827,8 +901,8 @@ export class DefenderSelectionModal {
       units.forEach(rawDef => {
         const def = getLocalizedDefender(rawDef, currentRealm);
         const isAllowed = isDefenderAllowedInRealm(def.id, currentRealm);
-        const isSelected = this.selected.includes(def.id);
-        const slotIdx = isSelected ? this.selected.indexOf(def.id) + 1 : 0;
+        const isSelected = this.selected.some(id => this.isSameDefender(id, def.id));
+        const slotIdx = isSelected ? this.selected.findIndex(id => this.isSameDefender(id, def.id)) + 1 : 0;
         const isDisabled = (!isSelected && isFull) || !isAllowed;
         const isForeignLocked = !isAllowed;
 

@@ -609,7 +609,7 @@ export function getSquadSynergies(selectedIds: string[], realm?: string): SquadS
 
 export function getBestPossibleMixLoadout(level: number, realm?: string, mixType: SquadMixPreset = 'best'): string[] {
   const limit = getDefenderSlotLimit(level);
-  const normRealm = (realm || 'midgard').toLowerCase().trim() as WorldId;
+  const normRealm = (typeof realm === 'string' ? realm : 'midgard').toLowerCase().trim() as WorldId;
   const defendersList = getDefendersListForRealm(normRealm);
 
   // Filter to defenders allowed in this realm
@@ -778,7 +778,7 @@ export function getBestPossibleMixLoadout(level: number, realm?: string, mixType
 
 export function getRecommendedLoadout(level: number, realm?: string): string[] {
   const limit = getDefenderSlotLimit(level);
-  const normRealm = (realm || 'midgard').toLowerCase().trim();
+  const normRealm = (typeof realm === 'string' ? realm : 'midgard').toLowerCase().trim();
   const mode = getForeignUnitsMode();
 
   if (mode === 'allow') {
@@ -801,7 +801,7 @@ export function getRecommendedLoadout(level: number, realm?: string): string[] {
 
 export function getSavedLoadout(level: number, realm?: string): string[] {
   const limit = getDefenderSlotLimit(level);
-  const normRealm = (realm || 'midgard').toLowerCase().trim();
+  const normRealm = (typeof realm === 'string' ? realm : 'midgard').toLowerCase().trim();
   const mode = getForeignUnitsMode();
   const recommended = getRecommendedLoadout(level, normRealm);
 
@@ -810,7 +810,9 @@ export function getSavedLoadout(level: number, realm?: string): string[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        let valid = parsed.filter(id => DEFENDERS_MAP[id]);
+        let valid = parsed
+          .map(id => (id === `sunflower_${normRealm}` ? 'sunflower' : id))
+          .filter(id => DEFENDERS_MAP[id] || id === 'sunflower');
         if (mode !== 'allow') {
           valid = valid.filter(id => isDefenderAllowedInRealm(id, normRealm));
         }
@@ -889,7 +891,7 @@ export function getLocalizedDefender(def: DefenderInfo, realm?: string): Defende
 }
 
 export function getDefendersListForRealm(realm?: string): DefenderInfo[] {
-  const normRealm = (realm || 'midgard').toLowerCase().trim() as WorldId;
+  const normRealm = (typeof realm === 'string' ? realm : 'midgard').toLowerCase().trim() as WorldId;
   const realmSunflower = getSunflowerForRealm(normRealm);
   const contextualSunflower: DefenderInfo = {
     ...realmSunflower,
