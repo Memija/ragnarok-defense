@@ -32,6 +32,55 @@ export interface SelectionModalOptions {
   onCancel?: () => void;
 }
 
+export interface PresetMeta {
+  id: SquadMixPreset;
+  nameKey: string;
+  defaultName: string;
+  icon: string;
+  tag: string;
+  titleKey: string;
+  defaultTitle: string;
+}
+
+export const PRESET_DEFINITIONS: Record<SquadMixPreset, PresetMeta> = {
+  best: {
+    id: 'best',
+    nameKey: 'presetBestName',
+    defaultName: 'Best Possible Mix',
+    icon: '⚡',
+    tag: 'Optimal',
+    titleKey: 'presetBestDesc',
+    defaultTitle: 'Ideal synergy of Economy, Tank, DPS & Crowd Control'
+  },
+  heavy_attack: {
+    id: 'heavy_attack',
+    nameKey: 'presetHeavyName',
+    defaultName: 'Heavy Firepower',
+    icon: '⚔️',
+    tag: 'DPS',
+    titleKey: 'presetHeavyDesc',
+    defaultTitle: 'Maximum sustained DPS, fireballs & explosive burst'
+  },
+  fortified: {
+    id: 'fortified',
+    nameKey: 'presetFortifiedName',
+    defaultName: 'Fortified Bastion',
+    icon: '🛡️',
+    tag: 'Defense',
+    titleKey: 'presetFortifiedDesc',
+    defaultTitle: 'High HP stone walls, icy slow & paralyzing butter'
+  },
+  balanced: {
+    id: 'balanced',
+    nameKey: 'presetBalancedName',
+    defaultName: 'Balanced Squad',
+    icon: '⚖️',
+    tag: 'Balanced',
+    titleKey: 'presetBalancedDesc',
+    defaultTitle: 'Standard versatile defensive loadout'
+  }
+};
+
 export class DefenderSelectionModal {
   private modalEl: HTMLElement | null;
   private backdropEl: HTMLElement | null;
@@ -42,6 +91,10 @@ export class DefenderSelectionModal {
   private levelBadgeEl: HTMLElement | null;
   private autoPickBtn: HTMLElement | null;
   private bestMixBtn: HTMLElement | null;
+  private bestMixIconEl: HTMLElement | null;
+  private bestMixTextEl: HTMLElement | null;
+  private bestMixTagEl: HTMLElement | null;
+  private activePreset: SquadMixPreset = 'best';
   private mixPresetsBtn: HTMLElement | null;
   private mixPresetsMenu: HTMLElement | null;
   private synergyBarEl: HTMLElement | null;
@@ -82,6 +135,9 @@ export class DefenderSelectionModal {
     this.levelBadgeEl = document.getElementById('capacity-level-badge');
     this.autoPickBtn = document.getElementById('auto-pick-btn');
     this.bestMixBtn = document.getElementById('best-mix-btn');
+    this.bestMixIconEl = this.bestMixBtn?.querySelector('.btn-icon') || null;
+    this.bestMixTextEl = this.bestMixBtn?.querySelector('.btn-text') || null;
+    this.bestMixTagEl = this.bestMixBtn?.querySelector('.mix-tag') || null;
     this.mixPresetsBtn = document.getElementById('mix-presets-btn');
     this.mixPresetsMenu = document.getElementById('mix-presets-menu');
     this.synergyBarEl = document.getElementById('squad-synergy-bar');
@@ -120,7 +176,7 @@ export class DefenderSelectionModal {
     });
 
     this.bestMixBtn?.addEventListener('click', () => {
-      this.applyMixPreset('best');
+      this.applyMixPreset(this.activePreset);
     });
 
     this.mixPresetsBtn?.addEventListener('click', (e) => {
@@ -212,6 +268,7 @@ export class DefenderSelectionModal {
     window.addEventListener('languagechange', () => {
       this.renderWorldTabs();
       this.updateModalHeaderAndButton();
+      this.updatePresetButtonAndMenu();
       if (this.modalEl && !this.modalEl.classList.contains('hidden')) {
         this.render();
       }
@@ -501,10 +558,7 @@ export class DefenderSelectionModal {
       confirmBtnText.textContent = options.isMidGame ? (t('updateSquad') || 'Update Squad ⚔️') : (t('toBattle') || 'To Battle ⚔️');
     }
 
-    const bestMixText = this.bestMixBtn?.querySelector('.btn-text');
-    if (bestMixText) {
-      bestMixText.textContent = t('bestPossibleMix') || 'Best Possible Mix';
-    }
+    this.updatePresetButtonAndMenu();
 
     const autoPickText = this.autoPickBtn?.querySelector('.btn-text');
     if (autoPickText) {
@@ -595,6 +649,7 @@ export class DefenderSelectionModal {
 
     // Default active world filter to current host realm so players see immediately relevant units
     this.activeWorldFilter = hostRealm;
+    this.activePreset = this.detectActivePreset() || 'best';
     this.renderWorldTabs();
     this.updateModalHeaderAndButton();
     this.render();
@@ -663,6 +718,13 @@ export class DefenderSelectionModal {
   }
 
   private render() {
+    // Detect if current squad matches any preset
+    const detected = this.detectActivePreset();
+    if (detected) {
+      this.activePreset = detected;
+    }
+    this.updatePresetButtonAndMenu();
+
     // Update capacity count
     if (this.capacityCountEl) {
       this.capacityCountEl.textContent = `${this.selected.length} / ${this.limit}`;
@@ -692,6 +754,7 @@ export class DefenderSelectionModal {
 
   private applyMixPreset(preset: SquadMixPreset = 'best') {
     if (!this.currentOptions) return;
+    this.activePreset = preset;
     const currentRealm = (this.currentOptions.realm || 'midgard').toLowerCase().trim();
     const newLoadout = getBestPossibleMixLoadout(this.currentOptions.level, this.currentOptions.realm, preset)
       .map(id => (id === `sunflower_${currentRealm}` ? 'sunflower' : id));
@@ -704,18 +767,64 @@ export class DefenderSelectionModal {
     SoundManager.getInstance().playPlant();
     this.pulseEquippedSlots();
 
-    let presetName = t('bestPossibleMix') || 'Best Possible Mix';
-    if (preset === 'heavy_attack') {
-      presetName = t('presetHeavyName') || 'Heavy Firepower';
-    } else if (preset === 'fortified') {
-      presetName = t('presetFortifiedName') || 'Fortified Bastion';
-    } else if (preset === 'balanced') {
-      presetName = t('presetBalancedName') || 'Balanced Squad';
-    }
+    const meta = PRESET_DEFINITIONS[preset] || PRESET_DEFINITIONS.best;
+    const presetName = t(meta.nameKey) || meta.defaultName;
 
     const statusLabel = isAlreadyEquipped ? (t('alreadyEquipped') || 'Already Equipped') : (t('applied') || 'Applied');
     this.showToast(`✦ ${presetName} · ${statusLabel}`);
     this.render();
+  }
+
+  private detectActivePreset(): SquadMixPreset | null {
+    if (!this.currentOptions) return null;
+    const presets: SquadMixPreset[] = ['best', 'heavy_attack', 'fortified', 'balanced'];
+    const currentRealm = (this.currentOptions.realm || 'midgard').toLowerCase().trim();
+    for (const preset of presets) {
+      const loadout = getBestPossibleMixLoadout(this.currentOptions.level, this.currentOptions.realm, preset)
+        .map(id => (id === `sunflower_${currentRealm}` ? 'sunflower' : id));
+      if (
+        this.selected.length === loadout.length &&
+        this.selected.every((id, idx) => this.isSameDefender(id, loadout[idx]))
+      ) {
+        return preset;
+      }
+    }
+    return null;
+  }
+
+  private updatePresetButtonAndMenu() {
+    const meta = PRESET_DEFINITIONS[this.activePreset] || PRESET_DEFINITIONS.best;
+    const localizedName = t(meta.nameKey) || meta.defaultName;
+    const localizedDesc = t(meta.titleKey) || meta.defaultTitle;
+    const localizedTag = t(`tag_${meta.id}`) || meta.tag;
+
+    if (this.bestMixIconEl) {
+      this.bestMixIconEl.textContent = meta.icon;
+    }
+    if (this.bestMixTextEl) {
+      this.bestMixTextEl.textContent = localizedName;
+    }
+    if (this.bestMixTagEl) {
+      this.bestMixTagEl.textContent = localizedTag;
+      this.bestMixTagEl.className = `mix-tag tag-${meta.id}`;
+    }
+    if (this.bestMixBtn) {
+      this.bestMixBtn.title = localizedDesc;
+      this.bestMixBtn.className = `aux-btn-best-mix preset-${meta.id}`;
+    }
+
+    if (this.mixPresetsMenu) {
+      this.mixPresetsMenu.querySelectorAll<HTMLElement>('.preset-menu-item').forEach(item => {
+        const itemPreset = item.dataset.preset;
+        if (itemPreset === this.activePreset) {
+          item.classList.add('is-active');
+          item.setAttribute('aria-selected', 'true');
+        } else {
+          item.classList.remove('is-active');
+          item.removeAttribute('aria-selected');
+        }
+      });
+    }
   }
 
   private togglePresetsMenu() {
