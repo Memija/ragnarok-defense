@@ -106,7 +106,7 @@
               </div>
 
               <!-- Language Row -->
-              <div class="settings-row">
+              <div class="settings-row language-row">
                 <div class="setting-label-group">
                   <span class="setting-icon">🌐</span>
                   <span class="setting-name" data-i18n="language">Language</span>
@@ -170,6 +170,21 @@
                   </button>
                 </div>
               </div>
+
+              <!-- Infinite Resources Row -->
+              <div class="settings-row infinite-resources-settings-row">
+                <div class="setting-label-group">
+                  <span class="setting-icon">♾️</span>
+                  <div class="setting-text-group">
+                    <span class="setting-name" data-i18n="infiniteResourcesTitle">Infinite Resources</span>
+                    <span class="setting-subdesc" data-i18n="infiniteResourcesSubtitle">Unlimited realm currency and unrestricted deployment</span>
+                  </div>
+                </div>
+                <button type="button" id="infinite-resources-toggle" class="theme-btn infinite-toggle-btn" role="switch" aria-checked="false" aria-label="Toggle Infinite Resources">
+                  <span class="infinite-toggle-icon">🔒</span>
+                  <span class="infinite-toggle-text" data-i18n="disabled">Disabled</span>
+                </button>
+              </div>
             </div>
 
             <!-- Pane 3: Level Rules -->
@@ -211,6 +226,7 @@
                     <div class="config-row-label">
                       <span class="cfg-icon">🪙</span>
                       <span class="cfg-text" data-i18n="startingCurrency">Starting Currency</span>
+                      <span id="infinite-currency-badge" class="infinite-currency-active-badge hidden" data-i18n="infiniteActive">Unlimited</span>
                     </div>
                     <div class="cfg-stepper">
                       <button type="button" class="cfg-step-btn" id="currency-minus-btn" aria-label="Decrease currency">-50</button>
@@ -226,6 +242,10 @@
                     <button type="button" class="cfg-preset-pill" data-amount="500">500</button>
                     <button type="button" class="cfg-preset-pill" data-amount="1000">1000</button>
                     <button type="button" class="cfg-preset-pill" data-amount="2000">2000</button>
+                    <button type="button" class="cfg-preset-pill infinite-preset-pill" data-amount="infinite" title="Infinite Resources" data-i18n-title="infiniteResources">
+                      <span class="preset-infinity-icon">♾️</span>
+                      <span class="preset-infinity-text" data-i18n="infinite">Infinite</span>
+                    </button>
                   </div>
 
                   <!-- Squad Slots Row -->

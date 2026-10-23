@@ -147,6 +147,31 @@ function notifyConfigChange(level?: number) {
   window.dispatchEvent(new CustomEvent('levelconfigchanged', { detail: { level } }));
 }
 
+export const INFINITE_RESOURCES_STORAGE_KEY = 'ragnarok_infinite_resources';
+
+/**
+ * Check if infinite resources mode is enabled.
+ */
+export function getInfiniteResources(): boolean {
+  try {
+    return localStorage.getItem(INFINITE_RESOURCES_STORAGE_KEY) === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Set infinite resources mode.
+ */
+export function setInfiniteResources(enabled: boolean): void {
+  try {
+    localStorage.setItem(INFINITE_RESOURCES_STORAGE_KEY, enabled ? 'true' : 'false');
+  } catch (e) {}
+  window.dispatchEvent(new CustomEvent('infiniteresourcessettingchanged', {
+    detail: { enabled }
+  }));
+}
+
 export type ForeignUnitsMode = 'allow' | 'disable' | 'limited';
 
 export const ALLOW_FOREIGN_UNITS_STORAGE_KEY = 'ragnarok_allow_foreign_units';

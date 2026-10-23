@@ -14,7 +14,9 @@ import {
   MAX_SLOTS,
   getForeignUnitsMode,
   setForeignUnitsMode,
-  type ForeignUnitsMode
+  type ForeignUnitsMode,
+  getInfiniteResources,
+  setInfiniteResources
 } from './engine/GameConfig';
 import { ForeignWorldsModal } from './engine/ForeignWorldsModal';
 
@@ -132,6 +134,8 @@ export function initUI() {
   let currentSettingsLevel: number = 1;
   let updateLevelSettingsUI: () => void = () => {};
   let updateForeignUnitsUI: () => void = () => {};
+  let updateInfiniteResourcesUI: () => void = () => {};
+  let closeLanguageDropdown: () => void = () => {};
 
   const openSettings = () => {
     if (closeTimeout) {
@@ -149,6 +153,7 @@ export function initUI() {
     updateSoundUI();
     updateLevelSettingsUI();
     updateForeignUnitsUI();
+    updateInfiniteResourcesUI();
     if (settingsModal) {
       settingsModal.classList.remove('hidden');
       settingsModal.style.pointerEvents = 'auto';
@@ -162,6 +167,9 @@ export function initUI() {
     if (closeTimeout) {
       clearTimeout(closeTimeout);
       closeTimeout = null;
+    }
+    if (typeof closeLanguageDropdown === 'function') {
+      closeLanguageDropdown();
     }
     soundManager.playClick();
     if (settingsModal) {
@@ -298,6 +306,7 @@ export function initUI() {
 
     updateLevelSettingsUI();
     updateForeignUnitsUI();
+    updateInfiniteResourcesUI();
 
     window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
   };
@@ -383,6 +392,47 @@ export function initUI() {
   updateForeignUnitsUI();
   window.addEventListener('foreignunitssettingchanged', updateForeignUnitsUI);
 
+  // Infinite Resources Toggle Control in Settings
+  const infiniteResourcesToggle = document.getElementById('infinite-resources-toggle') as HTMLButtonElement | null;
+  const infiniteCurrencyBadge = document.getElementById('infinite-currency-badge');
+
+  updateInfiniteResourcesUI = () => {
+    const isInfinite = getInfiniteResources();
+    const lang = document.body.dataset.lang || 'en';
+    const dict = translations[lang] || translations['en'];
+
+    if (infiniteResourcesToggle) {
+      infiniteResourcesToggle.classList.toggle('active', isInfinite);
+      infiniteResourcesToggle.setAttribute('aria-checked', isInfinite ? 'true' : 'false');
+
+      const iconSpan = infiniteResourcesToggle.querySelector('.infinite-toggle-icon');
+      if (iconSpan) {
+        iconSpan.textContent = isInfinite ? '♾️' : '🔒';
+      }
+
+      const textSpan = infiniteResourcesToggle.querySelector('.infinite-toggle-text');
+      if (textSpan) {
+        textSpan.textContent = isInfinite ? (dict['enabled'] || 'Enabled') : (dict['disabled'] || 'Disabled');
+      }
+    }
+  };
+
+  if (infiniteResourcesToggle) {
+    infiniteResourcesToggle.addEventListener('click', () => {
+      soundManager.playClick();
+      const next = !getInfiniteResources();
+      setInfiniteResources(next);
+      updateInfiniteResourcesUI();
+      updateLevelSettingsUI();
+    });
+  }
+
+  updateInfiniteResourcesUI();
+  window.addEventListener('infiniteresourcessettingchanged', () => {
+    updateInfiniteResourcesUI();
+    updateLevelSettingsUI();
+  });
+
   // Custom Select (i18n)
   const customSelect = document.getElementById('lang-select');
   const savedLang = localStorage.getItem('ragnarok_lang') || 'en';
@@ -391,6 +441,26 @@ export function initUI() {
     const selected = customSelect.querySelector('.select-selected') as HTMLElement;
     const itemsList = customSelect.querySelector('.select-items') as HTMLElement;
     const items = itemsList.querySelectorAll('div');
+    const parentRow = customSelect.closest('.settings-row');
+
+    closeLanguageDropdown = () => {
+      itemsList.classList.add('select-hide');
+      customSelect.classList.remove('is-open');
+      parentRow?.classList.remove('is-open');
+      selected?.classList.remove('select-arrow-active');
+    };
+
+    const toggleLanguageDropdown = () => {
+      const isHidden = itemsList.classList.contains('select-hide');
+      if (isHidden) {
+        itemsList.classList.remove('select-hide');
+        customSelect.classList.add('is-open');
+        parentRow?.classList.add('is-open');
+        selected?.classList.add('select-arrow-active');
+      } else {
+        closeLanguageDropdown();
+      }
+    };
 
     // Restore saved language selection in dropdown UI
     if (savedLang) {
@@ -405,7 +475,8 @@ export function initUI() {
 
     selected.addEventListener('click', (e) => {
       e.stopPropagation();
-      itemsList.classList.toggle('select-hide');
+      soundManager.playClick();
+      toggleLanguageDropdown();
     });
 
     items.forEach(item => {
@@ -416,7 +487,7 @@ export function initUI() {
         // Update selected display
         selected.innerHTML = target.innerHTML;
         selected.dataset.lang = lang;
-        itemsList.classList.add('select-hide');
+        closeLanguageDropdown();
         
         applyLanguage(lang);
 
@@ -433,7 +504,7 @@ export function initUI() {
 
     // Close dropdown when clicking outside
     document.addEventListener('click', () => {
-      itemsList.classList.add('select-hide');
+      closeLanguageDropdown();
     });
   } else {
     applyLanguage(savedLang);
@@ -480,19 +551,39 @@ export function initUI() {
     }
 
     // Update currency input & presets
+    const isInfinite = getInfiniteResources();
     if (currencyInput) {
-      currencyInput.value = currentCurrency.toString();
+      if (isInfinite) {
+        currencyInput.type = 'text';
+        currencyInput.value = '∞';
+        currencyInput.disabled = true;
+      } else {
+        currencyInput.type = 'number';
+        currencyInput.disabled = false;
+        currencyInput.value = currentCurrency.toString();
+      }
     }
     if (currencyMinusBtn) {
-      currencyMinusBtn.disabled = currentCurrency <= MIN_STARTING_CURRENCY;
+      currencyMinusBtn.disabled = isInfinite || currentCurrency <= MIN_STARTING_CURRENCY;
     }
     if (currencyPlusBtn) {
-      currencyPlusBtn.disabled = currentCurrency >= MAX_STARTING_CURRENCY;
+      currencyPlusBtn.disabled = isInfinite || currentCurrency >= MAX_STARTING_CURRENCY;
+    }
+    if (infiniteCurrencyBadge) {
+      infiniteCurrencyBadge.classList.toggle('hidden', !isInfinite);
     }
 
     presetPills.forEach(pill => {
-      const amt = parseInt(pill.dataset.amount || '0', 10);
-      pill.classList.toggle('active', amt === currentCurrency);
+      const amtStr = pill.dataset.amount;
+      if (amtStr === 'infinite') {
+        pill.classList.toggle('active', isInfinite);
+        pill.setAttribute('aria-pressed', isInfinite ? 'true' : 'false');
+      } else {
+        const amt = parseInt(amtStr || '0', 10);
+        const isActive = !isInfinite && amt === currentCurrency;
+        pill.classList.toggle('active', isActive);
+        pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      }
     });
 
     // Update slots display
@@ -536,6 +627,10 @@ export function initUI() {
   if (currencyMinusBtn) {
     currencyMinusBtn.addEventListener('click', () => {
       soundManager.playClick();
+      if (getInfiniteResources()) {
+        setInfiniteResources(false);
+        updateInfiniteResourcesUI();
+      }
       const cur = getStartingCurrencyForLevel(currentSettingsLevel);
       setStartingCurrencyForLevel(currentSettingsLevel, Math.max(MIN_STARTING_CURRENCY, cur - 50));
       updateLevelSettingsUI();
@@ -545,6 +640,10 @@ export function initUI() {
   if (currencyPlusBtn) {
     currencyPlusBtn.addEventListener('click', () => {
       soundManager.playClick();
+      if (getInfiniteResources()) {
+        setInfiniteResources(false);
+        updateInfiniteResourcesUI();
+      }
       const cur = getStartingCurrencyForLevel(currentSettingsLevel);
       setStartingCurrencyForLevel(currentSettingsLevel, Math.min(MAX_STARTING_CURRENCY, cur + 50));
       updateLevelSettingsUI();
@@ -556,6 +655,10 @@ export function initUI() {
       let val = parseInt(currencyInput.value, 10);
       if (isNaN(val)) {
         val = getStartingCurrencyForLevel(currentSettingsLevel);
+      }
+      if (getInfiniteResources()) {
+        setInfiniteResources(false);
+        updateInfiniteResourcesUI();
       }
       setStartingCurrencyForLevel(currentSettingsLevel, val);
       updateLevelSettingsUI();
@@ -572,10 +675,21 @@ export function initUI() {
   presetPills.forEach(pill => {
     pill.addEventListener('click', () => {
       soundManager.playClick();
-      const amt = parseInt(pill.dataset.amount || '0', 10);
-      if (amt > 0) {
-        setStartingCurrencyForLevel(currentSettingsLevel, amt);
+      const amtStr = pill.dataset.amount;
+      if (amtStr === 'infinite') {
+        setInfiniteResources(true);
+        updateInfiniteResourcesUI();
         updateLevelSettingsUI();
+      } else {
+        const amt = parseInt(amtStr || '0', 10);
+        if (amt > 0) {
+          if (getInfiniteResources()) {
+            setInfiniteResources(false);
+            updateInfiniteResourcesUI();
+          }
+          setStartingCurrencyForLevel(currentSettingsLevel, amt);
+          updateLevelSettingsUI();
+        }
       }
     });
   });

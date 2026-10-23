@@ -29,7 +29,7 @@ import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo, is
 import { DEFENDER_ICONS } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
-import { getStartingCurrencyForLevel, getDefaultStartingCurrency } from './GameConfig';
+import { getStartingCurrencyForLevel, getDefaultStartingCurrency, getInfiniteResources } from './GameConfig';
 import { t } from '../i18n';
 
 interface WeatherParticle {
@@ -265,10 +265,17 @@ export class Game {
   }
 
   updateUI() {
+    const isInfinite = getInfiniteResources();
     const currency = getRealmCurrency(this.realm);
     const sunCountEl = document.getElementById('sun-count');
     if (sunCountEl) {
-      sunCountEl.textContent = this.sun.toString();
+      if (isInfinite) {
+        sunCountEl.textContent = '∞';
+        sunCountEl.classList.add('is-infinite-val');
+      } else {
+        sunCountEl.textContent = this.sun.toString();
+        sunCountEl.classList.remove('is-infinite-val');
+      }
       sunCountEl.style.color = currency.color;
       sunCountEl.style.textShadow = `0 0 10px ${currency.glowColor}`;
     }
@@ -281,7 +288,7 @@ export class Game {
     unitCards.forEach(card => {
       const el = card as HTMLElement;
       const cost = parseInt(el.dataset.cost || '0', 10);
-      if (this.sun < cost) {
+      if (!isInfinite && this.sun < cost) {
         el.classList.add('unavailable');
         if (el.classList.contains('selected')) {
           el.classList.remove('selected');
@@ -511,6 +518,7 @@ export class Game {
 
     window.addEventListener('levelconfigchanged', this.handleLevelConfigChange);
     window.addEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
+    window.addEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
   }
 
   handleRosterClick = () => {
@@ -590,6 +598,10 @@ export class Game {
   handleForeignUnitsSettingChange = () => {
     this.selectedDefenders = getSavedLoadout(this.level, this.realm);
     this.renderSidebar();
+    this.updateUI();
+  };
+
+  handleInfiniteResourcesSettingChange = () => {
     this.updateUI();
   };
 
@@ -699,32 +711,35 @@ export class Game {
     let unit: Defender | null = null;
     const x = this.grid.startX + col * this.grid.cellWidth + (this.grid.cellWidth - 60) / 2;
     const y = row * this.grid.cellHeight + (this.grid.cellHeight - 80) / 2;
+    const isInf = getInfiniteResources();
 
-    if (unitType === 'peashooter' && this.sun >= 100) {
+    if (unitType === 'peashooter' && (isInf || this.sun >= 100)) {
       unit = new PeaShooter(x, y, row, col);
-    } else if ((unitType === 'sunflower' || unitType.startsWith('sunflower_')) && this.sun >= 50) {
+    } else if ((unitType === 'sunflower' || unitType.startsWith('sunflower_')) && (isInf || this.sun >= 50)) {
       const flowerRealm = unitType.startsWith('sunflower_') ? unitType.replace('sunflower_', '') : this.realm;
       unit = new SunFlower(x, y, row, col, flowerRealm);
-    } else if (unitType === 'wallnut' && this.sun >= 50) {
+    } else if (unitType === 'wallnut' && (isInf || this.sun >= 50)) {
       unit = new WallNut(x, y, row, col);
-    } else if (unitType === 'torchwood' && this.sun >= 175) {
+    } else if (unitType === 'torchwood' && (isInf || this.sun >= 175)) {
       unit = new Torchwood(x, y, row, col);
-    } else if (unitType === 'cherrybomb' && this.sun >= 150) {
+    } else if (unitType === 'cherrybomb' && (isInf || this.sun >= 150)) {
       unit = new CherryBomb(x, y, row, col);
-    } else if (unitType === 'chomper' && this.sun >= 150) {
+    } else if (unitType === 'chomper' && (isInf || this.sun >= 150)) {
       unit = new Chomper(x, y, row, col);
-    } else if (unitType === 'potatomine' && this.sun >= 25) {
+    } else if (unitType === 'potatomine' && (isInf || this.sun >= 25)) {
       unit = new PotatoMine(x, y, row, col);
-    } else if (unitType === 'snowpea' && this.sun >= 175) {
+    } else if (unitType === 'snowpea' && (isInf || this.sun >= 175)) {
       unit = new SnowPea(x, y, row, col);
-    } else if (unitType === 'repeater' && this.sun >= 200) {
+    } else if (unitType === 'repeater' && (isInf || this.sun >= 200)) {
       unit = new Repeater(x, y, row, col);
-    } else if (unitType === 'kernelpult' && this.sun >= 100) {
+    } else if (unitType === 'kernelpult' && (isInf || this.sun >= 100)) {
       unit = new KernelPult(x, y, row, col);
-    } else if (unitType === 'einherjar' && this.sun >= 225) {
+    } else if (unitType === 'einherjar' && (isInf || this.sun >= 225)) {
       unit = new Einherjar(x, y, row, col);
-    } else if (unitType === 'jalapeno' && this.sun >= 125) {
-      this.sun -= 125;
+    } else if (unitType === 'jalapeno' && (isInf || this.sun >= 125)) {
+      if (!isInf) {
+        this.sun -= 125;
+      }
       this.updateUI();
       this.triggerScreenShake(450, 12);
       SoundManager.getInstance().playExplosion();
@@ -746,7 +761,9 @@ export class Game {
 
     if (unit) {
       this.defenders.push(unit);
-      this.sun -= unit.cost;
+      if (!isInf) {
+        this.sun -= unit.cost;
+      }
       this.updateUI();
       SoundManager.getInstance().playPlant();
       this.particles.emit(x + 30, y + 40, '#ffd54f', 15, 4, 3, 400);
@@ -4236,6 +4253,7 @@ export class Game {
     window.removeEventListener('languagechange', this.handleLanguageChange);
     window.removeEventListener('levelconfigchanged', this.handleLevelConfigChange);
     window.removeEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
+    window.removeEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
     this.canvas.removeEventListener('mousemove', this.handleMouseMove);
     this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.removeEventListener('click', this.handleCanvasClick);
