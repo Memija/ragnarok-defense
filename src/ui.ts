@@ -242,6 +242,9 @@ export function initUI() {
     } else {
       document.body.dataset.activeTheme = theme;
     }
+    window.dispatchEvent(new CustomEvent('ragnarok-theme-changed', {
+      detail: { activeTheme: document.body.dataset.activeTheme }
+    }));
   };
 
   // Initial apply

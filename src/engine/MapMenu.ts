@@ -888,20 +888,20 @@ export class MapMenu {
       const lockY = cy - r - 13;
       ctx.save();
       ctx.translate(lx, lockY);
-      ctx.fillStyle = 'rgba(24, 18, 14, 0.94)';
+      ctx.fillStyle = isLight ? 'rgba(255, 251, 235, 0.96)' : 'rgba(24, 18, 14, 0.94)';
       ctx.beginPath();
       ctx.roundRect(-24, -8, 48, 16, 4);
       ctx.fill();
-      ctx.strokeStyle = '#d4af37';
+      ctx.strokeStyle = isLight ? '#b45309' : '#d4af37';
       ctx.lineWidth = 1.2;
-      ctx.shadowColor = 'rgba(212, 175, 55, 0.4)';
+      ctx.shadowColor = isLight ? 'rgba(180, 83, 9, 0.25)' : 'rgba(212, 175, 55, 0.4)';
       ctx.shadowBlur = 6;
       ctx.stroke();
 
       ctx.font = 'bold 8.5px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#fef08a';
+      ctx.fillStyle = isLight ? '#78350f' : '#fef08a';
       ctx.fillText(`🔒 Lvl ${loc.level}`, 0, 0);
       ctx.restore();
     } else {
@@ -1815,7 +1815,7 @@ export class MapMenu {
     ly: number,
     _r: number,
     loc: LocationNode,
-    _isLight: boolean
+    isLight: boolean
   ) {
     ctx.save();
 
@@ -1833,33 +1833,49 @@ export class MapMenu {
     const py = ly + 25;
 
     // Plaque Drop Shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+    ctx.fillStyle = isLight ? 'rgba(120, 53, 15, 0.24)' : 'rgba(0, 0, 0, 0.65)';
     ctx.beginPath();
     ctx.roundRect(px + 2, py + 2, plaqueW, plaqueH, 5);
     ctx.fill();
 
-    // Plaque Stone Backing Slate: Deep carved dwarven obsidian granite
+    // Plaque Backing Slate: Deep carved dwarven obsidian granite (dark) or Sunlit Parchment & Brass (light)
     ctx.beginPath();
     ctx.roundRect(px, py, plaqueW, plaqueH, 5);
     const pGrad = ctx.createLinearGradient(px, py, px, py + plaqueH);
-    pGrad.addColorStop(0, 'rgba(30, 22, 16, 0.94)');
-    pGrad.addColorStop(0.5, 'rgba(20, 14, 10, 0.96)');
-    pGrad.addColorStop(1, 'rgba(12, 8, 6, 0.98)');
+    if (isLight) {
+      if (loc.locked) {
+        pGrad.addColorStop(0, 'rgba(254, 252, 232, 0.95)');
+        pGrad.addColorStop(0.5, 'rgba(254, 243, 199, 0.96)');
+        pGrad.addColorStop(1, 'rgba(253, 230, 138, 0.98)');
+      } else {
+        pGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+        pGrad.addColorStop(0.5, 'rgba(255, 251, 235, 0.98)');
+        pGrad.addColorStop(1, 'rgba(254, 243, 199, 0.99)');
+      }
+    } else {
+      pGrad.addColorStop(0, 'rgba(30, 22, 16, 0.94)');
+      pGrad.addColorStop(0.5, 'rgba(20, 14, 10, 0.96)');
+      pGrad.addColorStop(1, 'rgba(12, 8, 6, 0.98)');
+    }
     ctx.fillStyle = pGrad;
     ctx.fill();
 
-    // Gold Filigree Border
-    ctx.strokeStyle = loc.locked ? '#854d0e' : (loc.hover > 0.1 ? '#fde047' : '#d4af37');
-    ctx.lineWidth = loc.hover > 0.1 ? 1.8 : 1.2;
+    // Gold / Bronze Filigree Border
+    ctx.strokeStyle = isLight
+      ? (loc.locked ? '#ca8a04' : (loc.hover > 0.1 ? '#b45309' : '#d97706'))
+      : (loc.locked ? '#854d0e' : (loc.hover > 0.1 ? '#fde047' : '#d4af37'));
+    ctx.lineWidth = loc.hover > 0.1 ? 1.8 : 1.3;
     if (!loc.locked && loc.hover > 0.1) {
-      ctx.shadowColor = '#d4af37';
+      ctx.shadowColor = isLight ? 'rgba(217, 119, 6, 0.45)' : '#d4af37';
       ctx.shadowBlur = 8;
     }
     ctx.stroke();
     ctx.shadowBlur = 0;
 
     // Corner Rivet Dots
-    ctx.fillStyle = loc.locked ? '#b45309' : '#f59e0b';
+    ctx.fillStyle = isLight
+      ? (loc.locked ? '#a16207' : '#b45309')
+      : (loc.locked ? '#b45309' : '#f59e0b');
     for (const cx of [px + 5, px + plaqueW - 5]) {
       for (const cy of [py + 5, py + plaqueH - 5]) {
         ctx.beginPath();
@@ -1871,14 +1887,20 @@ export class MapMenu {
     // Location Name (Bold, High Contrast Norse Serif)
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = loc.locked ? '#fef3c7' : '#fef08a';
+    ctx.fillStyle = isLight
+      ? (loc.locked ? '#78350f' : '#451a03')
+      : (loc.locked ? '#fef3c7' : '#fef08a');
     ctx.font = `bold ${12.5 + loc.hover * 0.8}px "Outfit", "Inter", sans-serif`;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-    ctx.shadowBlur = 4;
+    if (!isLight) {
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+      ctx.shadowBlur = 4;
+    }
     ctx.fillText(locName, lx, py + 11);
 
     // Rune Tag + Role Subtitle / Status
-    ctx.fillStyle = loc.locked ? '#fbbf24' : '#fde047';
+    ctx.fillStyle = isLight
+      ? (loc.locked ? '#92400e' : '#b45309')
+      : (loc.locked ? '#fbbf24' : '#fde047');
     ctx.font = `bold 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif`;
     ctx.shadowBlur = 0;
     ctx.fillText(subText, lx, py + 23);
@@ -1924,11 +1946,11 @@ export class MapMenu {
     this.activeCardRect = { x: cardX, y: cardY, w: cardW, h: cardH, loc };
 
     // 1. Deep Atmospheric Drop Shadow
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.92)';
+    ctx.shadowColor = isLight ? 'rgba(120, 53, 15, 0.35)' : 'rgba(0, 0, 0, 0.92)';
     ctx.shadowBlur = 24;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 6;
-    ctx.fillStyle = 'rgba(10, 8, 7, 0.96)';
+    ctx.fillStyle = isLight ? '#fefce8' : 'rgba(10, 8, 7, 0.96)';
     ctx.beginPath();
     ctx.roundRect(cardX, cardY, cardW, cardH, 12);
     ctx.fill();

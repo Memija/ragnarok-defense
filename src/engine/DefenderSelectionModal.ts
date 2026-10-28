@@ -973,6 +973,9 @@ export class DefenderSelectionModal {
       section.style.setProperty('--world-accent', world.color);
       section.style.setProperty('--world-border', world.badgeBorder);
       section.style.setProperty('--world-bg', world.badgeBg);
+      section.style.setProperty('--world-accent-light', world.lightColor);
+      section.style.setProperty('--world-border-light', world.lightBadgeBorder);
+      section.style.setProperty('--world-bg-light', world.lightBadgeBg);
 
       const localizedWorldName = t(`world_${world.id}`) || world.name;
       const localizedWorldSub = t(`realm_${world.id}`) || world.sub;

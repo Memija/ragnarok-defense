@@ -264,7 +264,10 @@ export class Game {
 
   updateUI() {
     const isInfinite = getInfiniteResources();
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
     const currency = getRealmCurrency(this.realm);
+    const activeColor = isLight ? currency.lightColor : currency.color;
+    const activeGlow = isLight ? currency.lightGlowColor : currency.glowColor;
     const sunCountEl = document.getElementById('sun-count');
     if (sunCountEl) {
       if (isInfinite) {
@@ -274,8 +277,8 @@ export class Game {
         sunCountEl.textContent = this.sun.toString();
         sunCountEl.classList.remove('is-infinite-val');
       }
-      sunCountEl.style.color = currency.color;
-      sunCountEl.style.textShadow = `0 0 10px ${currency.glowColor}`;
+      sunCountEl.style.color = activeColor;
+      sunCountEl.style.textShadow = isLight ? `0 1px 4px ${activeGlow}` : `0 0 10px ${activeGlow}`;
     }
     const levelDisplay = document.getElementById('level-display');
     if (levelDisplay) {
@@ -495,7 +498,13 @@ export class Game {
     window.addEventListener('levelconfigchanged', this.handleLevelConfigChange);
     window.addEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
     window.addEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
+    window.addEventListener('ragnarok-theme-changed', this.handleThemeChange);
   }
+
+  handleThemeChange = () => {
+    this.updateRealmHeader();
+    this.updateUI();
+  };
 
   handleLevelUp = () => {
     SoundManager.getInstance().playClick();
@@ -642,7 +651,10 @@ export class Game {
     if (realmIconEl) realmIconEl.textContent = info.icon;
 
     // Update Upper HUD resource counter for the active world's currency
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
     const currency = getRealmCurrency(this.realm);
+    const activeColor = isLight ? currency.lightColor : currency.color;
+    const activeGlow = isLight ? currency.lightGlowColor : currency.glowColor;
     const currencyName = getRealmCurrencyName(this.realm);
     const resourceCounter = document.getElementById('resource-counter');
     if (resourceCounter) {
@@ -656,15 +668,15 @@ export class Game {
       }
       const talismanEl = resourceCounter.querySelector('.sol-talisman') as HTMLElement;
       if (talismanEl) {
-        talismanEl.style.setProperty('--talisman-color', currency.color);
-        talismanEl.style.setProperty('--talisman-glow', currency.glowColor);
-        talismanEl.style.borderColor = currency.color;
-        talismanEl.style.boxShadow = `0 0 14px ${currency.glowColor}`;
+        talismanEl.style.setProperty('--talisman-color', activeColor);
+        talismanEl.style.setProperty('--talisman-glow', activeGlow);
+        talismanEl.style.borderColor = activeColor;
+        talismanEl.style.boxShadow = isLight ? `0 2px 8px ${activeGlow}` : `0 0 14px ${activeGlow}`;
       }
       const valEl = document.getElementById('sun-count');
       if (valEl) {
-        valEl.style.color = currency.color;
-        valEl.style.textShadow = `0 0 10px ${currency.glowColor}`;
+        valEl.style.color = activeColor;
+        valEl.style.textShadow = isLight ? `0 1px 4px ${activeGlow}` : `0 0 10px ${activeGlow}`;
       }
     }
   }
@@ -2577,21 +2589,21 @@ export class Game {
         const by = (r + 0.5) * this.grid.cellHeight;
         const isReady = this.valkyrieAvailable[r];
         
-        ctx.fillStyle = isReady ? '#2c3528' : '#1a1f18';
+        ctx.fillStyle = isLight ? (isReady ? '#78350f' : '#94a3b8') : (isReady ? '#2c3528' : '#1a1f18');
         ctx.beginPath(); ctx.ellipse(wallX - 25, by + 15, 20, 10, 0, 0, Math.PI*2); ctx.fill();
         
         ctx.save();
         ctx.translate(wallX - 25, by);
         ctx.rotate(isReady ? Math.sin(time * 0.8 + r) * 0.15 : 0);
         
-        ctx.fillStyle = '#151a14';
+        ctx.fillStyle = isLight ? '#451a03' : '#151a14';
         ctx.fillRect(-10, -35, 20, 60);
         
-        ctx.fillStyle = isReady ? '#6a7860' : '#475569';
+        ctx.fillStyle = isLight ? (isReady ? '#d97706' : '#64748b') : (isReady ? '#6a7860' : '#475569');
         ctx.fillRect(-12, -20, 24, 6);
         ctx.fillRect(-12, 5, 24, 6);
         
-        ctx.strokeStyle = isReady ? '#5a6850' : '#334155';
+        ctx.strokeStyle = isLight ? (isReady ? '#92400e' : '#475569') : (isReady ? '#5a6850' : '#334155');
         ctx.lineWidth = 6;
         ctx.lineCap = 'round';
         ctx.beginPath();
@@ -2605,13 +2617,15 @@ export class Game {
         ctx.stroke();
         
         if (isReady) {
-          ctx.fillStyle = `rgba(180,220,255,${0.6 + Math.sin(time * 2 + r) * 0.3})`;
-          ctx.shadowColor = '#80bfff'; ctx.shadowBlur = 5;
+          ctx.fillStyle = isLight
+            ? `rgba(2, 132, 199, ${0.75 + Math.sin(time * 2 + r) * 0.25})`
+            : `rgba(180,220,255,${0.6 + Math.sin(time * 2 + r) * 0.3})`;
+          ctx.shadowColor = isLight ? '#38bdf8' : '#80bfff'; ctx.shadowBlur = 5;
           ctx.font = 'bold 12px serif'; ctx.textAlign = 'center';
           ctx.fillText('ᛏ', 0, -5);
           ctx.shadowBlur = 0;
           
-          ctx.fillStyle = '#a0d0ff';
+          ctx.fillStyle = isLight ? '#0284c7' : '#a0d0ff';
           ctx.beginPath();
           ctx.moveTo(-2, -15); ctx.lineTo(2, -15); ctx.lineTo(0, -50); ctx.fill();
         } else {
@@ -3483,13 +3497,13 @@ export class Game {
       }
 
       // 5. Blizzard Snow Particles (Swirling white & cyan snowflakes)
-      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
       for (const p of this.weatherParticles) {
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.angle);
-        ctx.fillStyle = `rgba(225, 245, 254, ${p.alpha})`;
-        ctx.shadowColor = '#00e5ff';
+        ctx.fillStyle = isLight ? `rgba(2, 132, 199, ${p.alpha * 0.7})` : `rgba(225, 245, 254, ${p.alpha})`;
+        ctx.shadowColor = isLight ? '#38bdf8' : '#00e5ff';
         ctx.shadowBlur = 5;
         ctx.beginPath();
         ctx.ellipse(0, 0, p.size * 1.6, p.size * 0.8, 0, 0, Math.PI * 2);
@@ -3500,19 +3514,19 @@ export class Game {
     } else if (this.realm === 'asgard') {
       // Golden divine light beams & celestial feathers
       ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
       for (let i = 0; i < 5; i++) {
         const shaftX = 380 + i * 130 + Math.sin(time * 0.4 + i) * 25;
         const sg = ctx.createLinearGradient(shaftX, 0, shaftX, h);
-        sg.addColorStop(0, 'rgba(255, 235, 180, 0.18)');
-        sg.addColorStop(0.6, 'rgba(255, 213, 79, 0.06)');
+        sg.addColorStop(0, isLight ? 'rgba(245, 158, 11, 0.14)' : 'rgba(255, 235, 180, 0.18)');
+        sg.addColorStop(0.6, isLight ? 'rgba(251, 191, 36, 0.05)' : 'rgba(255, 213, 79, 0.06)');
         sg.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = sg;
         ctx.fillRect(shaftX - 40, 0, 80, h);
       }
       for (const p of this.weatherParticles) {
-        ctx.fillStyle = `rgba(255, 224, 130, ${p.alpha})`;
-        ctx.shadowColor = '#ffd54f';
+        ctx.fillStyle = isLight ? `rgba(217, 119, 6, ${p.alpha * 0.8})` : `rgba(255, 224, 130, ${p.alpha})`;
+        ctx.shadowColor = isLight ? '#f59e0b' : '#ffd54f';
         ctx.shadowBlur = 8;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -3522,10 +3536,10 @@ export class Game {
     } else if (this.realm === 'helheim') {
       // Ghostly pale blue-grey souls
       ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
       for (const p of this.weatherParticles) {
-        ctx.fillStyle = `rgba(144, 164, 174, ${p.alpha})`;
-        ctx.shadowColor = '#607d8b';
+        ctx.fillStyle = isLight ? `rgba(100, 116, 139, ${p.alpha * 0.75})` : `rgba(144, 164, 174, ${p.alpha})`;
+        ctx.shadowColor = isLight ? '#475569' : '#607d8b';
         ctx.shadowBlur = 8;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -3535,10 +3549,12 @@ export class Game {
     } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
       // Burning underworld embers / forge sparks
       ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
       for (const p of this.weatherParticles) {
-        const color = this.realm === 'svartalfheim' ? `rgba(255, 179, 0, ${p.alpha})` : `rgba(255, 112, 67, ${p.alpha})`;
-        const shadow = this.realm === 'svartalfheim' ? '#ff8f00' : '#ff5722';
+        const color = this.realm === 'svartalfheim'
+          ? (isLight ? `rgba(217, 119, 6, ${p.alpha * 0.85})` : `rgba(255, 179, 0, ${p.alpha})`)
+          : (isLight ? `rgba(220, 38, 38, ${p.alpha * 0.85})` : `rgba(255, 112, 67, ${p.alpha})`);
+        const shadow = this.realm === 'svartalfheim' ? (isLight ? '#d97706' : '#ff8f00') : (isLight ? '#dc2626' : '#ff5722');
         ctx.fillStyle = color;
         ctx.shadowColor = shadow;
         ctx.shadowBlur = 10;
@@ -3550,10 +3566,12 @@ export class Game {
     } else if (this.realm === 'vanaheim' || this.realm === 'alfheim') {
       // Bioluminescent floating spores or magical light motes
       ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
       for (const p of this.weatherParticles) {
-        const color = this.realm === 'alfheim' ? `rgba(255, 128, 171, ${p.alpha})` : `rgba(129, 199, 132, ${p.alpha})`;
-        const shadow = this.realm === 'alfheim' ? '#ff4081' : '#66bb6a';
+        const color = this.realm === 'alfheim'
+          ? (isLight ? `rgba(219, 39, 119, ${p.alpha * 0.8})` : `rgba(255, 128, 171, ${p.alpha})`)
+          : (isLight ? `rgba(22, 163, 74, ${p.alpha * 0.8})` : `rgba(129, 199, 132, ${p.alpha})`);
+        const shadow = this.realm === 'alfheim' ? (isLight ? '#ec4899' : '#ff4081') : (isLight ? '#22c55e' : '#66bb6a');
         ctx.fillStyle = color;
         ctx.shadowColor = shadow;
         ctx.shadowBlur = 8;
@@ -3574,6 +3592,7 @@ export class Game {
     const h = this.height;
     const entranceTimer = this.realmEntranceTimer;
     const progress = (2.8 - entranceTimer) / 2.8;
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     let alpha = 1.0;
     if (progress < 0.2) alpha = progress / 0.2;
@@ -3585,23 +3604,23 @@ export class Game {
       const flashAlpha = (1 - progress / 0.35) * 0.75;
       const fGrad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w * 0.85);
       fGrad.addColorStop(0, `rgba(255, 255, 255, ${flashAlpha})`);
-      fGrad.addColorStop(0.4, `rgba(0, 229, 255, ${flashAlpha * 0.65})`);
+      fGrad.addColorStop(0.4, isLight ? `rgba(56, 189, 248, ${flashAlpha * 0.45})` : `rgba(0, 229, 255, ${flashAlpha * 0.65})`);
       fGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = fGrad;
       ctx.fillRect(0, 0, w, h);
     }
 
     // 2. God of War Realm Crest Announcement
-    const realmInfo: Record<string, { title: string; subtitle: string; runes: string; color: string }> = {
-      jotunheim:    { title: 'Jötunheim',    subtitle: 'Realm of the Frost Giants', runes: 'ᚦ ᛟ ᛏ ᚢ ᚾ ᚺ ᛖ ᛁ ᛗ', color: '#00e5ff' },
-      asgard:       { title: 'Asgard',       subtitle: 'Realm of the Aesir Gods',   runes: 'ᚨ ᛊ ᚷ ᚨ ᚱ ᛞ',       color: '#ffd54f' },
-      helheim:      { title: 'Helheim',      subtitle: 'Realm of the Dead',         runes: 'ᚺ ᛖ ᛚ ᚺ ᛖ ᛁ ᛗ',       color: '#607d8b' },
-      vanaheim:     { title: 'Vanaheim',     subtitle: 'Realm of the Vanir Gods',   runes: 'ᚹ ᚨ ᚾ ᚨ ᚺ ᛖ ᛁ ᛗ', color: '#66bb6a' },
-      midgard:      { title: 'Midgard',      subtitle: 'Realm of Mortals',          runes: 'ᛗ ᛁ ᛞ ᚷ ᚨ ᚱ ᛞ',       color: '#81c784' },
-      alfheim:      { title: 'Alfheim',      subtitle: 'Realm of Light Elves',      runes: 'ᛉ ᛚ ᚠ ᚺ ᛖ ᛁ ᛗ',       color: '#ff80ab' },
-      svartalfheim: { title: 'Svartalfheim', subtitle: 'Realm of Dwarves',          runes: 'ᚲ ᚹ ᚨ ᚱ ᛏ ᚨ ᛚ ᚠ', color: '#ffb300' },
-      niflheim:     { title: 'Niflheim',     subtitle: 'Realm of Ice and Mist',     runes: 'ᛁ ᚠ ᛚ ᚺ ᛖ ᛁ ᛗ',       color: '#b2ebf2' },
-      muspelheim:   { title: 'Muspelheim',   subtitle: 'Realm of Fire',             runes: 'ᛊ ᚢ ᛊ ᛈ ᛖ ᛚ ᚺ',       color: '#ff3d00' }
+    const realmInfo: Record<string, { title: string; subtitle: string; runes: string; color: string; lightColor: string }> = {
+      jotunheim:    { title: 'Jötunheim',    subtitle: 'Realm of the Frost Giants', runes: 'ᚦ ᛟ ᛏ ᚢ ᚾ ᚺ ᛖ ᛁ ᛗ', color: '#00e5ff', lightColor: '#0284c7' },
+      asgard:       { title: 'Asgard',       subtitle: 'Realm of the Aesir Gods',   runes: 'ᚨ ᛊ ᚷ ᚨ ᚱ ᛞ',       color: '#ffd54f', lightColor: '#b45309' },
+      helheim:      { title: 'Helheim',      subtitle: 'Realm of the Dead',         runes: 'ᚺ ᛖ ᛚ ᚺ ᛖ ᛁ ᛗ',       color: '#607d8b', lightColor: '#475569' },
+      vanaheim:     { title: 'Vanaheim',     subtitle: 'Realm of the Vanir Gods',   runes: 'ᚹ ᚨ ᚾ ᚨ ᚺ ᛖ ᛁ ᛗ', color: '#66bb6a', lightColor: '#15803d' },
+      midgard:      { title: 'Midgard',      subtitle: 'Realm of Mortals',          runes: 'ᛗ ᛁ ᛞ ᚷ ᚨ ᚱ ᛞ',       color: '#81c784', lightColor: '#0369a1' },
+      alfheim:      { title: 'Alfheim',      subtitle: 'Realm of Light Elves',      runes: 'ᛉ ᛚ ᚠ ᚺ ᛖ ᛁ ᛗ',       color: '#ff80ab', lightColor: '#be185d' },
+      svartalfheim: { title: 'Svartalfheim', subtitle: 'Realm of Dwarves',          runes: 'ᚲ ᚹ ᚨ ᚱ ᛏ ᚨ ᛚ ᚠ', color: '#ffb300', lightColor: '#c2410c' },
+      niflheim:     { title: 'Niflheim',     subtitle: 'Realm of Ice and Mist',     runes: 'ᛁ ᚠ ᛚ ᚺ ᛖ ᛁ ᛗ',       color: '#b2ebf2', lightColor: '#0e7490' },
+      muspelheim:   { title: 'Muspelheim',   subtitle: 'Realm of Fire',             runes: 'ᛊ ᚢ ᛊ ᛈ ᛖ ᛚ ᚺ',       color: '#ff3d00', lightColor: '#b91c1c' }
     };
 
     let info = realmInfo[this.realm] || realmInfo.midgard;
@@ -3610,15 +3629,17 @@ export class Game {
     info = { ...info };
     if (this.city === 'althjofs-wheel') {
       const locName = t('loc_althjofs_wheel_name');
-      info.title    = locName !== 'loc_althjofs_wheel_name' ? locName : "Althjof's Wheel";
-      info.subtitle = `${t('prologue')} · Dwarven Watermill · Outer Canal`;
-      info.runes    = 'ᚨ ᛚ ᛏ   ·   ᚲ ᚨ ᚾ ᚨ ᛚ';
-      info.color    = '#14b8a6';
+      info.title      = locName !== 'loc_althjofs_wheel_name' ? locName : "Althjof's Wheel";
+      info.subtitle   = `${t('prologue')} · Dwarven Watermill · Outer Canal`;
+      info.runes      = 'ᚨ ᛚ ᛏ   ·   ᚲ ᚨ ᚾ ᚨ ᛚ';
+      info.color      = '#14b8a6';
+      info.lightColor = '#0f766e';
     } else if (this.city === 'nidavellir') {
-      info.title    = 'Niðavellir';
-      info.subtitle = 'The Dwarven Capital · Svartalfheim';
-      info.runes    = 'ᚾ ᛁ ᛞ ᚨ ᚹ ᛖ ᛚ ᛚ ᛁ ᚱ';
-      info.color    = '#ffaa00';
+      info.title      = 'Niðavellir';
+      info.subtitle   = 'The Dwarven Capital · Svartalfheim';
+      info.runes      = 'ᚾ ᛁ ᛞ ᚨ ᚹ ᛖ ᛚ ᛚ ᛁ ᚱ';
+      info.color      = '#ffaa00';
+      info.lightColor = '#b45309';
     } else if (this.city) {
       const locKey = `loc_${this.city.replace(/-/g, '_')}_name`;
       const trans = t(locKey);
@@ -3626,15 +3647,17 @@ export class Game {
       info.title = `${info.title} · ${cityName}`;
     }
 
+    const accentColor = isLight ? info.lightColor : info.color;
+
     ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
     const cx = w / 2 + 100;
     const cy = h / 2 - 30;
 
     // Glowing ornamental banner box
-    ctx.fillStyle = 'rgba(10, 14, 20, 0.90)';
-    ctx.strokeStyle = info.color;
+    ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(10, 14, 20, 0.90)';
+    ctx.strokeStyle = accentColor;
     ctx.lineWidth = 2.5;
-    ctx.shadowColor = info.color;
+    ctx.shadowColor = isLight ? 'rgba(15, 23, 42, 0.22)' : accentColor;
     ctx.shadowBlur = 25;
     ctx.beginPath();
     ctx.roundRect(cx - 240, cy - 65, 480, 130, 14);
@@ -3643,21 +3666,23 @@ export class Game {
     ctx.shadowBlur = 0;
 
     // Elder Futhark Runes
-    ctx.fillStyle = info.color;
+    ctx.fillStyle = accentColor;
     ctx.font = 'bold 16px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(info.runes, cx, cy - 35);
 
     // Realm Title
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
     ctx.font = 'bold 30px "Outfit", "Inter", sans-serif';
-    ctx.shadowColor = info.color;
-    ctx.shadowBlur = 18;
+    if (!isLight) {
+      ctx.shadowColor = accentColor;
+      ctx.shadowBlur = 18;
+    }
     ctx.fillText(`✦ ${info.title} ✦`, cx, cy + 2);
 
     // Subtitle
-    ctx.fillStyle = 'rgba(220, 235, 250, 0.9)';
+    ctx.fillStyle = isLight ? '#475569' : 'rgba(220, 235, 250, 0.9)';
     ctx.font = '700 12px "Outfit", "Inter", sans-serif';
     ctx.letterSpacing = '2px';
     ctx.shadowBlur = 0;
@@ -3678,22 +3703,23 @@ export class Game {
     const occupant = this.defenders.find(d => d.row === row && d.col === col);
     const isOccupied = !!occupant;
     const now = Date.now() / 1000;
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     ctx.save();
 
     if (this.selectedUnit === 'shovel') {
       if (isOccupied) {
         // Demolition reticle around defender
-        ctx.strokeStyle = '#ff3d00';
+        ctx.strokeStyle = isLight ? '#dc2626' : '#ff3d00';
         ctx.lineWidth = 2.5;
-        ctx.shadowColor = '#ff1744';
+        ctx.shadowColor = isLight ? 'rgba(220, 38, 38, 0.5)' : '#ff1744';
         ctx.shadowBlur = 15;
         
         ctx.strokeRect(cx + 8, cy + 8, cellW - 16, cellH - 16);
         
         // Corner demolition notches
         const cornerSize = 14;
-        ctx.fillStyle = '#ff3d00';
+        ctx.fillStyle = isLight ? '#dc2626' : '#ff3d00';
         // Top-left
         ctx.fillRect(cx + 4, cy + 4, cornerSize, 3);
         ctx.fillRect(cx + 4, cy + 4, 3, cornerSize);
@@ -3709,15 +3735,15 @@ export class Game {
 
         // DEMOLISH text badge
         ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(20, 10, 10, 0.9)';
-        ctx.strokeStyle = '#ff3d00';
-        ctx.lineWidth = 1;
+        ctx.fillStyle = isLight ? 'rgba(254, 242, 242, 0.96)' : 'rgba(20, 10, 10, 0.9)';
+        ctx.strokeStyle = isLight ? '#dc2626' : '#ff3d00';
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.roundRect(cx + cellW / 2 - 45, cy - 14, 90, 22, 6);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = '#ff5252';
+        ctx.fillStyle = isLight ? '#b91c1c' : '#ff5252';
         ctx.font = 'bold 10px "Outfit", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -3725,17 +3751,17 @@ export class Game {
       }
     } else if (isOccupied) {
       // Red Ward Barrier - Placement Blocked
-      ctx.fillStyle = 'rgba(211, 47, 47, 0.2)';
-      ctx.strokeStyle = 'rgba(255, 82, 82, 0.8)';
+      ctx.fillStyle = isLight ? 'rgba(254, 226, 226, 0.45)' : 'rgba(211, 47, 47, 0.2)';
+      ctx.strokeStyle = isLight ? 'rgba(220, 38, 38, 0.85)' : 'rgba(255, 82, 82, 0.8)';
       ctx.lineWidth = 2;
       ctx.shadowColor = '#d32f2f';
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = isLight ? 8 : 12;
       ctx.beginPath();
       ctx.roundRect(cx + 6, cy + 6, cellW - 12, cellH - 12, 10);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = '#ff5252';
+      ctx.fillStyle = isLight ? '#b91c1c' : '#ff5252';
       ctx.font = 'bold 11px "Outfit", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -3745,7 +3771,6 @@ export class Game {
       const defenderInfo = getDefenderInfo(this.selectedUnit, this.realm);
       const isTower = defenderInfo?.category === 'towers';
       const pulse = (Math.sin(now * 4) + 1) / 2;
-      const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
       const ringColor = isTower
         ? (isLight ? `rgba(2, 132, 199, ${0.7 + pulse * 0.3})` : `rgba(56, 189, 248, ${0.6 + pulse * 0.4})`)
@@ -3900,16 +3925,19 @@ export class Game {
   drawFloatingTexts() {
     if (this.floatingTexts.length === 0) return;
     const ctx = this.ctx;
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
     for (let i = 0; i < this.floatingTexts.length; i++) {
       const ft = this.floatingTexts[i];
       ctx.globalAlpha = ft.alpha;
-      ctx.shadowColor = ft.color;
+      const isWhiteText = ft.color.toLowerCase() === '#ffffff' || ft.color.toLowerCase() === '#fff';
+      const fillColor = (isLight && isWhiteText) ? '#0f172a' : ft.color;
+      ctx.strokeStyle = (isLight && isWhiteText) ? 'rgba(255, 255, 255, 0.92)' : 'rgba(0, 0, 0, 0.85)';
+      ctx.shadowColor = (isLight && isWhiteText) ? 'rgba(255, 255, 255, 0.8)' : ft.color;
       ctx.shadowBlur = ft.isCritical ? 16 : 8;
-      ctx.fillStyle = ft.color;
+      ctx.fillStyle = fillColor;
       ctx.font = ft.isCritical
         ? 'bold 20px "Outfit", "Inter", sans-serif'
         : 'bold 15px "Outfit", "Inter", sans-serif';
@@ -3927,15 +3955,16 @@ export class Game {
     const cx = this.grid ? (this.grid.startX + (this.width - this.grid.startX) / 2) : (w / 2);
     const cy = 120;
     const alpha = Math.min(1, this.waveBannerTimer * 1.5);
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     ctx.save();
     ctx.globalAlpha = alpha;
 
     // Glowing alert tablet
-    ctx.fillStyle = 'rgba(25, 10, 10, 0.92)';
-    ctx.strokeStyle = '#ff3d00';
+    ctx.fillStyle = isLight ? 'rgba(255, 241, 242, 0.96)' : 'rgba(25, 10, 10, 0.92)';
+    ctx.strokeStyle = isLight ? '#dc2626' : '#ff3d00';
     ctx.lineWidth = 3;
-    ctx.shadowColor = '#ff1744';
+    ctx.shadowColor = isLight ? 'rgba(220, 38, 38, 0.35)' : '#ff1744';
     ctx.shadowBlur = 30;
 
     ctx.beginPath();
@@ -3944,17 +3973,21 @@ export class Game {
     ctx.stroke();
 
     // Runic warning header
-    ctx.fillStyle = '#ff5252';
+    ctx.fillStyle = isLight ? '#b91c1c' : '#ff5252';
     ctx.font = 'bold 11px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   ᚹ ᚨ ᚱ ᚾ ᛁ ᚾ ᚷ', cx, cy - 16);
 
     // Main Alert Text
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = isLight ? '#7f1d1d' : '#ffffff';
     ctx.font = 'bold 18px "Outfit", sans-serif';
-    ctx.shadowColor = '#ff5722';
-    ctx.shadowBlur = 12;
+    if (!isLight) {
+      ctx.shadowColor = '#ff5722';
+      ctx.shadowBlur = 12;
+    } else {
+      ctx.shadowBlur = 0;
+    }
     ctx.fillText(this.waveBannerText, cx, cy + 12);
 
     ctx.restore();
@@ -3967,22 +4000,28 @@ export class Game {
     const h = this.height;
     const cx = w / 2;
     const cy = h / 2;
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     ctx.save();
 
     if (this.gameState === 'defeat') {
-      // Defeat: Blood-red cosmic vignette backdrop
+      // Defeat backdrop
       const defGrad = ctx.createRadialGradient(cx, cy, 50, cx, cy, w * 0.7);
-      defGrad.addColorStop(0, 'rgba(40, 10, 10, 0.85)');
-      defGrad.addColorStop(1, 'rgba(10, 2, 2, 0.95)');
+      if (isLight) {
+        defGrad.addColorStop(0, 'rgba(254, 226, 226, 0.75)');
+        defGrad.addColorStop(1, 'rgba(127, 29, 29, 0.65)');
+      } else {
+        defGrad.addColorStop(0, 'rgba(40, 10, 10, 0.85)');
+        defGrad.addColorStop(1, 'rgba(10, 2, 2, 0.95)');
+      }
       ctx.fillStyle = defGrad;
       ctx.fillRect(0, 0, w, h);
 
       // Carved Norse Stone Tablet
-      ctx.fillStyle = 'rgba(15, 20, 28, 0.96)';
-      ctx.strokeStyle = '#d32f2f';
+      ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.97)' : 'rgba(15, 20, 28, 0.96)';
+      ctx.strokeStyle = isLight ? '#dc2626' : '#d32f2f';
       ctx.lineWidth = 3;
-      ctx.shadowColor = '#ff1744';
+      ctx.shadowColor = isLight ? 'rgba(185, 28, 28, 0.35)' : '#ff1744';
       ctx.shadowBlur = 35;
       ctx.beginPath();
       ctx.roundRect(cx - 220, cy - 140, 440, 260, 16);
@@ -3990,21 +4029,25 @@ export class Game {
       ctx.stroke();
 
       // Skull Runes
-      ctx.fillStyle = '#ff5252';
+      ctx.fillStyle = isLight ? '#b91c1c' : '#ff5252';
       ctx.font = 'bold 16px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('ᛞ ᛖ ᚨ ᚦ   ·   ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ', cx, cy - 105);
 
       // Main Title
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = isLight ? '#7f1d1d' : '#ffffff';
       ctx.font = 'bold 26px "Outfit", "Inter", sans-serif';
-      ctx.shadowColor = '#d32f2f';
-      ctx.shadowBlur = 20;
+      if (!isLight) {
+        ctx.shadowColor = '#d32f2f';
+        ctx.shadowBlur = 20;
+      } else {
+        ctx.shadowBlur = 0;
+      }
       ctx.fillText('Realm has fallen', cx, cy - 65);
 
       // Description
-      ctx.fillStyle = 'rgba(220, 200, 200, 0.85)';
+      ctx.fillStyle = isLight ? '#334155' : 'rgba(220, 200, 200, 0.85)';
       ctx.font = '500 13px "Outfit", sans-serif';
       ctx.shadowBlur = 0;
       ctx.fillText('The fortress defenses were breached by the invaders.', cx, cy - 25);
@@ -4012,8 +4055,8 @@ export class Game {
 
       // Buttons
       // 1. Retry Button (Left)
-      ctx.fillStyle = 'rgba(183, 28, 28, 0.85)';
-      ctx.strokeStyle = '#ff5252';
+      ctx.fillStyle = isLight ? '#dc2626' : 'rgba(183, 28, 28, 0.85)';
+      ctx.strokeStyle = isLight ? '#b91c1c' : '#ff5252';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.roundRect(cx - 140, cy + 40, 130, 45, 8);
@@ -4024,28 +4067,33 @@ export class Game {
       ctx.fillText('↺ Retry', cx - 75, cy + 62);
 
       // 2. Realms Button (Right)
-      ctx.fillStyle = 'rgba(38, 50, 56, 0.85)';
-      ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
+      ctx.fillStyle = isLight ? '#f1f5f9' : 'rgba(38, 50, 56, 0.85)';
+      ctx.strokeStyle = isLight ? '#0284c7' : 'rgba(212, 175, 55, 0.6)';
       ctx.beginPath();
       ctx.roundRect(cx + 10, cy + 40, 130, 45, 8);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = '#e0e0e0';
+      ctx.fillStyle = isLight ? '#0f172a' : '#e0e0e0';
       ctx.fillText('« Realms', cx + 75, cy + 62);
 
     } else if (this.gameState === 'victory') {
       // Victory: Golden Celestial Bifrost Backdrop
       const vicGrad = ctx.createRadialGradient(cx, cy, 50, cx, cy, w * 0.7);
-      vicGrad.addColorStop(0, 'rgba(20, 35, 20, 0.85)');
-      vicGrad.addColorStop(1, 'rgba(4, 12, 6, 0.95)');
+      if (isLight) {
+        vicGrad.addColorStop(0, 'rgba(254, 243, 199, 0.75)');
+        vicGrad.addColorStop(1, 'rgba(6, 78, 59, 0.6)');
+      } else {
+        vicGrad.addColorStop(0, 'rgba(20, 35, 20, 0.85)');
+        vicGrad.addColorStop(1, 'rgba(4, 12, 6, 0.95)');
+      }
       ctx.fillStyle = vicGrad;
       ctx.fillRect(0, 0, w, h);
 
       // Carved Norse Stone Tablet
-      ctx.fillStyle = 'rgba(15, 24, 20, 0.96)';
-      ctx.strokeStyle = '#ffd54f';
+      ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.97)' : 'rgba(15, 24, 20, 0.96)';
+      ctx.strokeStyle = isLight ? '#d97706' : '#ffd54f';
       ctx.lineWidth = 3;
-      ctx.shadowColor = '#ffb300';
+      ctx.shadowColor = isLight ? 'rgba(217, 119, 6, 0.35)' : '#ffb300';
       ctx.shadowBlur = 35;
       ctx.beginPath();
       ctx.roundRect(cx - 220, cy - 140, 440, 260, 16);
@@ -4053,21 +4101,25 @@ export class Game {
       ctx.stroke();
 
       // Golden Runes
-      ctx.fillStyle = '#ffd54f';
+      ctx.fillStyle = isLight ? '#b45309' : '#ffd54f';
       ctx.font = 'bold 16px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('ᚹ ᛁ ᚲ ᛏ ᛟ ᚱ ᛁ   ·   ᛊ ᛖ ᚲ ᚢ ᚱ ᛖ', cx, cy - 105);
 
       // Main Title
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = isLight ? '#065f46' : '#ffffff';
       ctx.font = 'bold 26px "Outfit", "Inter", sans-serif';
-      ctx.shadowColor = '#ffd54f';
-      ctx.shadowBlur = 20;
+      if (!isLight) {
+        ctx.shadowColor = '#ffd54f';
+        ctx.shadowBlur = 20;
+      } else {
+        ctx.shadowBlur = 0;
+      }
       ctx.fillText('✦ Realm Secured ✦', cx, cy - 65);
 
       // Description
-      ctx.fillStyle = 'rgba(200, 240, 210, 0.85)';
+      ctx.fillStyle = isLight ? '#334155' : 'rgba(200, 240, 210, 0.85)';
       ctx.font = '500 13px "Outfit", sans-serif';
       ctx.shadowBlur = 0;
       ctx.fillText('All invading waves have been repelled by Odin\'s defense!', cx, cy - 25);
@@ -4075,8 +4127,8 @@ export class Game {
 
       // Buttons
       // 1. Next Level Button (Left)
-      ctx.fillStyle = 'rgba(46, 125, 50, 0.85)';
-      ctx.strokeStyle = '#81c784';
+      ctx.fillStyle = isLight ? '#15803d' : 'rgba(46, 125, 50, 0.85)';
+      ctx.strokeStyle = isLight ? '#166534' : '#81c784';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.roundRect(cx - 140, cy + 40, 130, 45, 8);
@@ -4087,13 +4139,13 @@ export class Game {
       ctx.fillText('✦ Next Level', cx - 75, cy + 62);
 
       // 2. Realms Button (Right)
-      ctx.fillStyle = 'rgba(38, 50, 56, 0.85)';
-      ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
+      ctx.fillStyle = isLight ? '#f1f5f9' : 'rgba(38, 50, 56, 0.85)';
+      ctx.strokeStyle = isLight ? '#0284c7' : 'rgba(212, 175, 55, 0.6)';
       ctx.beginPath();
       ctx.roundRect(cx + 10, cy + 40, 130, 45, 8);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = '#e0e0e0';
+      ctx.fillStyle = isLight ? '#0f172a' : '#e0e0e0';
       ctx.fillText('« Realms', cx + 75, cy + 62);
     }
 
@@ -4262,6 +4314,7 @@ export class Game {
     window.removeEventListener('levelconfigchanged', this.handleLevelConfigChange);
     window.removeEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
     window.removeEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
+    window.removeEventListener('ragnarok-theme-changed', this.handleThemeChange);
     this.canvas.removeEventListener('mousemove', this.handleMouseMove);
     this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.removeEventListener('click', this.handleCanvasClick);

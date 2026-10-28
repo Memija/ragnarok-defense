@@ -25,6 +25,9 @@ export interface WorldMeta {
   color: string;
   badgeBg: string;
   badgeBorder: string;
+  lightColor: string;
+  lightBadgeBg: string;
+  lightBadgeBorder: string;
 }
 
 export const WORLDS: Record<WorldId, WorldMeta> = {
@@ -37,7 +40,10 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     rune: 'ᚲ',
     color: '#f97316',
     badgeBg: 'rgba(249, 115, 22, 0.18)',
-    badgeBorder: 'rgba(249, 115, 22, 0.45)'
+    badgeBorder: 'rgba(249, 115, 22, 0.45)',
+    lightColor: '#c2410c',
+    lightBadgeBg: '#ffedd5',
+    lightBadgeBorder: 'rgba(234, 88, 12, 0.45)'
   },
   vanaheim: {
     id: 'vanaheim',
@@ -48,7 +54,10 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     rune: 'ᚹ',
     color: '#4ade80',
     badgeBg: 'rgba(74, 222, 128, 0.18)',
-    badgeBorder: 'rgba(74, 222, 128, 0.45)'
+    badgeBorder: 'rgba(74, 222, 128, 0.45)',
+    lightColor: '#15803d',
+    lightBadgeBg: '#dcfce7',
+    lightBadgeBorder: 'rgba(22, 163, 74, 0.45)'
   },
   asgard: {
     id: 'asgard',
@@ -59,7 +68,10 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     rune: 'ᚨ',
     color: '#fbbf24',
     badgeBg: 'rgba(251, 191, 36, 0.18)',
-    badgeBorder: 'rgba(251, 191, 36, 0.45)'
+    badgeBorder: 'rgba(251, 191, 36, 0.45)',
+    lightColor: '#b45309',
+    lightBadgeBg: '#fef3c7',
+    lightBadgeBorder: 'rgba(217, 119, 6, 0.48)'
   },
   midgard: {
     id: 'midgard',
@@ -70,7 +82,10 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     rune: 'ᛗ',
     color: '#38bdf8',
     badgeBg: 'rgba(56, 189, 248, 0.18)',
-    badgeBorder: 'rgba(56, 189, 248, 0.45)'
+    badgeBorder: 'rgba(56, 189, 248, 0.45)',
+    lightColor: '#0369a1',
+    lightBadgeBg: '#e0f2fe',
+    lightBadgeBorder: 'rgba(2, 132, 199, 0.45)'
   },
   jotunheim: {
     id: 'jotunheim',
@@ -81,7 +96,10 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     rune: 'ᚦ',
     color: '#22d3ee',
     badgeBg: 'rgba(34, 211, 238, 0.18)',
-    badgeBorder: 'rgba(34, 211, 238, 0.45)'
+    badgeBorder: 'rgba(34, 211, 238, 0.45)',
+    lightColor: '#0e7490',
+    lightBadgeBg: '#cffafe',
+    lightBadgeBorder: 'rgba(8, 145, 178, 0.45)'
   },
   niflheim: {
     id: 'niflheim',
@@ -92,7 +110,10 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     rune: 'ᛁ',
     color: '#a5f3fc',
     badgeBg: 'rgba(165, 243, 252, 0.18)',
-    badgeBorder: 'rgba(165, 243, 252, 0.45)'
+    badgeBorder: 'rgba(165, 243, 252, 0.45)',
+    lightColor: '#0f766e',
+    lightBadgeBg: '#ccfbf1',
+    lightBadgeBorder: 'rgba(13, 148, 136, 0.45)'
   },
   muspelheim: {
     id: 'muspelheim',
@@ -103,7 +124,10 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     rune: 'ᛊ',
     color: '#ef4444',
     badgeBg: 'rgba(239, 68, 68, 0.18)',
-    badgeBorder: 'rgba(239, 68, 68, 0.45)'
+    badgeBorder: 'rgba(239, 68, 68, 0.45)',
+    lightColor: '#b91c1c',
+    lightBadgeBg: '#fee2e2',
+    lightBadgeBorder: 'rgba(220, 38, 38, 0.45)'
   },
   helheim: {
     id: 'helheim',
@@ -112,9 +136,12 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     sub: 'Silent Obsidian Domain',
     icon: '💀',
     rune: 'ᚺ',
-    color: '#94a3b8',
-    badgeBg: 'rgba(148, 163, 184, 0.18)',
-    badgeBorder: 'rgba(148, 163, 184, 0.45)'
+    color: '#c084fc',
+    badgeBg: 'rgba(192, 132, 252, 0.18)',
+    badgeBorder: 'rgba(192, 132, 252, 0.45)',
+    lightColor: '#6d28d9',
+    lightBadgeBg: '#f3e8ff',
+    lightBadgeBorder: 'rgba(126, 34, 206, 0.42)'
   },
   alfheim: {
     id: 'alfheim',
@@ -125,7 +152,10 @@ export const WORLDS: Record<WorldId, WorldMeta> = {
     rune: 'ᛉ',
     color: '#f472b6',
     badgeBg: 'rgba(244, 114, 182, 0.18)',
-    badgeBorder: 'rgba(244, 114, 182, 0.45)'
+    badgeBorder: 'rgba(244, 114, 182, 0.45)',
+    lightColor: '#be185d',
+    lightBadgeBg: '#fce7f3',
+    lightBadgeBorder: 'rgba(219, 39, 119, 0.42)'
   }
 };
 
@@ -1018,7 +1048,10 @@ export function getDefendersGroupedByWorld(realm?: string): WorldDefendersGroup[
           rune: 'ᛟ',
           color: '#ffd700',
           badgeBg: 'rgba(255, 215, 0, 0.18)',
-          badgeBorder: 'rgba(255, 215, 0, 0.45)'
+          badgeBorder: 'rgba(255, 215, 0, 0.45)',
+          lightColor: '#b45309',
+          lightBadgeBg: '#fef3c7',
+          lightBadgeBorder: 'rgba(217, 119, 6, 0.45)'
         },
         defenders: units,
         isHomeWorld: wId === normRealm

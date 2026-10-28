@@ -180,6 +180,9 @@ export class ForeignWorldsModal {
       card.style.setProperty('--world-color', world.color);
       card.style.setProperty('--world-bg', world.badgeBg);
       card.style.setProperty('--world-border', world.badgeBorder);
+      card.style.setProperty('--world-color-light', world.lightColor);
+      card.style.setProperty('--world-bg-light', world.lightBadgeBg);
+      card.style.setProperty('--world-border-light', world.lightBadgeBorder);
 
       card.innerHTML = `
         <div class="card-checkbox">

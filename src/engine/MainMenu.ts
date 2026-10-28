@@ -788,20 +788,22 @@ export class MainMenu {
     const safeRadius = Math.max(1, oR);
     const coreGrad = ctx.createRadialGradient(rx - oR * 0.3, ry - oR * 0.3, 0, rx, ry, safeRadius);
     coreGrad.addColorStop(0, '#ffffff');
-    coreGrad.addColorStop(0.35, r.color);
-    coreGrad.addColorStop(0.85, '#0f172a');
-    coreGrad.addColorStop(1, '#020617');
+    coreGrad.addColorStop(0.38, r.color);
+    coreGrad.addColorStop(0.85, isLight ? '#1e293b' : '#0f172a');
+    coreGrad.addColorStop(1, isLight ? '#0f172a' : '#020617');
     ctx.beginPath();
     ctx.arc(rx, ry, Math.max(0.5, oR - 1), 0, Math.PI * 2);
     ctx.fillStyle = coreGrad;
     ctx.fill();
 
-    // 5. Central Glowing Rune
+    // 5. Central Glowing Rune (with crisp contrast shadow so it pops on bright cores)
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
     ctx.font = `bold ${Math.round(oR * 0.95)}px serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.72)';
+    ctx.strokeText(r.rune, rx, ry);
     ctx.fillStyle = '#ffffff';
     ctx.fillText(r.rune, rx, ry);
     ctx.restore();
@@ -813,7 +815,7 @@ export class MainMenu {
       const lR = Math.max(7, Math.round(oR * 0.26));
       ctx.save();
       // Backing pill glow
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.78)' : 'rgba(15, 23, 42, 0.85)';
       ctx.beginPath();
       ctx.roundRect(rx - lR * 1.25, lockY - lR * 1.15, lR * 2.5, lR * 2.3, lR * 0.5);
       ctx.fill();
@@ -854,37 +856,69 @@ export class MainMenu {
       ctx.restore();
     }
 
-    // Realm Label & Subtitle Badge (High Contrast in both themes)
+    // Realm Label & Subtitle Badge (High Contrast Plaque in both themes)
     ctx.save();
     const rawWorldName = t('world_' + r.id) || r.name;
     const labelText = rawWorldName;
     ctx.font = 'bold 13px "Outfit", "Inter", sans-serif';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
+    ctx.textBaseline = 'middle';
 
-    const labelY = ry + oR + 12;
+    const labelW = ctx.measureText(labelText).width;
+    const pillW = Math.max(88, labelW + 20);
+    const pillH = 22;
+    const pillX = rx - pillW * 0.5;
+    const pillY = ry + oR + 9;
 
+    // Backing Runic Pill
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, 11);
     if (isLight) {
-      ctx.lineWidth = 3.5;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
-      ctx.strokeText(labelText, rx, labelY);
+      ctx.fillStyle = r.locked
+        ? 'rgba(248, 250, 252, 0.90)'
+        : (isHovered ? 'rgba(255, 251, 235, 0.98)' : 'rgba(255, 255, 255, 0.92)');
+      ctx.strokeStyle = r.locked
+        ? 'rgba(148, 163, 184, 0.75)'
+        : (isHovered ? '#d97706' : 'rgba(217, 119, 6, 0.65)');
+    } else {
+      ctx.fillStyle = r.locked
+        ? 'rgba(8, 13, 23, 0.80)'
+        : (isHovered ? 'rgba(24, 15, 8, 0.95)' : 'rgba(8, 13, 23, 0.88)');
+      ctx.strokeStyle = r.locked
+        ? 'rgba(148, 163, 184, 0.38)'
+        : (isHovered ? '#fbbf24' : 'rgba(249, 115, 22, 0.65)');
     }
+    ctx.lineWidth = isHovered ? 1.6 : 1.2;
+    ctx.fill();
+    ctx.stroke();
+
     ctx.fillStyle = r.locked
-      ? (isLight ? '#334155' : 'rgba(241, 245, 249, 0.92)')
-      : (isHovered ? (isLight ? '#0f172a' : '#ffffff') : (isLight ? '#78350f' : r.color));
-    ctx.fillText(labelText, rx, labelY);
+      ? (isLight ? '#334155' : 'rgba(226, 232, 240, 0.92)')
+      : (isHovered ? (isLight ? '#78350f' : '#fef08a') : (isLight ? '#9a3412' : r.color));
+    ctx.fillText(labelText, rx, pillY + pillH * 0.5 + 0.5);
 
     if (isHovered) {
       const realmTitle = t('realm_' + r.id);
       const singleSub = r.locked ? `🔒 ${t('locked')}` : `✦ ${realmTitle} ✦`;
       ctx.font = `600 11px "Outfit", sans-serif`;
-      if (isLight) {
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
-        ctx.strokeText(singleSub, rx, ry + oR + 28);
-      }
-      ctx.fillStyle = r.locked ? '#dc2626' : (isLight ? '#0f172a' : '#ffffff');
-      ctx.fillText(singleSub, rx, ry + oR + 28);
+      const subW = ctx.measureText(singleSub).width + 16;
+      const subH = 18;
+      const subY = pillY + pillH + 4;
+
+      ctx.beginPath();
+      ctx.roundRect(rx - subW * 0.5, subY, subW, subH, 9);
+      ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(8, 13, 23, 0.90)';
+      ctx.strokeStyle = r.locked
+        ? (isLight ? 'rgba(220, 38, 38, 0.5)' : 'rgba(248, 113, 113, 0.5)')
+        : (isLight ? 'rgba(217, 119, 6, 0.5)' : 'rgba(251, 191, 36, 0.45)');
+      ctx.lineWidth = 1;
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = r.locked
+        ? (isLight ? '#b91c1c' : '#fca5a5')
+        : (isLight ? '#0f172a' : '#f8fafc');
+      ctx.fillText(singleSub, rx, subY + subH * 0.5 + 0.5);
     }
     ctx.restore();
   }
@@ -1430,13 +1464,13 @@ export class MainMenu {
   }
 
   // Draw Targeted Bifrost Sap Surges ONLY along the active realm path
-  drawTargetedBifrostSurge(time: number) {
+  drawTargetedBifrostSurge(time: number, isLight: boolean) {
     if (!this.hoveredRealm) return;
     const ctx = this.ctx;
     const targetRealmId = this.hoveredRealm.id;
 
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
 
     // Target branch only
     const targetBranches = this.branches.filter(br => br.realmId === targetRealmId);
@@ -1447,7 +1481,7 @@ export class MainMenu {
       ctx.moveTo(br.x1, br.y1);
       ctx.quadraticCurveTo(br.cx, br.cy, br.x2, br.y2);
       ctx.lineWidth = Math.max(16, br.w1 * 0.9);
-      ctx.strokeStyle = `rgba(251, 146, 60, 0.22)`;
+      ctx.strokeStyle = isLight ? `rgba(217, 119, 6, 0.28)` : `rgba(251, 146, 60, 0.22)`;
       ctx.stroke();
 
       // 2. Focused vibrant inner glow
@@ -1455,7 +1489,7 @@ export class MainMenu {
       ctx.moveTo(br.x1, br.y1);
       ctx.quadraticCurveTo(br.cx, br.cy, br.x2, br.y2);
       ctx.lineWidth = Math.max(6, br.w1 * 0.35);
-      ctx.strokeStyle = `rgba(254, 215, 170, 0.75)`;
+      ctx.strokeStyle = isLight ? `rgba(234, 88, 12, 0.85)` : `rgba(254, 215, 170, 0.75)`;
       ctx.stroke();
 
       // 3. Blazing core laser beam
@@ -1463,7 +1497,7 @@ export class MainMenu {
       ctx.moveTo(br.x1, br.y1);
       ctx.quadraticCurveTo(br.cx, br.cy, br.x2, br.y2);
       ctx.lineWidth = 2.5;
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = isLight ? '#fef08a' : '#ffffff';
       ctx.stroke();
 
       // 4. Flowing radiant energy comets
@@ -1474,8 +1508,8 @@ export class MainMenu {
 
         // Radiant golden flare
         const flare = ctx.createRadialGradient(px, py, 0, px, py, 14);
-        flare.addColorStop(0, '#ffffff');
-        flare.addColorStop(0.35, '#fbbf24');
+        flare.addColorStop(0, isLight ? '#fffbeb' : '#ffffff');
+        flare.addColorStop(0.35, isLight ? '#f59e0b' : '#fbbf24');
         flare.addColorStop(1, 'rgba(249, 115, 22, 0)');
         ctx.fillStyle = flare;
         ctx.beginPath();
@@ -1580,7 +1614,7 @@ export class MainMenu {
     this.drawYggdrasilWood(time, isLight);
 
     // === 6. TARGETED BIFROST SAP SURGES ===
-    this.drawTargetedBifrostSurge(time);
+    this.drawTargetedBifrostSurge(time, isLight);
 
     // === 7. REALM PARTICLE AMBIENCE ===
     this.drawRealmParticleAmbience(w, h, time, isLight);
@@ -1599,6 +1633,13 @@ export class MainMenu {
         p.y = -8;
         p.x = Math.random() * w;
       }
+      if (isLight) {
+        ctx.fillStyle = 'rgba(2, 132, 199, 0.25)';
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r + 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.fillStyle = isLight ? p.colorLight : p.colorDark;
       ctx.globalAlpha = p.alpha;
       ctx.beginPath();
@@ -1607,7 +1648,7 @@ export class MainMenu {
 
       // Delicate sparkling core on larger crystalline snowflakes
       if (p.r > 2.0) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = isLight ? '#bae6fd' : '#ffffff';
         ctx.globalAlpha = p.alpha * 0.85;
         ctx.fillRect(p.x - 0.6, p.y - 0.6, 1.2, 1.2);
       }

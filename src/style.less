@@ -2006,15 +2006,15 @@ body[data-active-theme="light"],
           }
 
           .section-header {
-            border-bottom: 1px solid rgba(2, 132, 199, 0.2) !important;
+            border-bottom: 1px solid var(--world-border-light, rgba(2, 132, 199, 0.25)) !important;
 
             .section-icon-frame {
-              background: #ffffff !important;
-              border: 1.5px solid rgba(2, 132, 199, 0.25) !important;
-              box-shadow: 0 2px 6px rgba(2, 132, 199, 0.1) !important;
+              background: var(--world-bg-light, #ffffff) !important;
+              border: 1.5px solid var(--world-border-light, rgba(2, 132, 199, 0.35)) !important;
+              box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
 
               .section-rune {
-                color: #0284c7 !important;
+                color: var(--world-accent-light, #0284c7) !important;
                 text-shadow: none !important;
               }
             }
@@ -2036,7 +2036,7 @@ body[data-active-theme="light"],
             }
 
             .section-title {
-              color: #0f172a !important;
+              color: var(--world-accent-light, #0f172a) !important;
             }
 
             .section-subtitle {
@@ -2044,9 +2044,9 @@ body[data-active-theme="light"],
             }
 
             .section-badge {
-              background: #e0f2fe !important;
-              border: 1px solid rgba(2, 132, 199, 0.4) !important;
-              color: #0369a1 !important;
+              background: var(--world-bg-light, #e0f2fe) !important;
+              border: 1px solid var(--world-border-light, rgba(2, 132, 199, 0.4)) !important;
+              color: var(--world-accent-light, #0369a1) !important;
 
               &.is-locked-badge {
                 background: #fee2e2 !important;
@@ -2063,8 +2063,8 @@ body[data-active-theme="light"],
             box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
 
             .card-icon-frame {
-              background: #f0f9ff !important;
-              border: 1.5px solid rgba(2, 132, 199, 0.25) !important;
+              background: var(--world-bg-light, #f0f9ff) !important;
+              border: 1.5px solid var(--world-border-light, rgba(2, 132, 199, 0.35)) !important;
             }
 
             .card-identity {
@@ -2072,7 +2072,8 @@ body[data-active-theme="light"],
                 color: #0f172a !important;
               }
               .card-origin {
-                color: #64748b !important;
+                color: var(--world-accent-light, #0369a1) !important;
+                font-weight: 700 !important;
               }
             }
 
@@ -2082,9 +2083,9 @@ body[data-active-theme="light"],
             }
 
             &:hover:not(.disabled-cap) {
-              background: #f0f9ff !important;
-              border-color: #0284c7 !important;
-              box-shadow: 0 6px 20px rgba(2, 132, 199, 0.18) !important;
+              background: #f8fafc !important;
+              border-color: var(--world-accent-light, #0284c7) !important;
+              box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12) !important;
             }
 
             &.selected {
@@ -2102,7 +2103,7 @@ body[data-active-theme="light"],
                   color: #0c4a6e !important;
                 }
                 .card-origin {
-                  color: #0284c7 !important;
+                  color: var(--world-accent-light, #0284c7) !important;
                 }
               }
 
@@ -2237,27 +2238,15 @@ body[data-active-theme="light"],
             }
 
             .role-pill {
-              border: 1px solid rgba(2, 132, 199, 0.3) !important;
-              background: #e0f2fe !important;
-              color: #0369a1 !important;
+              border: 1px solid var(--world-border-light, rgba(2, 132, 199, 0.35)) !important;
+              background: var(--world-bg-light, #e0f2fe) !important;
+              color: var(--world-accent-light, #0369a1) !important;
 
               &.role-pill-currency {
                 background: #fef3c7 !important;
                 border-color: #d97706 !important;
                 color: #92400e !important;
               }
-            }
-
-            &[data-category="plants"] .role-pill:not(.role-pill-currency) {
-              background: #dcfce7 !important;
-              border-color: rgba(34, 197, 94, 0.45) !important;
-              color: #15803d !important;
-            }
-
-            &[data-category="towers"] .role-pill:not(.role-pill-currency) {
-              background: #e0f2fe !important;
-              border-color: rgba(2, 132, 199, 0.4) !important;
-              color: #0369a1 !important;
             }
 
             .category-mini-pill {
@@ -2517,6 +2506,38 @@ body.theme-niflheim {
 }
 body.theme-muspelheim {
   background: radial-gradient(circle at 50% 80%, #421400 0%, #210800 60%, #0b0200 100%);
+}
+
+/* Light Mode Dynamic Realm Theme Backgrounds */
+body[data-active-theme="light"].theme-midgard {
+  background: radial-gradient(circle at 50% 30%, #f0fdf4 0%, #e0f2fe 65%, #dbeafe 100%);
+}
+body[data-active-theme="light"].theme-asgard {
+  background: radial-gradient(circle at 50% 20%, #fffbeb 0%, #fef3c7 65%, #fde68a 100%);
+}
+body[data-active-theme="light"].theme-helheim {
+  background: radial-gradient(circle at 50% 80%, #f8fafc 0%, #f1f5f9 65%, #e2e8f0 100%);
+}
+body[data-active-theme="light"].theme-jotunheim {
+  background: radial-gradient(circle at 50% 30%, #f0f9ff 0%, #e0f2fe 65%, #bae6fd 100%);
+}
+body[data-active-theme="light"].theme-vanaheim {
+  background: radial-gradient(circle at 50% 40%, #f0fdf4 0%, #dcfce7 65%, #bbf7d0 100%);
+}
+body[data-active-theme="light"].theme-alfheim {
+  background: radial-gradient(circle at 50% 30%, #fdf2f8 0%, #fce7f3 65%, #e0f2fe 100%);
+}
+body[data-active-theme="light"].theme-svartalfheim {
+  background: radial-gradient(circle at 50% 50%, #fffbeb 0%, #fef3c7 65%, #ffedd5 100%);
+}
+body[data-active-theme="light"].location-althjofs-wheel {
+  background: radial-gradient(circle at 50% 50%, #f0fdfa 0%, #ccfbf1 65%, #e0f2fe 100%);
+}
+body[data-active-theme="light"].theme-niflheim {
+  background: radial-gradient(circle at 50% 70%, #f0fdfa 0%, #e0f2fe 65%, #cffafe 100%);
+}
+body[data-active-theme="light"].theme-muspelheim {
+  background: radial-gradient(circle at 50% 80%, #fff7ed 0%, #ffedd5 65%, #fed7aa 100%);
 }
 
 /* Main App Wrapper */
@@ -6725,7 +6746,7 @@ body.theme-muspelheim {
         .toolbar-count {
           font-family: var(--font-heading);
           font-weight: 800;
-          color: #fbbf24;
+          color: #38bdf8;
           font-size: 1.05rem;
         }
       }
@@ -6740,8 +6761,8 @@ body.theme-muspelheim {
           gap: 4px;
           padding: 5px 12px;
           border-radius: 6px;
-          border: 1px solid var(--panel-border);
-          background: var(--select-bg);
+          border: 1px solid var(--frost-ice-border);
+          background: var(--frost-bg-button);
           color: var(--text-color);
           font-size: 0.78rem;
           font-weight: 600;
@@ -6749,9 +6770,9 @@ body.theme-muspelheim {
           transition: all 0.2s ease;
 
           &:hover {
-            background: var(--select-hover-bg);
-            border-color: #fbbf24;
-            color: #fbbf24;
+            background: var(--frost-bg-hover);
+            border-color: #38bdf8;
+            color: #bae6fd;
           }
         }
       }
@@ -6799,14 +6820,14 @@ body.theme-muspelheim {
           top: 0;
           bottom: 0;
           width: 4px;
-          background: var(--world-color, #fbbf24);
+          background: var(--world-color, #38bdf8);
           opacity: 0;
           transition: opacity 0.2s ease;
         }
 
         &:hover {
           opacity: 0.9;
-          border-color: var(--world-color, #fbbf24);
+          border-color: var(--world-color, #38bdf8);
           transform: translateY(-1.5px);
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 
@@ -6817,17 +6838,17 @@ body.theme-muspelheim {
 
         &.is-selected {
           opacity: 1;
-          border-color: var(--world-color, #f59e0b);
-          box-shadow: 0 0 16px rgba(245, 158, 11, 0.25), inset 0 0 12px rgba(245, 158, 11, 0.08);
+          border-color: var(--world-color, #38bdf8);
+          box-shadow: 0 0 16px var(--world-border, rgba(56, 189, 248, 0.3)), inset 0 0 12px var(--world-bg, rgba(56, 189, 248, 0.1));
 
           &::before {
             opacity: 1;
           }
 
           .card-checkbox {
-            background: var(--world-color, #f59e0b);
-            border-color: #fbbf24;
-            color: #1a1a1a;
+            background: var(--world-color, #38bdf8);
+            border-color: var(--world-color, #38bdf8);
+            color: #080d17;
           }
         }
 
@@ -6950,8 +6971,8 @@ body.theme-muspelheim {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background: linear-gradient(135deg, #d97706, #b45309);
-        border: 1.5px solid #f59e0b;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%);
+        border: 1.5px solid #38bdf8;
         color: #ffffff;
         padding: 10px 24px;
         border-radius: 12px;
@@ -6960,12 +6981,13 @@ body.theme-muspelheim {
         font-weight: 700;
         letter-spacing: 0.5px;
         cursor: pointer;
-        box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 16px rgba(56, 189, 248, 0.4);
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
         &:hover {
-          background: linear-gradient(135deg, #f59e0b, #d97706);
-          box-shadow: 0 6px 20px rgba(245, 158, 11, 0.55);
+          background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+          border-color: #7dd3fc;
+          box-shadow: 0 6px 22px rgba(56, 189, 248, 0.6);
           transform: translateY(-2px);
         }
       }
@@ -6977,96 +6999,144 @@ body.theme-muspelheim {
 body[data-active-theme="light"] {
   .foreign-worlds-modal {
     .foreign-worlds-content {
-      background: #fffdf5;
-      border-color: #ca8a04;
-      box-shadow: 0 20px 60px rgba(120, 53, 15, 0.2);
+      background: linear-gradient(150deg, #ffffff 0%, #f8fafc 45%, #f0f9ff 100%);
+      border-color: rgba(2, 132, 199, 0.5);
+      box-shadow: 0 25px 70px rgba(15, 23, 42, 0.18), 0 0 25px rgba(56, 189, 248, 0.2);
+      color: #0f172a;
+
+      .modal-header {
+        .runic-tag {
+          color: #0284c7;
+          text-shadow: none;
+          font-weight: 800;
+        }
+        .logo-title {
+          color: #0c4a6e;
+          text-shadow: 0 1px 2px rgba(56, 189, 248, 0.25);
+        }
+        .selection-subtitle {
+          color: #475569;
+          opacity: 1;
+        }
+        .gold-divider {
+          color: #0284c7;
+          &::before, &::after {
+            background: linear-gradient(90deg, transparent, rgba(2, 132, 199, 0.35), transparent);
+          }
+        }
+      }
 
       .foreign-worlds-toolbar {
-        background: #fef3c7;
-        border-color: #fde68a;
+        background: #ffffff;
+        border-color: rgba(2, 132, 199, 0.28);
+        box-shadow: 0 2px 10px rgba(2, 132, 199, 0.06);
 
         .toolbar-label {
-          color: #92400e;
+          color: #334155;
         }
 
         .toolbar-count {
-          color: #b45309;
+          color: #0284c7;
         }
 
         .troops-tool-btn {
-          background: #fefce8;
-          border-color: #ca8a04;
-          color: #78350f;
+          background: #f0f9ff;
+          border-color: rgba(2, 132, 199, 0.35);
+          color: #0369a1;
 
           &:hover {
-            background: #fde68a;
-            color: #451a03;
+            background: #e0f2fe;
+            border-color: #0284c7;
+            color: #0c4a6e;
           }
         }
       }
 
       .foreign-worlds-grid {
         &::-webkit-scrollbar-track {
-          background: #fef3c7;
+          background: rgba(2, 132, 199, 0.08);
         }
         &::-webkit-scrollbar-thumb {
-          background: #ca8a04;
+          background: rgba(2, 132, 199, 0.35);
         }
 
         .world-select-card {
-          background: #fefce8;
-          border-color: #e2d9b6;
+          background: #ffffff;
+          border-color: var(--world-border-light, #cbd5e1);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+          opacity: 0.78;
+
+          &::before {
+            background: var(--world-color-light, #0284c7);
+          }
 
           &:hover {
-            border-color: #ca8a04;
-            background: #fef08a;
+            opacity: 0.95;
+            border-color: var(--world-color-light, #0284c7);
+            background: #f8fafc;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
           }
 
           &.is-selected {
-            background: #fef3c7;
-            border-color: #ca8a04;
-            box-shadow: 0 2px 10px rgba(202, 138, 4, 0.2);
+            opacity: 1;
+            background: var(--world-bg-light, #f0f9ff);
+            border-color: var(--world-color-light, #0284c7);
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1), inset 0 0 12px rgba(255, 255, 255, 0.6);
 
             .card-checkbox {
-              background: #ca8a04;
-              border-color: #b45309;
+              background: var(--world-color-light, #0284c7);
+              border-color: var(--world-color-light, #0369a1);
               color: #ffffff;
             }
           }
 
           .world-avatar-frame {
-            background: #fefce8;
-            border-color: #ca8a04;
+            background: var(--world-bg-light, #f0f9ff);
+            border-color: var(--world-border-light, #0284c7);
+
+            .world-rune-sub {
+              color: var(--world-color-light, #0284c7);
+              text-shadow: none;
+            }
           }
 
           .card-checkbox {
-            border-color: #ca8a04;
+            border-color: #94a3b8;
+            background: #f8fafc;
           }
 
           .world-info {
             .world-header {
               .world-name {
-                color: #78350f;
+                color: var(--world-color-light, #0f172a);
+                font-weight: 800;
               }
               .world-badge-tag {
-                background: #fef3c7;
-                border-color: #ca8a04;
-                color: #78350f;
+                background: #ffffff;
+                border-color: var(--world-border-light, #cbd5e1);
+                color: var(--world-color-light, #334155);
               }
             }
             .world-subdesc {
-              color: #854d0e;
+              color: #475569;
             }
             .world-troops-preview {
-              color: #78350f;
+              color: #1e293b;
+              opacity: 0.95;
             }
           }
         }
       }
 
       .foreign-worlds-footer .foreign-worlds-done-btn {
-        background: linear-gradient(135deg, #ca8a04, #b45309);
-        border-color: #d97706;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        border-color: #38bdf8;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+
+        &:hover {
+          background: linear-gradient(135deg, #0369a1 0%, #0c4a6e 100%);
+          box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
+        }
       }
     }
   }
