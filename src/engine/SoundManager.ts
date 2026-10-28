@@ -5,6 +5,7 @@ export class SoundManager {
   private static instance: SoundManager;
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
+  private noiseBuffer: AudioBuffer | null = null;
   public isMuted: boolean = false;
   public volume: number = 0.8;
 
@@ -27,6 +28,19 @@ export class SoundManager {
     return SoundManager.instance;
   }
 
+  private getNoiseBuffer(ctx: AudioContext): AudioBuffer {
+    if (!this.noiseBuffer || this.noiseBuffer.sampleRate !== ctx.sampleRate) {
+      const bufferSize = Math.floor(ctx.sampleRate * 0.4);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      this.noiseBuffer = buffer;
+    }
+    return this.noiseBuffer;
+  }
+
   private initCtx(): AudioContext | null {
     if (this.isMuted) return null;
     if (!this.ctx) {
@@ -36,7 +50,7 @@ export class SoundManager {
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
     if (this.ctx && !this.masterGain) {
       this.masterGain = this.ctx.createGain();
@@ -248,15 +262,9 @@ export class SoundManager {
     osc.start(now);
     osc.stop(now + 0.6);
 
-    // Noise burst simulation
-    const bufferSize = ctx.sampleRate * 0.4;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
+    // Noise burst simulation (cached buffer reuse to eliminate GC pauses)
     const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
+    noise.buffer = this.getNoiseBuffer(ctx);
     const noiseFilter = ctx.createBiquadFilter();
     noiseFilter.type = 'lowpass';
     noiseFilter.frequency.setValueAtTime(800, now);

@@ -43,23 +43,39 @@ export function getDefaultStartingCurrency(level: number): number {
   return Math.min(MAX_STARTING_CURRENCY, 1600 + (lvl - 10) * 200);
 }
 
+const memoryCache: Record<string, any> = {};
+
 function getStoredObject<T>(key: string): Record<string, T> {
+  if (memoryCache[key] !== undefined) {
+    return memoryCache[key];
+  }
   try {
     const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
+        memoryCache[key] = parsed;
         return parsed;
       }
     }
   } catch (e) {}
-  return {};
+  memoryCache[key] = {};
+  return memoryCache[key];
 }
 
 function setStoredObject<T>(key: string, obj: Record<string, T>): void {
+  memoryCache[key] = obj;
   try {
     localStorage.setItem(key, JSON.stringify(obj));
   } catch (e) {}
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key && memoryCache[e.key] !== undefined) {
+      delete memoryCache[e.key];
+    }
+  });
 }
 
 /**
@@ -136,6 +152,8 @@ export function resetLevelConfig(level: number): void {
  * Reset all levels' settings to default.
  */
 export function resetAllLevelConfigs(): void {
+  delete memoryCache[CURRENCY_STORAGE_KEY];
+  delete memoryCache[SLOTS_STORAGE_KEY];
   try {
     localStorage.removeItem(CURRENCY_STORAGE_KEY);
     localStorage.removeItem(SLOTS_STORAGE_KEY);
@@ -153,8 +171,13 @@ export const INFINITE_RESOURCES_STORAGE_KEY = 'ragnarok_infinite_resources';
  * Check if infinite resources mode is enabled.
  */
 export function getInfiniteResources(): boolean {
+  if (memoryCache[INFINITE_RESOURCES_STORAGE_KEY] !== undefined) {
+    return memoryCache[INFINITE_RESOURCES_STORAGE_KEY];
+  }
   try {
-    return localStorage.getItem(INFINITE_RESOURCES_STORAGE_KEY) === 'true';
+    const val = localStorage.getItem(INFINITE_RESOURCES_STORAGE_KEY) === 'true';
+    memoryCache[INFINITE_RESOURCES_STORAGE_KEY] = val;
+    return val;
   } catch (e) {
     return false;
   }
@@ -164,6 +187,7 @@ export function getInfiniteResources(): boolean {
  * Set infinite resources mode.
  */
 export function setInfiniteResources(enabled: boolean): void {
+  memoryCache[INFINITE_RESOURCES_STORAGE_KEY] = enabled;
   try {
     localStorage.setItem(INFINITE_RESOURCES_STORAGE_KEY, enabled ? 'true' : 'false');
   } catch (e) {}
@@ -199,16 +223,23 @@ export const ALL_WORLD_IDS: string[] = [
  * - 'limited': defenders from selected foreign realms permitted
  */
 export function getForeignUnitsMode(): ForeignUnitsMode {
+  if (memoryCache[FOREIGN_UNITS_MODE_STORAGE_KEY] !== undefined) {
+    return memoryCache[FOREIGN_UNITS_MODE_STORAGE_KEY];
+  }
   try {
     const mode = localStorage.getItem(FOREIGN_UNITS_MODE_STORAGE_KEY) as ForeignUnitsMode | null;
     if (mode === 'allow' || mode === 'disable' || mode === 'limited') {
+      memoryCache[FOREIGN_UNITS_MODE_STORAGE_KEY] = mode;
       return mode;
     }
     const legacy = localStorage.getItem(ALLOW_FOREIGN_UNITS_STORAGE_KEY);
     if (legacy !== null) {
-      return legacy === 'true' ? 'allow' : 'disable';
+      const legacyMode = legacy === 'true' ? 'allow' : 'disable';
+      memoryCache[FOREIGN_UNITS_MODE_STORAGE_KEY] = legacyMode;
+      return legacyMode;
     }
   } catch (e) {}
+  memoryCache[FOREIGN_UNITS_MODE_STORAGE_KEY] = DEFAULT_FOREIGN_UNITS_MODE;
   return DEFAULT_FOREIGN_UNITS_MODE;
 }
 
@@ -216,6 +247,8 @@ export function getForeignUnitsMode(): ForeignUnitsMode {
  * Save foreign units policy ('allow' | 'disable' | 'limited').
  */
 export function setForeignUnitsMode(mode: ForeignUnitsMode): void {
+  memoryCache[FOREIGN_UNITS_MODE_STORAGE_KEY] = mode;
+  delete memoryCache[ALLOW_FOREIGN_UNITS_STORAGE_KEY];
   try {
     localStorage.setItem(FOREIGN_UNITS_MODE_STORAGE_KEY, mode);
     localStorage.setItem(ALLOW_FOREIGN_UNITS_STORAGE_KEY, mode === 'allow' ? 'true' : 'false');
@@ -244,22 +277,28 @@ export function setAllowForeignUnits(allowed: boolean): void {
  * Defaults to all nine realms if not customized yet.
  */
 export function getLimitedForeignWorlds(): string[] {
+  if (memoryCache[LIMITED_FOREIGN_WORLDS_STORAGE_KEY] !== undefined) {
+    return memoryCache[LIMITED_FOREIGN_WORLDS_STORAGE_KEY];
+  }
   try {
     const raw = localStorage.getItem(LIMITED_FOREIGN_WORLDS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
+        memoryCache[LIMITED_FOREIGN_WORLDS_STORAGE_KEY] = parsed;
         return parsed;
       }
     }
   } catch (e) {}
-  return [...ALL_WORLD_IDS];
+  memoryCache[LIMITED_FOREIGN_WORLDS_STORAGE_KEY] = [...ALL_WORLD_IDS];
+  return memoryCache[LIMITED_FOREIGN_WORLDS_STORAGE_KEY];
 }
 
 /**
  * Save list of world IDs allowed in 'limited' mode.
  */
 export function setLimitedForeignWorlds(worldIds: string[]): void {
+  memoryCache[LIMITED_FOREIGN_WORLDS_STORAGE_KEY] = worldIds;
   try {
     localStorage.setItem(LIMITED_FOREIGN_WORLDS_STORAGE_KEY, JSON.stringify(worldIds));
   } catch (e) {}

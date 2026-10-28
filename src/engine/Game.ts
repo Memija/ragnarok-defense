@@ -2,7 +2,6 @@ import { Grid } from './Grid';
 import { Defender } from '../entities/Defender';
 import { Attacker } from '../entities/Attacker';
 import { Projectile } from '../entities/Projectile';
-import { Resource } from '../entities/Resource';
 import { PeaShooter } from '../units/PeaShooter';
 import { SunFlower } from '../units/SunFlower';
 import { BasicZombie } from '../units/BasicZombie';
@@ -77,7 +76,6 @@ export class Game {
   defenders: Defender[] = [];
   attackers: Attacker[] = [];
   projectiles: Projectile[] = [];
-  resources: Resource[] = [];
   valkyries: Valkyrie[] = [];
   valkyrieAvailable: boolean[] = [];
   odinCommandTimer: number = 0;
@@ -487,39 +485,43 @@ export class Game {
     const levelDownBtn = document.getElementById('level-down');
     
     if (levelUpBtn) {
-      levelUpBtn.addEventListener('click', () => {
-        SoundManager.getInstance().playClick();
-        this.level++;
-        this.zombiesTotal = 10 + this.level * 5;
-        const maxSlots = getDefenderSlotLimit(this.level);
-        if (this.selectedDefenders.length < maxSlots) {
-          this.selectedDefenders = getSavedLoadout(this.level, this.realm);
-          this.renderSidebar();
-        }
-        this.updateUI();
-      });
+      levelUpBtn.addEventListener('click', this.handleLevelUp);
     }
     
     if (levelDownBtn) {
-      levelDownBtn.addEventListener('click', () => {
-        if (this.level > 1) {
-          SoundManager.getInstance().playClick();
-          this.level--;
-          this.zombiesTotal = 10 + this.level * 5;
-          const maxSlots = getDefenderSlotLimit(this.level);
-          if (this.selectedDefenders.length > maxSlots) {
-            this.selectedDefenders = this.selectedDefenders.slice(0, maxSlots);
-            this.renderSidebar();
-          }
-          this.updateUI();
-        }
-      });
+      levelDownBtn.addEventListener('click', this.handleLevelDown);
     }
 
     window.addEventListener('levelconfigchanged', this.handleLevelConfigChange);
     window.addEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
     window.addEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
   }
+
+  handleLevelUp = () => {
+    SoundManager.getInstance().playClick();
+    this.level++;
+    this.zombiesTotal = 10 + this.level * 5;
+    const maxSlots = getDefenderSlotLimit(this.level);
+    if (this.selectedDefenders.length < maxSlots) {
+      this.selectedDefenders = getSavedLoadout(this.level, this.realm);
+      this.renderSidebar();
+    }
+    this.updateUI();
+  };
+
+  handleLevelDown = () => {
+    if (this.level > 1) {
+      SoundManager.getInstance().playClick();
+      this.level--;
+      this.zombiesTotal = 10 + this.level * 5;
+      const maxSlots = getDefenderSlotLimit(this.level);
+      if (this.selectedDefenders.length > maxSlots) {
+        this.selectedDefenders = this.selectedDefenders.slice(0, maxSlots);
+        this.renderSidebar();
+      }
+      this.updateUI();
+    }
+  };
 
   handleRosterClick = () => {
     SoundManager.getInstance().playClick();
@@ -675,6 +677,8 @@ export class Game {
     this.defenders = [];
     this.attackers = [];
     this.projectiles = [];
+    this.valkyries = [];
+    this.particles.clear();
     for (let i = 0; i < this.floatingTexts.length; i++) {
       this.floatingTextPool.push(this.floatingTexts[i]);
     }
@@ -698,10 +702,7 @@ export class Game {
         this.particles.emit(d.x + d.width/2, d.y + d.height/2, '#795548', 20, 5, 4, 300);
         this.defenders.splice(occupantIndex, 1);
         SoundManager.getInstance().playExplosion();
-        
-        const unitCards = document.querySelectorAll('.unit-card');
-        unitCards.forEach(c => c.classList.remove('selected'));
-        this.selectedUnit = null;
+        this.deselectUnit();
       }
       return;
     }
@@ -743,8 +744,10 @@ export class Game {
       this.updateUI();
       this.triggerScreenShake(450, 12);
       SoundManager.getInstance().playExplosion();
-      for (const z of this.attackers) {
-        if (z.row === row) {
+      const rowAttackers = this.attackersByRow[row];
+      if (rowAttackers) {
+        for (let zi = 0; zi < rowAttackers.length; zi++) {
+          const z = rowAttackers[zi];
           z.takeDamage(1000);
           this.addFloatingText(z.x + z.width/2, z.y, '-1000 🔥', '#ff5722', true);
         }
@@ -753,9 +756,7 @@ export class Game {
         this.particles.emit(i, y + 20, '#ff5722', 15, 6, 5, 500);
         this.particles.emit(i, y + 20, '#ffeb3b', 10, 4, 3, 400);
       }
-      const unitCards = document.querySelectorAll('.unit-card');
-      unitCards.forEach(c => c.classList.remove('selected'));
-      this.selectedUnit = null;
+      this.deselectUnit();
       return; 
     }
 
@@ -768,10 +769,14 @@ export class Game {
       SoundManager.getInstance().playPlant();
       this.particles.emit(x + 30, y + 40, '#ffd54f', 15, 4, 3, 400);
 
-      const unitCards = document.querySelectorAll('.unit-card');
-      unitCards.forEach(c => c.classList.remove('selected'));
-      this.selectedUnit = null;
+      this.deselectUnit();
     }
+  }
+
+  deselectUnit() {
+    const unitCards = document.querySelectorAll('.unit-card');
+    unitCards.forEach(c => c.classList.remove('selected'));
+    this.selectedUnit = null;
   }
 
   updateRowBuckets() {
@@ -1046,6 +1051,7 @@ export class Game {
       }
     }
 
+    this.updateRowBuckets();
     const numDef = this.defenders.length;
     for (let i = 0; i < numDef; i++) this.defenders[i].update(deltaTime, this);
     const numAtt = this.attackers.length;
@@ -4239,6 +4245,8 @@ export class Game {
   }
 
   start() {
+    this.lastTime = performance.now();
+    cancelAnimationFrame(this.animationId);
     this.animationId = requestAnimationFrame(this.loop);
   }
   
@@ -4261,6 +4269,15 @@ export class Game {
     if (rosterBtn) {
       rosterBtn.removeEventListener('click', this.handleRosterClick);
     }
+    const levelUpBtn = document.getElementById('level-up');
+    if (levelUpBtn) {
+      levelUpBtn.removeEventListener('click', this.handleLevelUp);
+    }
+    const levelDownBtn = document.getElementById('level-down');
+    if (levelDownBtn) {
+      levelDownBtn.removeEventListener('click', this.handleLevelDown);
+    }
+    this.particles.clear();
     cancelAnimationFrame(this.animationId);
   }
 }

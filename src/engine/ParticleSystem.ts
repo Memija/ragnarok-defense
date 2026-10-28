@@ -94,6 +94,15 @@ export class ParticleSystem {
     }
   }
 
+  clear() {
+    for (let i = 0; i < this.particles.length; i++) {
+      if (this.pool.length < 300) {
+        this.pool.push(this.particles[i]);
+      }
+    }
+    this.particles.length = 0;
+  }
+
   draw(ctx: CanvasRenderingContext2D) {
     const len = this.particles.length;
     if (len === 0) return;

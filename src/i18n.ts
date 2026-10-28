@@ -1662,13 +1662,47 @@ export const ratatoskrQuotes: Record<string, string[]> = {
   ]
 };
 
+let cachedCurrentLang: SupportedLang = 'en';
+
+function detectLang(): SupportedLang {
+  if (typeof document !== 'undefined') {
+    const docLang = (document.body?.dataset?.lang || document.documentElement?.lang) as SupportedLang;
+    if (docLang && translations[docLang]) return docLang;
+  }
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('ragnarok_lang') as SupportedLang;
+      if (saved && translations[saved]) return saved;
+    } catch (_) {}
+  }
+  return 'en';
+}
+
+cachedCurrentLang = detectLang();
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('languagechange', (e: any) => {
+    const lang = e?.detail?.lang;
+    if (lang && translations[lang]) {
+      cachedCurrentLang = lang;
+    } else {
+      cachedCurrentLang = detectLang();
+    }
+  });
+}
+
+export function setCurrentLang(lang: SupportedLang): void {
+  if (translations[lang]) {
+    cachedCurrentLang = lang;
+  }
+}
+
 export function getCurrentLang(): SupportedLang {
-  const docLang = (document.body.dataset.lang || document.documentElement.lang) as SupportedLang;
-  return docLang && translations[docLang] ? docLang : 'en';
+  return cachedCurrentLang;
 }
 
 export function t(key: string, lang?: string): string {
-  const current = lang || getCurrentLang();
+  const current = lang || cachedCurrentLang;
   const dict = translations[current] || translations['en'];
   return dict[key] || translations['en']?.[key] || key;
 }

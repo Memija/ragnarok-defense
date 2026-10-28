@@ -1,5 +1,5 @@
 import { SoundManager } from './engine/SoundManager';
-import { translations, t } from './i18n';
+import { translations, t, setCurrentLang, type SupportedLang } from './i18n';
 import {
   getStartingCurrencyForLevel,
   setStartingCurrencyForLevel,
@@ -274,6 +274,7 @@ export function initUI() {
   };
 
   const applyLanguage = (lang: string) => {
+    setCurrentLang(lang as SupportedLang);
     const dict = translations[lang] || translations['en'];
     document.body.dataset.lang = lang;
     document.documentElement.lang = lang;

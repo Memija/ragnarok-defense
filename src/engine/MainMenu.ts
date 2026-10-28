@@ -1637,6 +1637,7 @@ export class MainMenu {
     this.built = false;
     this.transitioningRealm = null;
     this.transitionTimer = 0;
+    cancelAnimationFrame(this.animationId);
     this.loop();
   }
 
