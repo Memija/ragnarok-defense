@@ -188,37 +188,51 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
     }
   };
 
+  const returnToYggdrasil = () => {
+    if (mapMenu) {
+      mapMenu.stop();
+      mapMenu = null;
+    }
+    document.body.className = '';
+    mapMenuDiv?.classList.add('hidden');
+    gameContainer?.classList.add('hidden');
+    if (mainMenuDiv) {
+      mainMenuDiv.classList.remove('hidden');
+      mainMenuDiv.classList.add('active');
+      resizeMenu();
+      mainMenu.built = false;
+      mainMenu.start();
+    }
+  };
+
+  const openRealmMap = (realm: string) => {
+    mainMenu.stop();
+    if (mapMenu) {
+      mapMenu.stop();
+      mapMenu = null;
+    }
+    if (mainMenuDiv) {
+      mainMenuDiv.classList.add('hidden');
+      mainMenuDiv.classList.remove('active');
+    }
+    gameContainer?.classList.add('hidden');
+    if (mapMenuDiv) {
+      mapMenuDiv.classList.remove('hidden');
+    }
+    resizeMenu();
+
+    document.body.className = `theme-${realm}`;
+    mapMenu = new MapMenu(mapCanvas, mapCtx, realm, (city: string) => {
+      startGame(realm, city);
+    }, () => {
+      returnToYggdrasil();
+    });
+    mapMenu.start();
+  };
+
   mainMenu = new MainMenu(menuCanvas, menuCtx, (realm: string) => {
     if (realm === 'svartalfheim') {
-      // Show Map Menu
-      mainMenu.stop();
-      if (mainMenuDiv) {
-        mainMenuDiv.classList.add('hidden');
-        mainMenuDiv.classList.remove('active');
-      }
-      if (mapMenuDiv) {
-        mapMenuDiv.classList.remove('hidden');
-      }
-      resizeMenu();
-      
-      document.body.className = `theme-${realm}`;
-      mapMenu = new MapMenu(mapCanvas, mapCtx, realm, (city: string) => {
-        startGame(realm, city);
-      }, () => {
-        // Return to Yggdrasil from the canvas portal node
-        if (mapMenu) { mapMenu.stop(); mapMenu = null; }
-        document.body.className = '';
-        if (mapMenuDiv) mapMenuDiv.classList.add('hidden');
-        if (mainMenuDiv) {
-          mainMenuDiv.classList.remove('hidden');
-          mainMenuDiv.classList.add('active');
-          // Resize canvas first so it has correct dimensions, then rebuild tree
-          resizeMenu();
-          mainMenu.built = false;
-          mainMenu.start();
-        }
-      });
-      mapMenu.start();
+      openRealmMap(realm);
     } else {
       // Directly start game for other realms
       startGame(realm);
@@ -229,28 +243,11 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   resizeMenu();
   mainMenu.start();
 
-
-
   if (returnFromMapBtn) {
     returnFromMapBtn.addEventListener('click', () => {
       (window as any).__closeSettings?.();
       SoundManager.getInstance().playClick();
-      if (mapMenu) {
-        mapMenu.stop();
-        mapMenu = null;
-      }
-      
-      document.body.className = '';
-      if (mapMenuDiv) {
-        mapMenuDiv.classList.add('hidden');
-      }
-      if (mainMenuDiv) {
-        mainMenuDiv.classList.remove('hidden');
-        mainMenuDiv.classList.add('active');
-        resizeMenu();
-        mainMenu.built = false;
-        mainMenu.start();
-      }
+      returnToYggdrasil();
     });
   }
 
@@ -284,20 +281,18 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   const handleReturnToMenu = () => {
     SoundManager.getInstance().playClick();
     pausedByVisibility = false;
+    const shouldReturnToRealmMap = Boolean(game && game.realm === 'svartalfheim' && game.city);
+    const activeRealm = game?.realm || 'svartalfheim';
+
     if (game) {
       game.stop();
       game = null;
     }
-    
-    document.body.className = '';
-    gameContainer?.classList.add('hidden');
-    
-    if (mainMenuDiv) {
-      mainMenuDiv.classList.remove('hidden');
-      mainMenuDiv.classList.add('active');
-      resizeMenu();
-      mainMenu.built = false;
-      mainMenu.start();
+
+    if (shouldReturnToRealmMap) {
+      openRealmMap(activeRealm);
+    } else {
+      returnToYggdrasil();
     }
   };
 

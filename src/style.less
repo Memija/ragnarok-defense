@@ -1567,6 +1567,9 @@ body[data-active-theme="light"],
   &.location-althjofs-wheel {
     background: radial-gradient(circle at 50% 50%, #ccfbf1 0%, #99f6e4 60%, #cbd5e1 100%);
   }
+  &.location-andvaris-falls {
+    background: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 60%, #cbd5e1 100%);
+  }
   &.theme-niflheim {
     background: radial-gradient(circle at 50% 70%, #f1f5f9 0%, #e2e8f0 60%, #cbd5e1 100%);
   }
@@ -2501,6 +2504,9 @@ body.theme-svartalfheim {
 body.location-althjofs-wheel {
   background: radial-gradient(circle at 50% 50%, #0d1e22 0%, #081216 60%, #030608 100%);
 }
+body.location-andvaris-falls {
+  background: radial-gradient(circle at 50% 50%, #0c1f2e 0%, #07131d 60%, #03070b 100%);
+}
 body.theme-niflheim {
   background: radial-gradient(circle at 50% 70%, #0d1b29 0%, #060e16 60%, #03060a 100%);
 }
@@ -2532,6 +2538,9 @@ body[data-active-theme="light"].theme-svartalfheim {
 }
 body[data-active-theme="light"].location-althjofs-wheel {
   background: radial-gradient(circle at 50% 50%, #f0fdfa 0%, #ccfbf1 65%, #e0f2fe 100%);
+}
+body[data-active-theme="light"].location-andvaris-falls {
+  background: radial-gradient(circle at 50% 50%, #f0f9ff 0%, #e0f2fe 65%, #bae6fd 100%);
 }
 body[data-active-theme="light"].theme-niflheim {
   background: radial-gradient(circle at 50% 70%, #f0fdfa 0%, #e0f2fe 65%, #cffafe 100%);
@@ -5889,6 +5898,60 @@ body[data-active-theme="light"].theme-muspelheim {
       top: 15px;
       left: 20px;
       z-index: 50;
+    }
+  }
+
+  /* Dwarven Obsidian & Burnished Gold Return Button on Svartalfheim Map (Dark Mode) */
+  body.theme-svartalfheim:not([data-active-theme="light"]) & #map-menu #return-from-map-btn {
+    background: linear-gradient(135deg, rgba(24, 16, 10, 0.96) 0%, rgba(14, 9, 6, 0.98) 100%);
+    border-color: rgba(217, 119, 6, 0.72);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.78),
+      0 0 14px rgba(217, 119, 6, 0.24),
+      inset 0 1px 1px rgba(254, 243, 199, 0.18),
+      inset 0 -1px 3px rgba(0, 0, 0, 0.75);
+
+    .btn-corner-rune {
+      color: rgba(245, 158, 11, 0.72);
+    }
+
+    .tree-portal-glyph {
+      .glyph-arrow {
+        color: #fbbf24;
+        text-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+      }
+
+      .tree-icon-frame {
+        background: radial-gradient(circle, rgba(74, 222, 128, 0.24) 0%, rgba(20, 14, 9, 0.92) 100%);
+        border-color: #eab308;
+        box-shadow: 0 0 8px rgba(234, 179, 8, 0.35);
+
+        .yggdrasil-tree-svg {
+          color: #86efac;
+          filter: drop-shadow(0 0 3px rgba(74, 222, 128, 0.6));
+        }
+      }
+    }
+
+    .btn-text {
+      color: #fef3c7;
+      text-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.95),
+        0 0 10px rgba(245, 158, 11, 0.4);
+    }
+
+    .return-btn-flourish {
+      color: #f59e0b;
+      text-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, rgba(38, 25, 14, 0.98) 0%, rgba(22, 14, 8, 0.99) 100%);
+      border-color: #fbbf24;
+      box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.85),
+        0 0 20px rgba(245, 158, 11, 0.38),
+        inset 0 1px 1px rgba(254, 243, 199, 0.28);
     }
   }
 

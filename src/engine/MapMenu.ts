@@ -21,6 +21,7 @@ export interface LocationNode {
   type: 'capital' | 'city' | 'mine' | 'waterfall';
   icon: string;
   gemColor: string;
+  lightGemColor?: string;
   accentColor: string;
   secondaryColor: string;
   chapter?: string;
@@ -57,7 +58,7 @@ export class MapMenu {
       locked: false,
       desc: 'Deep within the subterranean waterways of Svartalfheim, the colossal Great Wheel of master artisan Althjof churns the canal torrents to power the royal foundries of Nidavellir.\n\nAs the tremors of Ragnarök reverberate across the roots of Yggdrasil, an ominous advance threatens to breach the outer river gates. The dwarven architects have called upon you to secure the waterways and hold the threshold.',
       storyObjective: "Hold the outer canal waterways and safeguard Althjof's Great Wheel from ruin.",
-      px: 0.63, py: 0.48, radius: 34, hover: 0, type: 'mine', icon: 'waterwheel', gemColor: '#14b8a6',
+      px: 0.64, py: 0.47, radius: 34, hover: 0, type: 'mine', icon: 'waterwheel', gemColor: '#14b8a6', lightGemColor: '#0f766e',
       accentColor: '#14b8a6', secondaryColor: '#d97706'
     },
     {
@@ -75,7 +76,7 @@ export class MapMenu {
       desc: 'Subterranean rapids plunging into crystal chasms. Waterborne raiders and serpent beasts contest the passage to the cursed gold hoards. Hold the slippery stone bridge chokepoint before the waterways are overrun.',
       storyObjective: 'Hold the central bridge against 7 waves of aquatic fiends',
       storyTip: 'Pair rapid archers with slowing runes to control enemy flow.',
-      px: 0.38, py: 0.82, radius: 34, hover: 0, type: 'waterfall', icon: 'waterfall', gemColor: '#38bdf8',
+      px: 0.38, py: 0.82, radius: 34, hover: 0, type: 'waterfall', icon: 'waterfall', gemColor: '#38bdf8', lightGemColor: '#0284c7',
       accentColor: '#38bdf8', secondaryColor: '#0284c7'
     },
     {
@@ -93,7 +94,7 @@ export class MapMenu {
       desc: 'The sacred craft enclave of the Sons of Ivaldi where legendary relics like Gungnir were forged. Corrupted shadow fiends swarm the crystal anvil chambers attempting to desecrate the divine armories.',
       storyObjective: 'Safeguard the forge hall across 8 waves of shadow fiends',
       storyTip: 'Upgrade your central towers to pierce heavily armored fiends.',
-      px: 0.50, py: 0.24, radius: 32, hover: 0, type: 'city', icon: 'gungnir', gemColor: '#c084fc',
+      px: 0.50, py: 0.24, radius: 32, hover: 0, type: 'city', icon: 'gungnir', gemColor: '#c084fc', lightGemColor: '#7e22ce',
       accentColor: '#c084fc', secondaryColor: '#7e22ce'
     },
     {
@@ -111,7 +112,7 @@ export class MapMenu {
       desc: 'A colossal circular quarry carved in descending terraces. Armored iron-eaters and heavy siege trolls have smashed the railway lines and storm the lifts toward the inner halls.',
       storyObjective: 'Hold the spiral stone terraces against 9 siege waves',
       storyTip: 'Splash damage and heavy ballistas are essential against grouped armored trolls.',
-      px: 0.80, py: 0.28, radius: 34, hover: 0, type: 'mine', icon: 'minecart', gemColor: '#ea580c',
+      px: 0.78, py: 0.28, radius: 34, hover: 0, type: 'mine', icon: 'minecart', gemColor: '#ea580c', lightGemColor: '#c2410c',
       accentColor: '#ea580c', secondaryColor: '#fb923c'
     },
     {
@@ -129,7 +130,7 @@ export class MapMenu {
       desc: 'The colossal primordial geode mines of dwarf lord Dvalin. Vast timbered mine shafts plunge into glowing crystal chasms where ancient subterranean horrors have awakened.',
       storyObjective: 'Eliminate 10 waves of subterranean crystal horrors',
       storyTip: 'Concentrate fire at the lift intersections to prevent breaches.',
-      px: 0.91, py: 0.58, radius: 34, hover: 0, type: 'mine', icon: 'minehoist', gemColor: '#f59e0b',
+      px: 0.90, py: 0.58, radius: 34, hover: 0, type: 'mine', icon: 'minehoist', gemColor: '#f59e0b', lightGemColor: '#b45309',
       accentColor: '#f59e0b', secondaryColor: '#78350f'
     },
     {
@@ -147,7 +148,7 @@ export class MapMenu {
       desc: 'Twin blast furnaces roaring day and night with divine dragonfire. Elite flame drakes and apocalyptic fiends launch an all-out assault on the divine armories.',
       storyObjective: 'Protect the sacred furnaces through 11 extreme assault waves',
       storyTip: 'Max-tier ballistas and tactical rune placement are required to survive.',
-      px: 0.72, py: 0.68, radius: 36, hover: 0, type: 'city', icon: 'forge', gemColor: '#ff5722',
+      px: 0.72, py: 0.68, radius: 36, hover: 0, type: 'city', icon: 'forge', gemColor: '#ff5722', lightGemColor: '#c2410c',
       accentColor: '#ff5722', secondaryColor: '#fbbf24'
     },
     {
@@ -165,7 +166,7 @@ export class MapMenu {
       desc: 'The great subterranean capital fortress. Massive stone keeps, fortified bastions, and the golden throne of Brokkr and Eitri face the final apocalyptic horde of Ragnarök.',
       storyObjective: 'Survive 12 nightmare waves to defend the dwarven throne',
       storyTip: 'Unleash every power, upgrade every bastion, and hold the citadel gate.',
-      px: 0.20, py: 0.36, radius: 38, hover: 0, type: 'capital', icon: 'castle', gemColor: '#ffd700',
+      px: 0.22, py: 0.36, radius: 38, hover: 0, type: 'capital', icon: 'castle', gemColor: '#ffd700', lightGemColor: '#b45309',
       accentColor: '#ffd700', secondaryColor: '#b45309'
     }
   ];
@@ -253,22 +254,63 @@ export class MapMenu {
     }
   }
 
-  getActiveUnlockedCity(): LocationNode | null {
-    // If hovering an unlocked location, focus on it
-    if (this.hoveredCity && !this.hoveredCity.locked) {
-      return this.hoveredCity;
+  getMapTransform(w: number, h: number): { dx: number; dy: number; dw: number; dh: number } {
+    const imgRatio = 1376 / 768;
+    const canvasRatio = w / h;
+    let dw = w, dh = h, dx = 0, dy = 0;
+
+    if (canvasRatio > imgRatio) {
+      dh = w / imgRatio;
+      dy = (h - dh) / 2;
+    } else {
+      dw = h * imgRatio;
+      dx = (w - dw) / 2;
     }
-    // If hovering a locked location, hide the card completely
-    if (this.hoveredCity && this.hoveredCity.locked) {
-      return null;
+    return { dx, dy, dw, dh };
+  }
+
+  projectMapPoint(px: number, py: number, w: number, h: number): { x: number; y: number } {
+    const { dx, dy, dw, dh } = this.getMapTransform(w, h);
+    return {
+      x: dx + px * dw,
+      y: dy + py * dh
+    };
+  }
+
+  getNodeScreenPos(loc: LocationNode, w: number, h: number): { x: number; y: number } {
+    const raw = this.projectMapPoint(loc.px, loc.py, w, h);
+    const padX = Math.max(56, loc.radius + 20);
+    const padTop = Math.max(84, loc.radius + 38);
+    const padBottom = Math.max(68, loc.radius + 32);
+    return {
+      x: Math.max(padX, Math.min(w - padX, raw.x)),
+      y: Math.max(padTop, Math.min(h - padBottom, raw.y))
+    };
+  }
+
+  getFrontierCity(): LocationNode | null {
+    const unlocked = this.locations.filter(l => !l.locked);
+    return unlocked.length > 0 ? unlocked[unlocked.length - 1] : null;
+  }
+
+  getPrerequisiteCity(loc: LocationNode): LocationNode | null {
+    const idx = MapMenu.PROGRESSION_ORDER.indexOf(loc.id);
+    if (idx <= 0) return null;
+    const prevId = MapMenu.PROGRESSION_ORDER[idx - 1];
+    return this.locations.find(l => l.id === prevId) || null;
+  }
+
+  getActiveInspectedCity(): LocationNode | null {
+    // If hovering any location (unlocked or locked), inspect its briefing card
+    if (this.hoveredCity) {
+      return this.hoveredCity;
     }
     // If hovering over the active story card, maintain focus
     if (this.hoveredCard && this.activeCardRect) {
       return this.activeCardRect.loc;
     }
-    // Default when no location is hovered: present the highest unlocked playable chapter!
-    const unlocked = this.locations.filter(l => !l.locked);
-    return unlocked.length > 0 ? unlocked[unlocked.length - 1] : null;
+    // Default when no location is hovered: present the highest unlocked playable chapter
+    return this.getFrontierCity();
   }
 
   loadBackgrounds() {
@@ -295,6 +337,7 @@ export class MapMenu {
         vy: -0.0008 - Math.random() * 0.0016,
         size: 2.0 + Math.random() * 3.5,
         alpha: 0.25 + Math.random() * 0.45,
+        life: Math.random(),
         phase: Math.random() * Math.PI * 2
       });
     }
@@ -330,13 +373,28 @@ export class MapMenu {
     this.canvas.addEventListener('mousemove', this.onMouseMove);
     this.canvas.addEventListener('click', this.onClick);
     this.canvas.addEventListener('mouseleave', this.onMouseLeave);
+    window.addEventListener('keydown', this.onKeyDown);
   }
 
   unbindEvents() {
     this.canvas.removeEventListener('mousemove', this.onMouseMove);
     this.canvas.removeEventListener('click', this.onClick);
     this.canvas.removeEventListener('mouseleave', this.onMouseLeave);
+    window.removeEventListener('keydown', this.onKeyDown);
   }
+
+  onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      const settingsModal = document.getElementById('settings-modal');
+      if (settingsModal && !settingsModal.classList.contains('hidden')) return;
+      const defenderModal = document.getElementById('defender-modal');
+      if (defenderModal && !defenderModal.classList.contains('hidden')) return;
+      if (this.onReturn) {
+        SoundManager.getInstance().playClick();
+        this.onReturn();
+      }
+    }
+  };
 
   onMouseLeave = () => {
     this.hoveredCity = null;
@@ -358,11 +416,10 @@ export class MapMenu {
     this.hoveredReturn = false;
     this.canvas.style.cursor = 'default';
 
-    // Check hover on location nodes
+    // Check hover on location nodes using aspect-accurate projection
     for (const loc of this.locations) {
-      const lx = loc.px * w;
-      const ly = loc.py * h;
-      if (Math.hypot(mx - lx, my - ly) < loc.radius * 1.8) {
+      const pos = this.getNodeScreenPos(loc, w, h);
+      if (Math.hypot(mx - pos.x, my - pos.y) < loc.radius * 1.65) {
         this.hoveredCity = loc;
         this.canvas.style.cursor = loc.locked ? 'not-allowed' : 'pointer';
         break;
@@ -370,11 +427,11 @@ export class MapMenu {
     }
 
     // If not directly over a node, check if hovering over the active story card
-    if (!this.hoveredCity && this.activeCardRect && !this.activeCardRect.loc.locked) {
-      const { x, y, w: cw, h: ch } = this.activeCardRect;
+    if (!this.hoveredCity && this.activeCardRect) {
+      const { x, y, w: cw, h: ch, loc: cardLoc } = this.activeCardRect;
       if (mx >= x && mx <= x + cw && my >= y && my <= y + ch) {
         this.hoveredCard = true;
-        this.canvas.style.cursor = 'pointer';
+        this.canvas.style.cursor = cardLoc.locked ? 'default' : 'pointer';
       }
     }
 
@@ -396,19 +453,23 @@ export class MapMenu {
       const h = rect.height;
 
       for (const loc of this.locations) {
-        const lx = loc.px * w;
-        const ly = loc.py * h;
-        if (Math.hypot(mx - lx, my - ly) < loc.radius * 1.8) {
+        const pos = this.getNodeScreenPos(loc, w, h);
+        if (Math.hypot(mx - pos.x, my - pos.y) < loc.radius * 1.65) {
           targetCity = loc;
           break;
         }
       }
 
-      if (!targetCity && this.activeCardRect && !this.activeCardRect.loc.locked) {
-        const { x, y, w: cw, h: ch } = this.activeCardRect;
+      if (!targetCity && this.activeCardRect) {
+        const { x, y, w: cw, h: ch, loc: cardLoc } = this.activeCardRect;
         if (mx >= x && mx <= x + cw && my >= y && my <= y + ch) {
+          if (cardLoc.locked) {
+            SoundManager.getInstance().playLocked();
+            cardLoc.shake = 12;
+            return;
+          }
           SoundManager.getInstance().playClick();
-          this.onSelectCity(this.activeCardRect.loc.id);
+          this.onSelectCity(cardLoc.id);
           return;
         }
       }
@@ -426,7 +487,12 @@ export class MapMenu {
     }
 
     // Click on the story card action area / deploy button
-    if (this.hoveredCard && this.activeCardRect && !this.activeCardRect.loc.locked) {
+    if (this.hoveredCard && this.activeCardRect) {
+      if (this.activeCardRect.loc.locked) {
+        SoundManager.getInstance().playLocked();
+        this.activeCardRect.loc.shake = 12;
+        return;
+      }
       SoundManager.getInstance().playClick();
       this.onSelectCity(this.activeCardRect.loc.id);
       return;
@@ -434,6 +500,7 @@ export class MapMenu {
   };
 
   start() {
+    this.initProgression();
     this.unbindEvents();
     this.bindEvents();
     cancelAnimationFrame(this.animationId);
@@ -458,18 +525,7 @@ export class MapMenu {
     ctx.clearRect(0, 0, w, h);
 
     // ── 1. RENDER HIGH-RES ILLUSTRATED REALM MAP BACKGROUND WITH SMOOTH DISSOLVE ──
-    const imgRatio = 1376 / 768;
-    const canvasRatio = w / h;
-    let dw = w, dh = h, dx = 0, dy = 0;
-
-    if (canvasRatio > imgRatio) {
-      dh = w / imgRatio;
-      dy = (h - dh) / 2;
-    } else {
-      dw = h * imgRatio;
-      dx = (w - dw) / 2;
-    }
-
+    const { dx, dy, dw, dh } = this.getMapTransform(w, h);
     let renderedAny = false;
 
     // Draw Dark Realm Map
@@ -492,39 +548,55 @@ export class MapMenu {
     if (!renderedAny) {
       // Fallback procedural cavern gradient while images load
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-      bgGrad.addColorStop(0, '#1c1410');
-      bgGrad.addColorStop(0.5, '#241a14');
-      bgGrad.addColorStop(1, '#0e0a08');
+      if (isLight) {
+        bgGrad.addColorStop(0, '#fffbeb');
+        bgGrad.addColorStop(0.5, '#fef3c7');
+        bgGrad.addColorStop(1, '#fde68a');
+      } else {
+        bgGrad.addColorStop(0, '#1c1410');
+        bgGrad.addColorStop(0.5, '#241a14');
+        bgGrad.addColorStop(1, '#0e0a08');
+      }
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, w, h);
     }
 
-    // ── 2. DYNAMIC AMBIENT LIGHTING OVERLAYS ──
+    // ── 2. DYNAMIC AMBIENT LIGHTING OVERLAYS (ASPECT-LOCKED TO PAINTED LANDMARKS) ──
     ctx.save();
     // Warm forge ambient pulse at Sindri's Forge
     const forgePulse = Math.sin(time * 3.5) * 0.15 + 0.85;
-    const forgeX = 0.72 * w;
-    const forgeY = 0.68 * h;
-    const forgeGlow = ctx.createRadialGradient(forgeX, forgeY, 10, forgeX, forgeY, 180);
-    forgeGlow.addColorStop(0, `rgba(255, 140, 20, ${0.30 * forgePulse})`);
-    forgeGlow.addColorStop(0.5, `rgba(245, 158, 11, ${0.12 * forgePulse})`);
+    const forgePt = this.projectMapPoint(0.72, 0.68, w, h);
+    const forgeGlow = ctx.createRadialGradient(forgePt.x, forgePt.y, 10, forgePt.x, forgePt.y, 180);
+    forgeGlow.addColorStop(0, `rgba(255, 140, 20, ${(isLight ? 0.22 : 0.30) * forgePulse})`);
+    forgeGlow.addColorStop(0.5, `rgba(245, 158, 11, ${(isLight ? 0.08 : 0.12) * forgePulse})`);
     forgeGlow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = forgeGlow;
     ctx.beginPath();
-    ctx.arc(forgeX, forgeY, 180, 0, Math.PI * 2);
+    ctx.arc(forgePt.x, forgePt.y, 180, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cyan bioluminescent pulse at Waterfall and Crystals
+    // Cyan bioluminescent pulse at Andvari's Falls
     const waterPulse = Math.sin(time * 2.0) * 0.12 + 0.88;
-    const waterX = 0.38 * w;
-    const waterY = 0.82 * h;
-    const waterGlow = ctx.createRadialGradient(waterX, waterY, 10, waterX, waterY, 160);
-    waterGlow.addColorStop(0, `rgba(56, 189, 248, ${0.28 * waterPulse})`);
-    waterGlow.addColorStop(0.6, `rgba(14, 165, 233, ${0.10 * waterPulse})`);
+    const waterPt = this.projectMapPoint(0.38, 0.82, w, h);
+    const waterGlow = ctx.createRadialGradient(waterPt.x, waterPt.y, 10, waterPt.x, waterPt.y, 165);
+    waterGlow.addColorStop(0, `rgba(56, 189, 248, ${(isLight ? 0.20 : 0.28) * waterPulse})`);
+    waterGlow.addColorStop(0.6, `rgba(14, 165, 233, ${(isLight ? 0.07 : 0.10) * waterPulse})`);
     waterGlow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = waterGlow;
     ctx.beginPath();
-    ctx.arc(waterX, waterY, 160, 0, Math.PI * 2);
+    ctx.arc(waterPt.x, waterPt.y, 165, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Royal Citadel gatehouse lantern glow at Nidavellir
+    const gatePulse = Math.sin(time * 2.6 + 1.1) * 0.12 + 0.88;
+    const gatePt = this.projectMapPoint(0.25, 0.35, w, h);
+    const gateGlow = ctx.createRadialGradient(gatePt.x, gatePt.y, 8, gatePt.x, gatePt.y, 150);
+    gateGlow.addColorStop(0, `rgba(251, 191, 36, ${(isLight ? 0.16 : 0.22) * gatePulse})`);
+    gateGlow.addColorStop(0.55, `rgba(217, 119, 6, ${(isLight ? 0.06 : 0.09) * gatePulse})`);
+    gateGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gateGlow;
+    ctx.beginPath();
+    ctx.arc(gatePt.x, gatePt.y, 150, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -532,17 +604,20 @@ export class MapMenu {
     ctx.save();
     for (const p of this.waterSprayParticles) {
       p.y += p.vy;
-      p.x += p.vx;
+      p.x += p.vx + Math.sin(time * 2.2 + p.phase) * 0.00018;
       p.life -= 0.012;
-      if (p.life <= 0 || p.y < 0.75) {
-        p.x = 0.35 + Math.random() * 0.08;
-        p.y = 0.82 + Math.random() * 0.06;
-        p.life = 1;
+      if (!Number.isFinite(p.life) || p.life <= 0 || p.y < 0.74) {
+        p.x = 0.34 + Math.random() * 0.09;
+        p.y = 0.82 + Math.random() * 0.08;
+        p.life = 0.75 + Math.random() * 0.25;
       }
-      const alpha = p.life * p.alpha;
-      ctx.fillStyle = isLight ? `rgba(224, 242, 254, ${alpha})` : `rgba(125, 211, 252, ${alpha})`;
+      const alpha = Math.max(0, Math.min(1, p.life * p.alpha));
+      const sprayPt = this.projectMapPoint(p.x, p.y, w, h);
+      ctx.fillStyle = isLight
+        ? `rgba(14, 165, 233, ${alpha * 0.65})`
+        : `rgba(125, 211, 252, ${alpha})`;
       ctx.beginPath();
-      ctx.arc(p.x * w, p.y * h, p.size, 0, Math.PI * 2);
+      ctx.arc(sprayPt.x, sprayPt.y, p.size, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -555,12 +630,14 @@ export class MapMenu {
         emb.y = 0.70 + Math.random() * 0.05;
       }
       const pSin = Math.sin(time * 5 + emb.pulse) * 0.3 + 0.7;
-      ctx.fillStyle = emb.color;
-      ctx.shadowColor = emb.color;
-      ctx.shadowBlur = 6 * pSin;
-      ctx.globalAlpha = 0.8 * pSin;
+      const embPt = this.projectMapPoint(emb.x, emb.y, w, h);
+      const embColor = isLight && emb.color === '#ffd54f' ? '#ea580c' : emb.color;
+      ctx.fillStyle = embColor;
+      ctx.shadowColor = embColor;
+      ctx.shadowBlur = (isLight ? 4 : 6) * pSin;
+      ctx.globalAlpha = (isLight ? 0.88 : 0.82) * pSin;
       ctx.beginPath();
-      ctx.arc(emb.x * w, emb.y * h, emb.size, 0, Math.PI * 2);
+      ctx.arc(embPt.x, embPt.y, emb.size, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.shadowBlur = 0;
@@ -574,22 +651,30 @@ export class MapMenu {
       if (mote.x < 0) mote.x = 1;
       if (mote.x > 1) mote.x = 0;
       const mAlpha = mote.alpha * (Math.sin(time * 2 + mote.phase) * 0.25 + 0.75);
-      ctx.fillStyle = isLight ? `rgba(251, 191, 36, ${mAlpha})` : `rgba(245, 158, 11, ${mAlpha * 0.8})`;
+      ctx.fillStyle = isLight
+        ? `rgba(180, 83, 9, ${mAlpha * 0.55})`
+        : `rgba(245, 158, 11, ${mAlpha * 0.8})`;
       ctx.beginPath();
       ctx.arc(mote.x * w, mote.y * h, mote.size, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
 
+    // ── 5B. DWARVEN CAMPAIGN WAYPOINT TRAIL (FOLLOWING CANALS, TRACKS & VIADUCT) ──
+    this.drawCampaignRoute(ctx, w, h, time, isLight);
+
     // ── 6. NATURALLY INTEGRATED DWARVEN LANDMARK MONUMENTS ──
+    const frontierCity = this.getFrontierCity();
     for (const loc of this.locations) {
       const shakeOffset = (loc.shake && loc.shake > 0) ? Math.sin(loc.shake * 3) * (loc.shake * 0.4) : 0;
       if (loc.shake && loc.shake > 0) {
         loc.shake -= 1;
       }
-      const lx = loc.px * w + shakeOffset;
-      const ly = loc.py * h;
+      const pos = this.getNodeScreenPos(loc, w, h);
+      const lx = pos.x + shakeOffset;
+      const ly = pos.y;
       const isHovered = this.hoveredCity === loc;
+      const isFrontier = frontierCity?.id === loc.id;
       loc.hover += (isHovered ? 1 : -1) * 0.15;
       loc.hover = Math.max(0, Math.min(1, loc.hover));
 
@@ -599,37 +684,161 @@ export class MapMenu {
       this.drawGroundedPedestal(ctx, lx, ly, r, loc, time, isLight);
 
       // 6B. Elevated 3D Crest Standard with Bespoke Handcrafted Vectors
-      this.drawElevatedCrest(ctx, lx, ly, r, loc, time, isLight);
+      this.drawElevatedCrest(ctx, lx, ly, r, loc, time, isLight, isFrontier);
 
-      // 6C. Integrated Dwarven Stone Name Plaque
-      this.drawNamePlaque(ctx, lx, ly, r, loc, isLight);
+      // 6C. Integrated Dwarven Stone Name Plaque (edge-clamped inside viewport)
+      this.drawNamePlaque(ctx, lx, ly, r, loc, isLight, w, h);
     }
 
-    // ── 7. STORY MISSION BRIEFING CARD (HIDDEN FOR LOCKED PLACES) ──
-    const activeLoc = this.getActiveUnlockedCity();
-    if (activeLoc && !activeLoc.locked) {
+    // ── 7. STORY MISSION BRIEFING CARD (UNLOCKED & LOCKED PREVIEW) ──
+    const activeLoc = this.getActiveInspectedCity();
+    if (activeLoc) {
       this.drawMissionIntelCard(ctx, activeLoc, w, h, isLight, time);
     } else {
       this.activeCardRect = null;
     }
 
-    // ── 8. MAJESTIC DWARVEN REALM TITLE BANNER ──
-    ctx.save();
-    const bannerW = Math.min(440, Math.max(280, w - 340));
-    const bannerH = 48;
-    const bannerX = (w - bannerW) / 2;
-    const bannerY = 12;
+    // ── 8. MAJESTIC DWARVEN REALM TITLE BANNER WITH CAMPAIGN PROGRESS ──
+    this.drawRealmBanner(ctx, w, isLight);
+  }
 
-    // Banner slate backing
-    ctx.fillStyle = isLight ? 'rgba(255, 251, 235, 0.95)' : 'rgba(18, 15, 12, 0.95)';
+  private drawCampaignRoute(
+    ctx: CanvasRenderingContext2D,
+    w: number,
+    h: number,
+    time: number,
+    isLight: boolean
+  ) {
+    // Control points trace the illustrated waterways, cavern bridges, mine-cart tracks & central viaduct
+    const routeControlPoints: Record<string, { cpx: number; cpy: number }> = {
+      'althjofs-wheel->andvaris-falls':   { cpx: 0.53, cpy: 0.64 },
+      'andvaris-falls->ivaldis-workshop': { cpx: 0.48, cpy: 0.52 },
+      'ivaldis-workshop->jarnsmida-quarry': { cpx: 0.64, cpy: 0.16 },
+      'jarnsmida-quarry->dvalins-depths': { cpx: 0.92, cpy: 0.40 },
+      'dvalins-depths->sindris-forge':    { cpx: 0.83, cpy: 0.69 },
+      'sindris-forge->nidavellir':        { cpx: 0.47, cpy: 0.53 }
+    };
+
+    ctx.save();
+    ctx.lineCap = 'round';
+
+    for (let i = 0; i < MapMenu.PROGRESSION_ORDER.length - 1; i++) {
+      const fromId = MapMenu.PROGRESSION_ORDER[i];
+      const toId = MapMenu.PROGRESSION_ORDER[i + 1];
+      const fromLoc = this.locations.find(l => l.id === fromId);
+      const toLoc = this.locations.find(l => l.id === toId);
+      if (!fromLoc || !toLoc) continue;
+
+      const p0 = this.getNodeScreenPos(fromLoc, w, h);
+      const p2 = this.getNodeScreenPos(toLoc, w, h);
+      const ctrlDef = routeControlPoints[`${fromId}->${toId}`];
+      const p1 = ctrlDef
+        ? this.projectMapPoint(ctrlDef.cpx, ctrlDef.cpy, w, h)
+        : { x: (p0.x + p2.x) * 0.5, y: (p0.y + p2.y) * 0.5 };
+
+      // Offset slightly toward ground plinth level (+10px Y) so path connects pedestals cleanly
+      const sy0 = p0.y + 8;
+      const sy1 = p1.y + 8;
+      const sy2 = p2.y + 8;
+
+      const isUnlockedPath = !fromLoc.locked && !toLoc.locked;
+      const isNextUnlockPath = !fromLoc.locked && toLoc.locked;
+      const isEndpointHovered = this.hoveredCity === fromLoc || this.hoveredCity === toLoc;
+
+      // 1. Subtle high-contrast backing casing so route reads cleanly across glowing rivers & sandstone
+      ctx.save();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = isUnlockedPath
+        ? (isLight ? 'rgba(69, 26, 3, 0.34)' : 'rgba(10, 6, 4, 0.55)')
+        : (isLight ? 'rgba(69, 26, 3, 0.16)' : 'rgba(10, 6, 4, 0.34)');
+      ctx.lineWidth = isUnlockedPath ? 5.2 : 3.6;
+      ctx.beginPath();
+      ctx.moveTo(p0.x, sy0);
+      ctx.quadraticCurveTo(p1.x, sy1, p2.x, sy2);
+      ctx.stroke();
+      ctx.restore();
+
+      // 2. Forged Dwarven Waypoint Dash Line
+      ctx.save();
+      if (isUnlockedPath) {
+        ctx.setLineDash([8, 7]);
+        ctx.lineDashOffset = -time * 16;
+        ctx.strokeStyle = isLight ? '#b45309' : '#fbbf24';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = isLight ? 'rgba(217, 119, 6, 0.45)' : 'rgba(251, 191, 36, 0.75)';
+        ctx.shadowBlur = isLight ? 4 : 8;
+      } else if (isNextUnlockPath) {
+        const nextPulse = Math.sin(time * 2.5) * 0.12 + 0.88;
+        ctx.setLineDash([6, 9]);
+        ctx.lineDashOffset = -time * 8;
+        ctx.strokeStyle = isLight
+          ? `rgba(180, 83, 9, ${(isEndpointHovered ? 0.72 : 0.48) * nextPulse})`
+          : `rgba(251, 191, 36, ${(isEndpointHovered ? 0.65 : 0.40) * nextPulse})`;
+        ctx.lineWidth = isEndpointHovered ? 2.2 : 1.8;
+      } else {
+        ctx.setLineDash([4, 10]);
+        ctx.strokeStyle = isLight
+          ? `rgba(120, 53, 15, ${isEndpointHovered ? 0.52 : 0.28})`
+          : `rgba(214, 199, 178, ${isEndpointHovered ? 0.45 : 0.22})`;
+        ctx.lineWidth = isEndpointHovered ? 1.8 : 1.4;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(p0.x, sy0);
+      ctx.quadraticCurveTo(p1.x, sy1, p2.x, sy2);
+      ctx.stroke();
+      ctx.restore();
+
+      // 3. Animated traveling forge-spark mote along unlocked campaign routes
+      if (isUnlockedPath) {
+        const sparkT = ((time * 0.38 + i * 0.27) % 1);
+        const inv = 1 - sparkT;
+        const sx = inv * inv * p0.x + 2 * inv * sparkT * p1.x + sparkT * sparkT * p2.x;
+        const sy = inv * inv * sy0 + 2 * inv * sparkT * sy1 + sparkT * sparkT * sy2;
+        ctx.save();
+        ctx.fillStyle = isLight ? '#ea580c' : '#fef08a';
+        ctx.shadowColor = isLight ? '#d97706' : '#f59e0b';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 3.0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  private drawRealmBanner(ctx: CanvasRenderingContext2D, w: number, isLight: boolean) {
+    ctx.save();
+
+    // Reserve safe horizontal clearance for #return-from-map-btn (left) and .top-action-buttons (right)
+    const leftSafe = 248;
+    const rightSafe = Math.max(leftSafe + 240, w - 144);
+    const maxSafeW = rightSafe - leftSafe;
+    const bannerW = Math.min(460, Math.max(240, Math.min(maxSafeW, w - 360)));
+    const bannerH = 56;
+    let bannerX = (w - bannerW) / 2;
+    if (bannerX < leftSafe) bannerX = leftSafe;
+    if (bannerX + bannerW > rightSafe) bannerX = Math.max(leftSafe, rightSafe - bannerW);
+    const bannerY = 12;
+    const centerX = bannerX + bannerW * 0.5;
+
+    // Banner drop shadow & slate backing
+    ctx.shadowColor = isLight ? 'rgba(120, 53, 15, 0.22)' : 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 3;
+    ctx.fillStyle = isLight ? 'rgba(255, 251, 235, 0.96)' : 'rgba(18, 14, 11, 0.95)';
     ctx.beginPath();
     ctx.roundRect(bannerX, bannerY, bannerW, bannerH, 10);
     ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
 
-    // Gold filigree border
-    ctx.strokeStyle = '#d4af37';
+    // Gold / Bronze filigree border
+    ctx.strokeStyle = isLight ? '#b45309' : '#d4af37';
     ctx.lineWidth = 1.8;
-    ctx.shadowColor = '#d4af37';
+    ctx.shadowColor = isLight ? 'rgba(180, 83, 9, 0.28)' : 'rgba(212, 175, 55, 0.55)';
     ctx.shadowBlur = 8;
     ctx.stroke();
     ctx.shadowBlur = 0;
@@ -637,13 +846,54 @@ export class MapMenu {
     // Header Runic Text
     ctx.textAlign = 'center';
     ctx.fillStyle = isLight ? '#92400e' : '#f59e0b';
-    ctx.font = '700 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif';
-    ctx.fillText(`ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ · ${t('realm_svartalfheim')} · ᛊ ᚹ ᚨ ᚱ ᛏ ᚨ ᛚ ᚠ`, w / 2, bannerY + 17);
+    ctx.font = '700 9px "Segoe UI Historic", "Segoe UI Symbol", sans-serif';
+    ctx.fillText(`ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ · ${t('realm_svartalfheim')} · ᛊ ᚹ ᚨ ᚱ ᛏ ᚨ ᛚ ᚠ`, centerX, bannerY + 15);
 
     // Realm Title
     ctx.fillStyle = isLight ? '#1c1917' : '#fef08a';
-    ctx.font = 'bold 15px "Outfit", "Inter", sans-serif';
-    ctx.fillText(t('world_svartalfheim'), w / 2, bannerY + 36);
+    ctx.font = 'bold 14.5px "Cinzel", "Outfit", "Inter", serif';
+    ctx.fillText(t('world_svartalfheim'), centerX, bannerY + 32);
+
+    // Campaign Progression Strip: 7 Stronghold Gem Pips + Unsealed Counter
+    const unlockedCount = this.locations.filter(l => !l.locked).length;
+    const totalCount = this.locations.length;
+    const progressLabel = t('strongholds_unsealed')
+      .replace('{unlocked}', String(unlockedCount))
+      .replace('{total}', String(totalCount));
+
+    ctx.font = '600 9.5px "Outfit", "Inter", sans-serif';
+    const labelW = ctx.measureText(progressLabel).width;
+    const pipsW = totalCount * 10;
+    const totalStripW = pipsW + 8 + labelW;
+    const stripStartX = centerX - totalStripW * 0.5;
+    const stripY = bannerY + 45;
+
+    for (let i = 0; i < totalCount; i++) {
+      const loc = this.locations[i];
+      const pipX = stripStartX + i * 10 + 4;
+      const isUnlocked = !loc.locked;
+      ctx.beginPath();
+      ctx.moveTo(pipX, stripY - 3.2);
+      ctx.lineTo(pipX + 3.2, stripY);
+      ctx.lineTo(pipX, stripY + 3.2);
+      ctx.lineTo(pipX - 3.2, stripY);
+      ctx.closePath();
+      ctx.fillStyle = isUnlocked
+        ? (isLight ? (loc.lightGemColor || '#b45309') : loc.gemColor)
+        : (isLight ? 'rgba(180, 83, 9, 0.20)' : 'rgba(255, 255, 255, 0.16)');
+      ctx.fill();
+      ctx.strokeStyle = isUnlocked
+        ? (isLight ? '#78350f' : '#fef08a')
+        : (isLight ? 'rgba(120, 53, 15, 0.35)' : 'rgba(212, 175, 55, 0.30)');
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = isLight ? '#78350f' : '#fde68a';
+    ctx.fillText(progressLabel, stripStartX + pipsW + 8, stripY + 0.5);
+
     ctx.restore();
   }
 
@@ -658,13 +908,14 @@ export class MapMenu {
     isLight: boolean
   ) {
     ctx.save();
+    const activeGemColor = isLight ? (loc.lightGemColor || loc.gemColor) : loc.gemColor;
 
     // 1. Terrain Contact Shadow (soft diffuse ellipse directly on cavern floor)
     ctx.beginPath();
     ctx.ellipse(lx, ly + 14, r * 1.35 + loc.hover * 4, r * 0.44, 0, 0, Math.PI * 2);
     const shadowGrad = ctx.createRadialGradient(lx, ly + 14, 2, lx, ly + 14, r * 1.35 + loc.hover * 4);
-    shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.70)');
-    shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.40)');
+    shadowGrad.addColorStop(0, isLight ? 'rgba(69, 26, 3, 0.48)' : 'rgba(0, 0, 0, 0.70)');
+    shadowGrad.addColorStop(0.6, isLight ? 'rgba(69, 26, 3, 0.22)' : 'rgba(0, 0, 0, 0.40)');
     shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = shadowGrad;
     ctx.fill();
@@ -673,19 +924,19 @@ export class MapMenu {
     if (!loc.locked) {
       const pingPhase = ((time * 0.7 + loc.px * 6) % 1);
       const pingR = (r * 1.1) + pingPhase * (r * 0.9);
-      const pingAlpha = (1 - pingPhase) * (0.35 + loc.hover * 0.45);
+      const pingAlpha = (1 - pingPhase) * (0.40 + loc.hover * 0.45);
       ctx.beginPath();
       ctx.ellipse(lx, ly + 12, pingR * 1.3, pingR * 0.46, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = loc.gemColor;
+      ctx.strokeStyle = activeGemColor;
       ctx.globalAlpha = pingAlpha;
-      ctx.lineWidth = 1.8;
+      ctx.lineWidth = isLight ? 2.1 : 1.8;
       ctx.stroke();
       ctx.globalAlpha = 1.0;
     } else {
       // Subdued dormant boundary ring
       ctx.beginPath();
       ctx.ellipse(lx, ly + 12, r * 1.15, r * 0.42, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(120, 113, 108, 0.30)';
+      ctx.strokeStyle = isLight ? 'rgba(120, 53, 15, 0.35)' : 'rgba(120, 113, 108, 0.30)';
       ctx.lineWidth = 1.2;
       ctx.stroke();
     }
@@ -714,19 +965,19 @@ export class MapMenu {
     ctx.beginPath();
     ctx.ellipse(lx, ly + 12 - plinthDepth, plinthW, plinthH, 0, 0, Math.PI * 2);
     const topGrad = ctx.createRadialGradient(lx, ly + 12 - plinthDepth, 2, lx, ly + 12 - plinthDepth, plinthW);
-    topGrad.addColorStop(0, isLight ? '#d6c7b2' : '#3a2b22');
-    topGrad.addColorStop(1, isLight ? '#9c826c' : '#1e140e');
+    topGrad.addColorStop(0, isLight ? '#e7dac6' : '#3a2b22');
+    topGrad.addColorStop(1, isLight ? '#a88c72' : '#1e140e');
     ctx.fillStyle = topGrad;
     ctx.fill();
-    ctx.strokeStyle = '#d4af37';
+    ctx.strokeStyle = isLight ? '#b45309' : '#d4af37';
     ctx.lineWidth = 1.4;
     ctx.stroke();
 
     // Inset glowing elemental runic vein on plinth surface
     ctx.beginPath();
     ctx.ellipse(lx, ly + 12 - plinthDepth, plinthW * 0.65, plinthH * 0.65, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = loc.gemColor;
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = activeGemColor;
+    ctx.lineWidth = 1.3;
     ctx.stroke();
 
     ctx.restore();
@@ -740,9 +991,11 @@ export class MapMenu {
     r: number,
     loc: LocationNode,
     time: number,
-    isLight: boolean
+    isLight: boolean,
+    isFrontier: boolean = false
   ) {
     ctx.save();
+    const activeGemColor = isLight ? (loc.lightGemColor || loc.gemColor) : loc.gemColor;
 
     // Vertical tactile floating lift on hover and idle
     const floatY = -loc.hover * 10 + Math.sin(time * 2.2 + loc.px * 10) * 2.5;
@@ -751,7 +1004,7 @@ export class MapMenu {
     // Intermediate contact shadow between floating crest and plinth
     ctx.beginPath();
     ctx.ellipse(lx, ly + 3 + loc.hover * 2, (r - 2) * 1.05, (r - 2) * 0.35, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    ctx.fillStyle = isLight ? 'rgba(69, 26, 3, 0.32)' : 'rgba(0, 0, 0, 0.42)';
     ctx.fill();
 
     // 1. Rotating Elder Futhark Reticle on Hover
@@ -762,21 +1015,27 @@ export class MapMenu {
       const reticleR = r + 15 + loc.hover * 4;
       ctx.beginPath();
       ctx.arc(0, 0, reticleR, 0, Math.PI * 2);
-      ctx.strokeStyle = loc.locked ? '#ef4444' : loc.gemColor;
-      ctx.globalAlpha = loc.hover * 0.85;
+      ctx.strokeStyle = loc.locked ? (isLight ? '#dc2626' : '#ef4444') : activeGemColor;
+      ctx.globalAlpha = loc.hover * 0.9;
       ctx.setLineDash([7, 10]);
       ctx.lineWidth = 2.0;
       ctx.stroke();
 
       // Outer runic markers: LOKA for locked, Elder Futhark for active
       const runeSymbols = loc.locked ? ['ᛚ','ᛟ','ᚲ','ᚨ','ᛚ','ᛟ','ᚲ','ᚨ'] : ['ᚠ','ᚢ','ᚦ','ᚨ','ᚱ','ᚲ','ᚷ','ᚹ'];
-      ctx.font = 'bold 9px "Segoe UI Historic", "Segoe UI Symbol", serif';
+      ctx.font = 'bold 9.5px "Segoe UI Historic", "Segoe UI Symbol", serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = loc.locked ? '#f87171' : loc.gemColor;
+      ctx.setLineDash([]);
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = isLight ? 'rgba(255, 251, 235, 0.9)' : 'rgba(10, 6, 4, 0.85)';
+      ctx.fillStyle = loc.locked ? (isLight ? '#b91c1c' : '#f87171') : activeGemColor;
       for (let ri = 0; ri < runeSymbols.length; ri++) {
         const ra = (ri * Math.PI * 2) / runeSymbols.length;
-        ctx.fillText(runeSymbols[ri], Math.cos(ra) * (reticleR + 7), Math.sin(ra) * (reticleR + 7));
+        const rx = Math.cos(ra) * (reticleR + 7);
+        const ry = Math.sin(ra) * (reticleR + 7);
+        ctx.strokeText(runeSymbols[ri], rx, ry);
+        ctx.fillText(runeSymbols[ri], rx, ry);
       }
       ctx.restore();
     }
@@ -784,17 +1043,17 @@ export class MapMenu {
     // 2. Outer Heavy Dwarven Brass Medallion Frame
     ctx.beginPath();
     ctx.arc(lx, cy, r + 4, 0, Math.PI * 2);
-    ctx.fillStyle = isLight ? '#e2d3b5' : '#1f1610';
+    ctx.fillStyle = isLight ? '#e7d8bb' : '#1f1610';
     ctx.fill();
-    ctx.strokeStyle = '#d4af37';
+    ctx.strokeStyle = isLight ? '#b45309' : '#d4af37';
     ctx.lineWidth = 2.4;
-    ctx.shadowColor = loc.gemColor;
-    ctx.shadowBlur = 6 + loc.hover * 16;
+    ctx.shadowColor = activeGemColor;
+    ctx.shadowBlur = (isFrontier && !loc.locked ? 10 : 6) + loc.hover * 16;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
     // Decorative Dwarven Rivets / Corner Clamps at 8 points
-    ctx.fillStyle = '#f59e0b';
+    ctx.fillStyle = isLight ? '#b45309' : '#f59e0b';
     for (let rv = 0; rv < 8; rv++) {
       const rva = (rv * Math.PI * 2) / 8;
       const rvx = lx + Math.cos(rva) * (r + 4);
@@ -871,7 +1130,7 @@ export class MapMenu {
 
     // If locked, draw heavy crossed dwarven iron chains and padlock
     if (loc.locked) {
-      this.drawDwarvenLock(ctx, lx, cy, r, time);
+      this.drawDwarvenLock(ctx, lx, cy, r, time, isLight);
     }
 
     ctx.restore();
@@ -879,33 +1138,37 @@ export class MapMenu {
     // Inner gold hairline bezel ring
     ctx.beginPath();
     ctx.arc(lx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = loc.locked ? '#d4af37' : '#d4af37';
+    ctx.strokeStyle = isLight ? '#92400e' : '#d4af37';
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // 4. Waypoint Beacon: Start diamond if unlocked, Padlock badge if locked
+    // 4. Waypoint Beacon: Frontier diamond, Secured badge, or Padlock badge
     if (loc.locked) {
       const lockY = cy - r - 13;
+      const lockBadgeText = `🔒 ${t('level_abbr')} ${loc.level}`;
       ctx.save();
       ctx.translate(lx, lockY);
+      ctx.font = 'bold 8.5px sans-serif';
+      const badgeW = Math.max(48, Math.ceil(ctx.measureText(lockBadgeText).width + 12));
       ctx.fillStyle = isLight ? 'rgba(255, 251, 235, 0.96)' : 'rgba(24, 18, 14, 0.94)';
       ctx.beginPath();
-      ctx.roundRect(-24, -8, 48, 16, 4);
+      ctx.roundRect(-badgeW * 0.5, -8, badgeW, 16, 4);
       ctx.fill();
       ctx.strokeStyle = isLight ? '#b45309' : '#d4af37';
       ctx.lineWidth = 1.2;
       ctx.shadowColor = isLight ? 'rgba(180, 83, 9, 0.25)' : 'rgba(212, 175, 55, 0.4)';
       ctx.shadowBlur = 6;
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
-      ctx.font = 'bold 8.5px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = isLight ? '#78350f' : '#fef08a';
-      ctx.fillText(`🔒 Lvl ${loc.level}`, 0, 0);
+      ctx.fillText(lockBadgeText, 0, 0);
       ctx.restore();
-    } else {
-      const beaconY = cy - r - 13;
+    } else if (isFrontier) {
+      // Active Campaign Frontier Beacon: Pulsing Golden Battle Diamond
+      const beaconY = cy - r - 14;
       const beaconPulse = Math.sin(time * 3.5 + loc.px * 8) * 0.25 + 0.75;
       ctx.save();
       ctx.translate(lx, beaconY);
@@ -913,31 +1176,57 @@ export class MapMenu {
 
       // Glow halo
       ctx.beginPath();
-      ctx.arc(0, 0, 7 * beaconPulse, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(245, 158, 11, ${0.4 * beaconPulse + loc.hover * 0.3})`;
+      ctx.arc(0, 0, 9 * beaconPulse, 0, Math.PI * 2);
+      ctx.fillStyle = isLight
+        ? `rgba(217, 119, 6, ${0.38 * beaconPulse + loc.hover * 0.28})`
+        : `rgba(245, 158, 11, ${0.45 * beaconPulse + loc.hover * 0.3})`;
       ctx.fill();
 
       // Golden Diamond
       ctx.beginPath();
-      ctx.moveTo(0, -6);
-      ctx.lineTo(5, 0);
-      ctx.lineTo(0, 6);
-      ctx.lineTo(-5, 0);
+      ctx.moveTo(0, -7);
+      ctx.lineTo(6, 0);
+      ctx.lineTo(0, 7);
+      ctx.lineTo(-6, 0);
       ctx.closePath();
-      ctx.fillStyle = loc.hover > 0.1 ? '#fef08a' : '#d4af37';
+      ctx.fillStyle = loc.hover > 0.1 ? '#fef08a' : (isLight ? '#f59e0b' : '#fbbf24');
       ctx.fill();
-      ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isLight ? '#78350f' : '#ffd700';
+      ctx.lineWidth = 1.2;
       ctx.stroke();
 
-      // Downward battle chevron
-      ctx.fillStyle = '#451a03';
+      // Crisp downward battle chevron
+      ctx.strokeStyle = '#451a03';
+      ctx.lineWidth = 1.7;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.beginPath();
-      ctx.moveTo(-2.5, -2);
-      ctx.lineTo(0, 2);
-      ctx.lineTo(2.5, -2);
+      ctx.moveTo(-2.6, -1.6);
+      ctx.lineTo(0, 1.8);
+      ctx.lineTo(2.6, -1.6);
       ctx.stroke();
 
+      ctx.restore();
+    } else {
+      // Previously Conquered / Replayable Stronghold Badge
+      const badgeY = cy - r - 13;
+      const securedBadgeText = `✦ ${t('level_abbr')} ${loc.level}`;
+      ctx.save();
+      ctx.translate(lx, badgeY);
+      ctx.font = 'bold 8.5px sans-serif';
+      const badgeW = Math.max(48, Math.ceil(ctx.measureText(securedBadgeText).width + 12));
+      ctx.fillStyle = isLight ? 'rgba(236, 253, 245, 0.96)' : 'rgba(14, 30, 24, 0.94)';
+      ctx.beginPath();
+      ctx.roundRect(-badgeW * 0.5, -8, badgeW, 16, 4);
+      ctx.fill();
+      ctx.strokeStyle = isLight ? '#0f766e' : '#2dd4bf';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = isLight ? '#115e59' : '#99f6e4';
+      ctx.fillText(securedBadgeText, 0, 0);
       ctx.restore();
     }
 
@@ -945,16 +1234,16 @@ export class MapMenu {
   }
 
   // ── FORGED DWARVEN LOCK & HEAVY CHAINS (LOCKED MONUMENT OVERLAY) ──
-  private drawDwarvenLock(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, time: number) {
+  private drawDwarvenLock(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, time: number, isLight: boolean = false) {
     ctx.save();
     
     // 1. Slender, semi-translucent forged mithril/gold chains that reveal the crest art
     ctx.save();
-    ctx.globalAlpha = 0.55;
+    ctx.globalAlpha = isLight ? 0.72 : 0.55;
 
     // Soft underlying contact line
-    ctx.strokeStyle = 'rgba(20, 16, 12, 0.4)';
-    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = isLight ? 'rgba(69, 26, 3, 0.55)' : 'rgba(20, 16, 12, 0.4)';
+    ctx.lineWidth = 2.6;
     ctx.beginPath();
     ctx.moveTo(cx - r * 0.72, cy - r * 0.55);
     ctx.lineTo(cx + r * 0.72, cy + r * 0.55);
@@ -963,7 +1252,7 @@ export class MapMenu {
     ctx.stroke();
 
     // Gleaming dwarven gold chain links
-    ctx.strokeStyle = '#fef08a';
+    ctx.strokeStyle = isLight ? '#d97706' : '#fef08a';
     ctx.lineWidth = 1.6;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -982,17 +1271,17 @@ export class MapMenu {
 
     // Ambient golden aura behind the lock
     ctx.save();
-    ctx.shadowColor = 'rgba(253, 224, 71, 0.65)';
-    ctx.shadowBlur = 10;
+    ctx.shadowColor = isLight ? 'rgba(69, 26, 3, 0.45)' : 'rgba(253, 224, 71, 0.65)';
+    ctx.shadowBlur = isLight ? 6 : 10;
 
     // Radiant gold & silver shackle
     ctx.beginPath();
     ctx.arc(cx, lockY - 1, 5.5, Math.PI, 0);
-    ctx.strokeStyle = '#fef08a';
-    ctx.lineWidth = 2.8;
+    ctx.strokeStyle = isLight ? '#78350f' : '#fef08a';
+    ctx.lineWidth = 3.2;
     ctx.stroke();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.0;
+    ctx.strokeStyle = isLight ? '#fde68a' : '#ffffff';
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
     // Padlock body (gleaming light gold & polished dwarven brass)
@@ -1005,7 +1294,7 @@ export class MapMenu {
     ctx.beginPath();
     ctx.roundRect(cx - lockW * 0.5, lockY, lockW, lockH, 3.5);
     ctx.fill();
-    ctx.strokeStyle = '#ffd700';
+    ctx.strokeStyle = isLight ? '#78350f' : '#ffd700';
     ctx.lineWidth = 1.3;
     ctx.stroke();
     ctx.restore();
@@ -1019,7 +1308,7 @@ export class MapMenu {
     ctx.restore();
 
     // Sparkling corner rivets
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = isLight ? '#78350f' : '#ffffff';
     for (const rx of [cx - lockW * 0.5 + 2.5, cx + lockW * 0.5 - 2.5]) {
       for (const ry of [lockY + 2.5, lockY + lockH - 2.5]) {
         ctx.beginPath();
@@ -1033,7 +1322,7 @@ export class MapMenu {
     ctx.save();
     ctx.shadowColor = '#ef4444';
     ctx.shadowBlur = 5;
-    ctx.fillStyle = `rgba(239, 68, 68, ${keyholePulse})`;
+    ctx.fillStyle = `rgba(220, 38, 38, ${keyholePulse})`;
     ctx.beginPath();
     ctx.arc(cx, lockY + lockH * 0.42, 2.0, 0, Math.PI * 2);
     ctx.fill();
@@ -1281,7 +1570,7 @@ export class MapMenu {
   }
 
   // ── 3. ANDVARI'S FALLS: CURSED GOLDEN RING (ANDVARANAUT) & MYSTICAL WATERFALL ──
-  private drawAndvariFallsCrest(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, time: number, _hover: number, _isLight: boolean) {
+  private drawAndvariFallsCrest(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, time: number, _hover: number, isLight: boolean) {
     ctx.save();
     // 1. Cascading subterranean water torrents
     ctx.save();
@@ -1294,7 +1583,9 @@ export class MapMenu {
     // Waterfall streams
     for (let stream = -2; stream <= 2; stream++) {
       const sx = cx + stream * 8;
-      ctx.strokeStyle = stream % 2 === 0 ? 'rgba(224, 242, 254, 0.7)' : 'rgba(125, 211, 252, 0.6)';
+      ctx.strokeStyle = isLight
+        ? (stream % 2 === 0 ? 'rgba(2, 132, 199, 0.72)' : 'rgba(3, 105, 161, 0.55)')
+        : (stream % 2 === 0 ? 'rgba(224, 242, 254, 0.7)' : 'rgba(125, 211, 252, 0.6)');
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(sx, cy - r * 0.75);
@@ -1304,7 +1595,7 @@ export class MapMenu {
     ctx.restore();
 
     // 2. Foaming splash pool ripples at base
-    ctx.strokeStyle = 'rgba(224, 242, 254, 0.8)';
+    ctx.strokeStyle = isLight ? 'rgba(3, 105, 161, 0.72)' : 'rgba(224, 242, 254, 0.8)';
     ctx.lineWidth = 1.2;
     for (let rip = 1; rip <= 3; rip++) {
       const ripR = (r * 0.3) + rip * 5 + Math.sin(time * 4 + rip) * 2;
@@ -1684,7 +1975,7 @@ export class MapMenu {
   }
 
   // ── 7. IVALDI'S WORKSHOP: SACRED SPEARHEAD OF GUNGNIR & ROTATING CELESTIAL ASTROLABE ──
-  private drawIvaldiWorkshopCrest(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, time: number, _hover: number, _isLight: boolean) {
+  private drawIvaldiWorkshopCrest(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, time: number, _hover: number, isLight: boolean) {
     ctx.save();
     // 1. Concentric Rotating Celestial Astrolabe Rings
     ctx.save();
@@ -1694,8 +1985,8 @@ export class MapMenu {
     ctx.rotate(time * 0.35);
     ctx.beginPath();
     ctx.arc(0, 0, r * 0.68, 0, Math.PI * 2);
-    ctx.lineWidth = 1.2;
-    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 1.3;
+    ctx.strokeStyle = isLight ? '#7e22ce' : '#c084fc';
     ctx.setLineDash([4, 8]);
     ctx.stroke();
 
@@ -1704,7 +1995,7 @@ export class MapMenu {
     ctx.beginPath();
     ctx.arc(0, 0, r * 0.48, 0, Math.PI * 2);
     ctx.lineWidth = 1.4;
-    ctx.strokeStyle = '#e9d5ff';
+    ctx.strokeStyle = isLight ? '#581c87' : '#e9d5ff';
     ctx.setLineDash([3, 6]);
     ctx.stroke();
     ctx.setLineDash([]);
@@ -1713,8 +2004,8 @@ export class MapMenu {
     // 2. Ethereal Violet Energy Aura in Center
     const auraPulse = Math.sin(time * 3) * 0.15 + 0.85;
     const auraGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r * 0.65);
-    auraGrad.addColorStop(0, `rgba(233, 213, 255, ${0.45 * auraPulse})`);
-    auraGrad.addColorStop(0.5, `rgba(168, 85, 247, ${0.25 * auraPulse})`);
+    auraGrad.addColorStop(0, isLight ? `rgba(147, 51, 234, ${0.32 * auraPulse})` : `rgba(233, 213, 255, ${0.45 * auraPulse})`);
+    auraGrad.addColorStop(0.5, `rgba(168, 85, 247, ${0.22 * auraPulse})`);
     auraGrad.addColorStop(1, 'rgba(59, 7, 100, 0)');
     ctx.fillStyle = auraGrad;
     ctx.beginPath();
@@ -1750,12 +2041,12 @@ export class MapMenu {
     bladeGrad.addColorStop(1, '#3b0764');
     ctx.fillStyle = bladeGrad;
     ctx.fill();
-    ctx.strokeStyle = '#f5d0fe';
+    ctx.strokeStyle = isLight ? '#581c87' : '#f5d0fe';
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
     // Central Glowing Runic Fuller Line (Odin's divine mark)
-    ctx.strokeStyle = '#38bdf8';
+    ctx.strokeStyle = isLight ? '#0284c7' : '#38bdf8';
     ctx.lineWidth = 1.5;
     ctx.shadowColor = '#38bdf8';
     ctx.shadowBlur = 6;
@@ -1770,7 +2061,7 @@ export class MapMenu {
       const glintAngle = time * 1.8 + (g * Math.PI * 2) / 3;
       const gx = cx + Math.cos(glintAngle) * (r * 0.48);
       const gy = cy + Math.sin(glintAngle) * (r * 0.48);
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = isLight ? '#6b21a8' : '#ffffff';
       ctx.beginPath();
       ctx.arc(gx, gy, 1.8, 0, Math.PI * 2);
       ctx.fill();
@@ -1808,14 +2099,28 @@ export class MapMenu {
     return val !== key ? val : (loc.storyObjective || '');
   }
 
-  // ── INTEGRATED DWARVEN STONE NAME PLAQUE ──
+  getLocalizedSubtitle(loc: LocationNode): string {
+    const key = `loc_${loc.id.replace(/-/g, '_')}_sub`;
+    const val = t(key);
+    return val !== key ? val : loc.subtitle;
+  }
+
+  getLocalizedThreat(loc: LocationNode): string {
+    const key = `threat_${loc.threat.toLowerCase()}`;
+    const val = t(key);
+    return val !== key ? val : loc.threat;
+  }
+
+  // ── INTEGRATED DWARVEN STONE NAME PLAQUE (EDGE-CLAMPED) ──
   private drawNamePlaque(
     ctx: CanvasRenderingContext2D,
     lx: number,
     ly: number,
     _r: number,
     loc: LocationNode,
-    isLight: boolean
+    isLight: boolean,
+    canvasW: number = 1280,
+    canvasH: number = 768
   ) {
     ctx.save();
 
@@ -1829,8 +2134,9 @@ export class MapMenu {
     const subW = ctx.measureText(subText).width;
     const plaqueW = Math.max(140, Math.max(nameW, subW) + 28);
     const plaqueH = 32;
-    const px = lx - plaqueW * 0.5;
-    const py = ly + 25;
+    const px = Math.max(12, Math.min(canvasW - plaqueW - 12, lx - plaqueW * 0.5));
+    const py = Math.max(12, Math.min(canvasH - plaqueH - 10, ly + 25));
+    const centerX = px + plaqueW * 0.5;
 
     // Plaque Drop Shadow
     ctx.fillStyle = isLight ? 'rgba(120, 53, 15, 0.24)' : 'rgba(0, 0, 0, 0.65)';
@@ -1895,7 +2201,7 @@ export class MapMenu {
       ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
       ctx.shadowBlur = 4;
     }
-    ctx.fillText(locName, lx, py + 11);
+    ctx.fillText(locName, centerX, py + 11);
 
     // Rune Tag + Role Subtitle / Status
     ctx.fillStyle = isLight
@@ -1903,15 +2209,16 @@ export class MapMenu {
       : (loc.locked ? '#fbbf24' : '#fde047');
     ctx.font = `bold 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif`;
     ctx.shadowBlur = 0;
-    ctx.fillText(subText, lx, py + 23);
+    ctx.fillText(subText, centerX, py + 23);
 
     ctx.restore();
   }
 
-  // ── IMMERSIVE STORY CHAPTER BRIEFING CARD ──
+  // ── IMMERSIVE STORY CHAPTER BRIEFING CARD (UNLOCKED & LOCKED PREVIEW) ──
   drawMissionIntelCard(ctx: CanvasRenderingContext2D, loc: LocationNode, w: number, h: number, isLight: boolean, time: number) {
     ctx.save();
-    const cardW = Math.min(460, Math.max(400, w * 0.34));
+    const cardW = Math.min(450, Math.max(320, Math.min(w * 0.34, w - 40)));
+    const activeGemColor = isLight ? (loc.lightGemColor || '#b45309') : loc.gemColor;
 
     const locName = this.getLocalizedLocName(loc);
     const locChapter = this.getLocalizedChapter(loc);
@@ -1926,27 +2233,27 @@ export class MapMenu {
     ctx.font = '500 11px "Outfit", "Inter", sans-serif';
     const objH = this.measureWrappedTextHeight(ctx, locObjective, cardW - 60, 15, 0);
     const boxH = Math.max(44, 25 + objH);
-    const btnH = 34;
+    const btnH = 36;
+    const headerTopOffset = 78;
 
-    // 60 (header & divider to narrative) + textH + 10 (margin) + boxH + 14 (margin) + btnH + 16 (bottom padding)
-    const cardH = Math.max(260, 60 + textH + 10 + boxH + 14 + btnH + 16);
+    const cardH = Math.max(274, headerTopOffset + textH + 10 + boxH + 12 + btnH + 16);
 
-    // Position card intelligently: prefer right of node, clamp inside canvas bounds
-    let cardX = loc.px * w + loc.radius + 24;
-    if (cardX + cardW > w - 24) {
-      cardX = loc.px * w - loc.radius - cardW - 24;
+    // Position card relative to aspect-projected node coordinates so it never occludes the active node
+    const nodePos = this.getNodeScreenPos(loc, w, h);
+    let cardX = nodePos.x + loc.radius + 26;
+    if (cardX + cardW > w - 20) {
+      cardX = nodePos.x - loc.radius - cardW - 26;
     }
-    // Strict boundary clamping so it NEVER clips off left or right
-    cardX = Math.max(20, Math.min(w - cardW - 20, cardX));
+    cardX = Math.max(18, Math.min(w - cardW - 18, cardX));
 
-    let cardY = loc.py * h - cardH * 0.5;
-    cardY = Math.max(70, Math.min(h - cardH - 16, cardY));
+    let cardY = nodePos.y - cardH * 0.5;
+    cardY = Math.max(76, Math.min(h - cardH - 16, cardY));
 
     // Save hit test bounds for clicking / hovering the card
     this.activeCardRect = { x: cardX, y: cardY, w: cardW, h: cardH, loc };
 
     // 1. Deep Atmospheric Drop Shadow
-    ctx.shadowColor = isLight ? 'rgba(120, 53, 15, 0.35)' : 'rgba(0, 0, 0, 0.92)';
+    ctx.shadowColor = isLight ? 'rgba(120, 53, 15, 0.32)' : 'rgba(0, 0, 0, 0.92)';
     ctx.shadowBlur = 24;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 6;
@@ -1960,9 +2267,9 @@ export class MapMenu {
     // 2. Card Background Slab: Multi-stop Obsidian Granite or Antique Parchment
     const cardGrad = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardH);
     if (isLight) {
-      cardGrad.addColorStop(0, '#fefce8');
-      cardGrad.addColorStop(0.3, '#fef3c7');
-      cardGrad.addColorStop(0.7, '#fde68a');
+      cardGrad.addColorStop(0, '#fffef5');
+      cardGrad.addColorStop(0.35, '#fef3c7');
+      cardGrad.addColorStop(0.75, '#fde68a');
       cardGrad.addColorStop(1, '#fed7aa');
     } else {
       cardGrad.addColorStop(0, '#1c1511');
@@ -1981,18 +2288,20 @@ export class MapMenu {
       cardX + cardW * 0.5, cardY + cardH * 0.45, cardW * 0.75
     );
     vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    vignette.addColorStop(1, isLight ? 'rgba(180, 83, 9, 0.08)' : 'rgba(0, 0, 0, 0.55)');
+    vignette.addColorStop(1, isLight ? 'rgba(180, 83, 9, 0.07)' : 'rgba(0, 0, 0, 0.55)');
     ctx.fillStyle = vignette;
     ctx.beginPath();
     ctx.roundRect(cardX, cardY, cardW, cardH, 12);
     ctx.fill();
 
     // 3. Ornate Double Gold Border with Nordic Runic Knotwork Glow
-    const borderColor = isLight ? '#b45309' : '#d4af37';
+    const borderColor = loc.locked
+      ? (isLight ? '#a16207' : '#854d0e')
+      : (isLight ? '#b45309' : '#d4af37');
     ctx.lineWidth = 2;
     ctx.strokeStyle = borderColor;
-    ctx.shadowColor = loc.gemColor || borderColor;
-    ctx.shadowBlur = 10;
+    ctx.shadowColor = loc.locked ? borderColor : (activeGemColor || borderColor);
+    ctx.shadowBlur = loc.locked ? 4 : 10;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
@@ -2011,26 +2320,61 @@ export class MapMenu {
     ctx.fillText('ᛟ', cardX + 13, cardY + cardH - 13);
     ctx.fillText('ᛟ', cardX + cardW - 13, cardY + cardH - 13);
 
-    // 4. Single Clean Title Row (Title on left, Chapter tag on right)
+    // 4A. Top Eyebrow Row: Chapter Tag (Left) + Level & Threat Pill (Right) — zero collision!
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = isLight ? '#92400e' : '#f59e0b';
+    ctx.font = 'bold 10px "Cinzel", "Outfit", sans-serif';
+    ctx.fillText(`✦ ${locChapter} ✦`, cardX + 22, cardY + 19);
+
+    const threatColors: Record<LocationNode['threat'], { dark: string; light: string }> = {
+      Normal:    { dark: '#2dd4bf', light: '#0f766e' },
+      Hard:      { dark: '#fbbf24', light: '#b45309' },
+      Extreme:   { dark: '#fb923c', light: '#c2410c' },
+      Nightmare: { dark: '#f87171', light: '#b91c1c' }
+    };
+    const threatTint = threatColors[loc.threat] || threatColors.Normal;
+    const locThreat = this.getLocalizedThreat(loc);
+    const pillLabel = `${t('level')} ${loc.level} · ${locThreat}`;
+    ctx.font = 'bold 9.5px "Outfit", "Inter", sans-serif';
+    const pillW = ctx.measureText(pillLabel).width + 16;
+    const pillX = cardX + cardW - 22 - pillW;
+    const pillY = cardY + 11;
+    ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.72)' : 'rgba(255, 255, 255, 0.07)';
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, 16, 4);
+    ctx.fill();
+    ctx.strokeStyle = isLight ? threatTint.light : threatTint.dark;
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = isLight ? threatTint.light : threatTint.dark;
+    ctx.fillText(pillLabel, pillX + pillW * 0.5, pillY + 8.5);
+
+    // 4B. Stronghold Title Row (Auto-fitted to card width across all languages)
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-
+    const maxTitleW = cardW - 44;
+    let titleFontSize = 20;
+    ctx.font = `bold ${titleFontSize}px "Cinzel", "Outfit", "Inter", serif`;
+    while (titleFontSize > 14 && ctx.measureText(locName).width > maxTitleW) {
+      titleFontSize -= 0.5;
+      ctx.font = `bold ${titleFontSize}px "Cinzel", "Outfit", "Inter", serif`;
+    }
     ctx.fillStyle = isLight ? '#1c1917' : '#ffffff';
-    ctx.font = 'bold 21px "Cinzel", "Outfit", "Inter", serif';
-    ctx.shadowColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(0, 0, 0, 0.9)';
-    ctx.shadowBlur = 5;
-    ctx.fillText(locName, cardX + 22, cardY + 34);
+    ctx.shadowColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(locName, cardX + 22, cardY + 43);
     ctx.shadowBlur = 0;
 
-    // Chapter Tag on the right (eliminating redundant stacked titles)
-    ctx.textAlign = 'right';
-    ctx.fillStyle = isLight ? '#92400e' : '#f59e0b';
-    ctx.font = 'bold 11px "Cinzel", "Outfit", sans-serif';
-    const chapterTag = locChapter;
-    ctx.fillText(`✦ ${chapterTag} ✦`, cardX + cardW - 22, cardY + 31);
+    // 4C. Subtitle & Tactical Role Line
+    const locSubtitle = this.getLocalizedSubtitle(loc);
+    ctx.fillStyle = isLight ? '#78350f' : 'rgba(253, 230, 138, 0.78)';
+    ctx.font = '600 10.5px "Outfit", "Inter", sans-serif';
+    ctx.fillText(`${locSubtitle}  ·  [ ${loc.rune} ]`, cardX + 22, cardY + 57);
 
     // 5. Clean Gold Divider Line
-    const divY = cardY + 44;
+    const divY = cardY + 65;
     const divGrad = ctx.createLinearGradient(cardX + 22, divY, cardX + cardW - 22, divY);
     divGrad.addColorStop(0, 'rgba(212, 175, 55, 0.1)');
     divGrad.addColorStop(0.5, isLight ? 'rgba(180, 83, 9, 0.65)' : 'rgba(212, 175, 55, 0.75)');
@@ -2046,25 +2390,22 @@ export class MapMenu {
     ctx.textAlign = 'left';
     ctx.fillStyle = isLight ? '#451a03' : '#fef3c7';
     ctx.font = '12px "Outfit", "Inter", sans-serif';
-    const textEndY = this.drawWrappedText(ctx, locDesc, cardX + 22, cardY + 62, cardW - 44, 16.5, 6);
+    const textEndY = this.drawWrappedText(ctx, locDesc, cardX + 22, cardY + headerTopOffset, cardW - 44, 16.5, 6);
 
     // 7. Carved Dwarven Mandate Plaque (Positioned strictly below narrative text)
     const boxW = cardW - 36;
     const boxX = cardX + 18;
     const boxY = textEndY + 10;
 
-    // Slate backing for mandate
     ctx.fillStyle = isLight ? 'rgba(217, 119, 6, 0.14)' : 'rgba(245, 158, 11, 0.09)';
     ctx.beginPath();
     ctx.roundRect(boxX, boxY, boxW, boxH, 6);
     ctx.fill();
 
-    // Mandate border
     ctx.strokeStyle = isLight ? 'rgba(180, 83, 9, 0.45)' : 'rgba(245, 158, 11, 0.35)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Corner micro rivets on mandate
     ctx.fillStyle = isLight ? '#b45309' : '#f59e0b';
     for (const rx of [boxX + 5, boxX + boxW - 5]) {
       for (const ry of [boxY + 5, boxY + boxH - 5]) {
@@ -2074,50 +2415,87 @@ export class MapMenu {
       }
     }
 
-    // Mandate Header Label
     ctx.fillStyle = isLight ? '#92400e' : '#fde047';
     ctx.font = 'bold 10px "Cinzel", "Outfit", sans-serif';
     ctx.fillText(`ᛏ ${t('defense_mandate')}`, boxX + 12, boxY + 16);
 
-    // Mandate Description (No wave counts, no enemy types, no tips!)
     ctx.fillStyle = isLight ? '#292524' : '#e2e8f0';
     ctx.font = '500 11px "Outfit", "Inter", sans-serif';
     this.drawWrappedText(ctx, locObjective, boxX + 12, boxY + 31, boxW - 24, 14, 0);
 
-    // 8. Shortened, Majestic Call-to-Arms Action Button
+    // 8. Action Footer: Call-to-Arms Button (Unlocked) OR Sealed Prerequisite Banner (Locked)
     const btnW = cardW - 36;
     const btnX = cardX + 18;
-    const btnY = boxY + boxH + 14;
-    const pulse = Math.sin(time * 3.5) * 0.25 + 0.75;
-    const isBtnHovered = this.hoveredCard;
+    const btnY = boxY + boxH + 12;
 
-    // Button Background: Deep Obsidian with warm ember gradient
-    const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
-    if (isLight) {
-      btnGrad.addColorStop(0, isBtnHovered ? '#f59e0b' : '#d97706');
-      btnGrad.addColorStop(1, isBtnHovered ? '#b45309' : '#92400e');
+    if (loc.locked) {
+      const prevCity = this.getPrerequisiteCity(loc);
+      const prevName = prevCity ? this.getLocalizedLocName(prevCity) : '';
+      const lockMsg = prevName
+        ? `🔒 ${t('sealed_prerequisite').replace('{city}', prevName)}`
+        : `🔒 ${t('locked')}`;
+
+      const lockGrad = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
+      if (isLight) {
+        lockGrad.addColorStop(0, 'rgba(120, 53, 15, 0.14)');
+        lockGrad.addColorStop(1, 'rgba(69, 26, 3, 0.22)');
+      } else {
+        lockGrad.addColorStop(0, 'rgba(39, 39, 42, 0.85)');
+        lockGrad.addColorStop(1, 'rgba(24, 24, 27, 0.92)');
+      }
+      ctx.fillStyle = lockGrad;
+      ctx.beginPath();
+      ctx.roundRect(btnX, btnY, btnW, btnH, 6);
+      ctx.fill();
+
+      ctx.strokeStyle = isLight ? 'rgba(146, 64, 14, 0.55)' : 'rgba(161, 98, 7, 0.65)';
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = isLight ? '#78350f' : '#fcd34d';
+      let lockFont = 11.5;
+      ctx.font = `bold ${lockFont}px "Outfit", "Inter", sans-serif`;
+      while (lockFont > 9 && ctx.measureText(lockMsg).width > btnW - 20) {
+        lockFont -= 0.5;
+        ctx.font = `bold ${lockFont}px "Outfit", "Inter", sans-serif`;
+      }
+      ctx.fillText(lockMsg, btnX + btnW * 0.5, btnY + btnH * 0.5);
     } else {
-      btnGrad.addColorStop(0, isBtnHovered ? 'rgba(217, 119, 6, 0.70)' : `rgba(180, 83, 9, ${0.30 + pulse * 0.12})`);
-      btnGrad.addColorStop(1, isBtnHovered ? 'rgba(120, 53, 15, 0.80)' : `rgba(69, 26, 3, ${0.40 + pulse * 0.14})`);
+      const pulse = Math.sin(time * 3.5) * 0.25 + 0.75;
+      const isBtnHovered = this.hoveredCard;
+
+      const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
+      if (isLight) {
+        btnGrad.addColorStop(0, isBtnHovered ? '#f59e0b' : '#d97706');
+        btnGrad.addColorStop(1, isBtnHovered ? '#b45309' : '#92400e');
+      } else {
+        btnGrad.addColorStop(0, isBtnHovered ? 'rgba(217, 119, 6, 0.75)' : `rgba(180, 83, 9, ${0.34 + pulse * 0.12})`);
+        btnGrad.addColorStop(1, isBtnHovered ? 'rgba(120, 53, 15, 0.85)' : `rgba(69, 26, 3, ${0.44 + pulse * 0.14})`);
+      }
+      ctx.fillStyle = btnGrad;
+      ctx.beginPath();
+      ctx.roundRect(btnX, btnY, btnW, btnH, 6);
+      ctx.fill();
+
+      ctx.strokeStyle = isLight
+        ? (isBtnHovered ? '#78350f' : '#92400e')
+        : (isBtnHovered ? '#fef08a' : '#d4af37');
+      ctx.lineWidth = isBtnHovered ? 2.0 : 1.4;
+      ctx.shadowColor = isLight
+        ? 'rgba(180, 83, 9, 0.35)'
+        : (isBtnHovered ? '#fde047' : '#d4af37');
+      ctx.shadowBlur = isBtnHovered ? 12 : 5 * pulse;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = isLight ? '#ffffff' : (isBtnHovered ? '#ffffff' : '#fef08a');
+      ctx.font = 'bold 12.5px "Cinzel", "Outfit", sans-serif';
+      ctx.fillText(t('commence_defense'), btnX + btnW * 0.5, btnY + btnH * 0.5 + 0.5);
     }
-    ctx.fillStyle = btnGrad;
-    ctx.beginPath();
-    ctx.roundRect(btnX, btnY, btnW, btnH, 6);
-    ctx.fill();
-
-    // Button Border: Burnished Gold with hover glow
-    ctx.strokeStyle = isBtnHovered ? '#fef08a' : '#d4af37';
-    ctx.lineWidth = isBtnHovered ? 2.0 : 1.4;
-    ctx.shadowColor = isBtnHovered ? '#fde047' : '#d4af37';
-    ctx.shadowBlur = isBtnHovered ? 12 : 5 * pulse;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Shortened Button Text
-    ctx.textAlign = 'center';
-    ctx.fillStyle = isLight ? '#ffffff' : (isBtnHovered ? '#ffffff' : '#fef08a');
-    ctx.font = 'bold 12.5px "Cinzel", "Outfit", sans-serif';
-    ctx.fillText(t('commence_defense'), btnX + btnW * 0.5, btnY + 22);
 
     ctx.restore();
   }

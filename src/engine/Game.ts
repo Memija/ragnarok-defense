@@ -178,6 +178,29 @@ export class Game {
     this.updateUI();
   }
 
+  private isDwarvenWaterwayCity(): boolean {
+    return this.realm === 'svartalfheim' && (this.city === 'althjofs-wheel' || this.city === 'andvaris-falls');
+  }
+
+  private isDwarvenForgeCity(): boolean {
+    return this.realm === 'svartalfheim' && !this.isDwarvenWaterwayCity();
+  }
+
+  private getDwarvenWallRunes(): string[] {
+    switch (this.city) {
+      case 'ivaldis-workshop':
+        return ['ᛁ', 'ᚹ', 'ᚨ', 'ᛚ', 'ᛞ', 'ᛁ', 'ᛊ', 'ᛟ', 'ᚱ'];
+      case 'jarnsmida-quarry':
+        return ['ᛃ', 'ᚨ', 'ᚱ', 'ᚾ', 'ᛊ', 'ᛗ', 'ᛁ', 'ᛞ', 'ᚨ'];
+      case 'dvalins-depths':
+        return ['ᛞ', 'ᚹ', 'ᚨ', 'ᛚ', 'ᛁ', 'ᚾ', 'ᛞ', 'ᛖ', 'ᛈ'];
+      case 'sindris-forge':
+        return ['ᛊ', 'ᛁ', 'ᚾ', 'ᛞ', 'ᚱ', 'ᛁ', 'ᚠ', 'ᛟ', 'ᚱ'];
+      default:
+        return ['ᚾ', 'ᛁ', 'ᛞ', 'ᚨ', 'ᚹ', 'ᛖ', 'ᛚ', 'ᛚ', 'ᛁ', 'ᚱ'];
+    }
+  }
+
   initWeather() {
     this.weatherParticles = [];
     const count = this.realm === 'jotunheim' ? 160 : 80;
@@ -217,7 +240,7 @@ export class Game {
       p.alpha = 0.2 + Math.random() * 0.4;
       p.angle = Math.random() * Math.PI * 2;
       p.vAngle = (Math.random() - 0.5) * 0.02;
-    } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+    } else if (this.isDwarvenWaterwayCity()) {
       p.x = Math.random() * w;
       p.y = randomY ? Math.random() * h : h + 10;
       p.vx = (Math.random() - 0.5) * 1.8;
@@ -568,7 +591,20 @@ export class Game {
           if (this.city) {
             MapMenu.unlockNextCity(this.city);
           }
-          this.level++;
+          if (this.realm === 'svartalfheim' && this.city) {
+            const curIdx = MapMenu.PROGRESSION_ORDER.indexOf(this.city);
+            if (curIdx !== -1 && curIdx < MapMenu.PROGRESSION_ORDER.length - 1) {
+              this.city = MapMenu.PROGRESSION_ORDER[curIdx + 1];
+              this.level = CITY_LEVELS[this.city] || (this.level + 1);
+            } else {
+              this.level++;
+            }
+          } else {
+            this.level++;
+          }
+          if (typeof document !== 'undefined') {
+            document.body.className = this.city ? `theme-${this.realm} location-${this.city}` : `theme-${this.realm}`;
+          }
           if (this.onOpenRoster) {
             this.onOpenRoster();
             return;
@@ -685,6 +721,8 @@ export class Game {
     this.gameState = 'playing';
     this.zombiesSpawned = 0;
     this.zombiesKilled = 0;
+    this.zombiesTotal = 10 + this.level * 5;
+    this.zombieSpawnTimer = 0;
     this.waveAnnounced = false;
     this.defenders = [];
     this.attackers = [];
@@ -695,12 +733,20 @@ export class Game {
       this.floatingTextPool.push(this.floatingTexts[i]);
     }
     this.floatingTexts.length = 0;
+    if (typeof document !== 'undefined') {
+      document.body.className = this.city ? `theme-${this.realm} location-${this.city}` : `theme-${this.realm}`;
+    }
+    this.grid = new Grid(this.width, this.height, this.realm, this.city);
+    this.cachedBgGradient = null;
+    this.cachedCastleCanvas = null;
+    this.initWeather();
     this.sun = getStartingCurrencyForLevel(this.level);
     for (let r = 0; r < this.grid.rows; r++) {
       this.valkyrieAvailable[r] = true;
     }
-    this.realmEntranceTimer = 2.5;
+    this.realmEntranceTimer = 2.8;
     this.updateRealmHeader();
+    this.renderSidebar();
     this.updateUI();
   }
 
@@ -898,11 +944,11 @@ export class Game {
       for (const valk of this.valkyries) {
         if (zombie.row === valk.row && zombie.x < valk.x + valk.width && zombie.x + zombie.width > valk.x) {
           zombie.takeDamage(1000);
-          if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+          if (this.isDwarvenWaterwayCity()) {
             this.addFloatingText(zombie.x + zombie.width/2, zombie.y - 10, '-1000 🌊', '#2dd4bf', true);
             this.particles.emit(zombie.x, zombie.y + zombie.height/2, '#2dd4bf', 12, 5, 4, 300);
             this.particles.emit(zombie.x, zombie.y + zombie.height/2, '#e0f2fe', 8, 3, 2, 200);
-          } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+          } else if (this.isDwarvenForgeCity()) {
             this.addFloatingText(zombie.x + zombie.width/2, zombie.y - 10, '-1000 🔥', '#ff8c00', true);
             this.particles.emit(zombie.x, zombie.y + zombie.height/2, '#ff3d00', 10, 5, 4, 300);
           } else {
@@ -1059,6 +1105,9 @@ export class Game {
       // Victory Condition check
       if (this.zombiesSpawned >= this.zombiesTotal && this.attackers.length === 0) {
         this.gameState = 'victory';
+        if (this.city) {
+          MapMenu.unlockNextCity(this.city);
+        }
         SoundManager.getInstance().playVictory();
       }
     }
@@ -1144,17 +1193,24 @@ export class Game {
         wallGrad.addColorStop(0, '#fef9c3');
         wallGrad.addColorStop(0.7, '#fde68a');
         wallGrad.addColorStop(1, '#fcd34d');
-      } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
-        wallGrad.addColorStop(0, '#ccfbf1');
-        wallGrad.addColorStop(0.4, '#99f6e4');
-        wallGrad.addColorStop(0.75, '#5eead4');
-        wallGrad.addColorStop(1, '#2dd4bf');
-      } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+      } else if (this.isDwarvenWaterwayCity()) {
+        if (this.city === 'andvaris-falls') {
+          wallGrad.addColorStop(0, '#e0f2fe');
+          wallGrad.addColorStop(0.4, '#bae6fd');
+          wallGrad.addColorStop(0.75, '#7dd3fc');
+          wallGrad.addColorStop(1, '#38bdf8');
+        } else {
+          wallGrad.addColorStop(0, '#ccfbf1');
+          wallGrad.addColorStop(0.4, '#99f6e4');
+          wallGrad.addColorStop(0.75, '#5eead4');
+          wallGrad.addColorStop(1, '#2dd4bf');
+        }
+      } else if (this.isDwarvenForgeCity()) {
         wallGrad.addColorStop(0, '#fef3c7');
         wallGrad.addColorStop(0.5, '#fde68a');
         wallGrad.addColorStop(0.85, '#fcd34d');
         wallGrad.addColorStop(1, '#fbbf24');
-      } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
+      } else if (this.realm === 'muspelheim') {
         wallGrad.addColorStop(0, '#ffedd5');
         wallGrad.addColorStop(0.7, '#fed7aa');
         wallGrad.addColorStop(1, '#fdba74');
@@ -1172,19 +1228,19 @@ export class Game {
         wallGrad.addColorStop(0, '#3a2d12');
         wallGrad.addColorStop(0.7, '#5c481e');
         wallGrad.addColorStop(1, '#8c6d2d');
-      } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
-        // Althjof's Wheel: Damp subterranean dwarven river masonry
+      } else if (this.isDwarvenWaterwayCity()) {
+        // Althjof's Wheel & Andvari's Falls: Damp subterranean dwarven river masonry
         wallGrad.addColorStop(0, '#0c151a');
         wallGrad.addColorStop(0.4, '#152229');
         wallGrad.addColorStop(0.75, '#1c2d36');
         wallGrad.addColorStop(1, '#243b47');
-      } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
-        // Nidavellir: rich dark stone — charcoal with warm amber seams
+      } else if (this.isDwarvenForgeCity()) {
+        // Dwarven Forge / Mine / Citadel Strongholds: charcoal with warm amber seams
         wallGrad.addColorStop(0, '#1a1510');
         wallGrad.addColorStop(0.5, '#2e2618');
         wallGrad.addColorStop(0.85, '#3a301e');
         wallGrad.addColorStop(1, '#4a3c24');
-      } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
+      } else if (this.realm === 'muspelheim') {
         wallGrad.addColorStop(0, '#21100c');
         wallGrad.addColorStop(0.7, '#381c15');
         wallGrad.addColorStop(1, '#542b20');
@@ -1198,7 +1254,7 @@ export class Game {
     ctx.fillRect(0, 0, wallW, height);
 
     // Stone brick patterns
-    if (!(this.realm === 'svartalfheim' && this.city === 'althjofs-wheel')) {
+    if (!this.isDwarvenWaterwayCity()) {
       ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.35)';
       ctx.lineWidth = 1.5;
       const brickH = 32;
@@ -1219,7 +1275,7 @@ export class Game {
     }
 
     // Realm-specific wall overlay / frost / icicles / runes / static architecture
-    if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+    if (this.isDwarvenWaterwayCity()) {
       const h = height;
       ctx.save();
 
@@ -1649,7 +1705,7 @@ export class Game {
       ctx.fillRect(wallX - 6, 0, 6, h);
 
       ctx.restore();
-    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+    } else if (this.isDwarvenForgeCity()) {
       ctx.save();
       // Warm amber forge-glow seeping through the stone
       const forgeSeep = ctx.createLinearGradient(wallW - 10, 0, 0, 0);
@@ -1799,18 +1855,16 @@ export class Game {
       }
     }
 
-    if (!(this.realm === 'svartalfheim' && (this.city === 'nidavellir' || this.city === 'althjofs-wheel'))) {
+    if (this.realm !== 'svartalfheim') {
       // Outer Fortress Border Beam - Realm-Adaptive with Frost / Element Accents
       const beamColor =
         this.realm === 'jotunheim' || this.realm === 'niflheim' ? '#38bdf8' :
-        this.realm === 'svartalfheim' ? (this.city === 'althjofs-wheel' ? '#2dd4bf' : '#f59e0b') :
         this.realm === 'helheim' || this.realm === 'muspelheim' ? '#ef4444' :
         this.realm === 'vanaheim' || this.realm === 'midgard' ? '#4ade80' :
         '#38bdf8'; // Asgard / Celestial Frost
 
       const beamHighlight =
         this.realm === 'jotunheim' || this.realm === 'niflheim' ? '#bae6fd' :
-        this.realm === 'svartalfheim' ? (this.city === 'althjofs-wheel' ? '#99f6e4' : '#fde68a') :
         this.realm === 'helheim' || this.realm === 'muspelheim' ? '#fecaca' :
         this.realm === 'vanaheim' || this.realm === 'midgard' ? '#bbf7d0' :
         '#bae6fd';
@@ -2162,7 +2216,7 @@ export class Game {
     const time = Date.now() / 1000;
     const h = this.height;
 
-    if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+    if (this.isDwarvenWaterwayCity()) {
       ctx.save();
       const bastionLeft = Math.max(76, Math.round(wallW * 0.28));
       const bastionRight = wallW - 58;
@@ -2504,7 +2558,7 @@ export class Game {
 
         ctx.restore();
       }
-    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+    } else if (this.isDwarvenForgeCity()) {
       ctx.save();
       // Wall torches with animated flicker
       const torchX = wallW - 30;
@@ -2541,13 +2595,13 @@ export class Game {
       }
       ctx.shadowBlur = 0;
 
-      // Dwarven runes carved into the stone, glowing amber
-      const nRunes = ['ᚾ', 'ᛁ', 'ᛞ', 'ᚨ', 'ᚹ', 'ᛖ', 'ᛚ', 'ᛚ', 'ᛁ', 'ᚱ'];
+      // Dwarven stronghold runes carved into the stone, glowing amber/bronze
+      const nRunes = this.getDwarvenWallRunes();
       ctx.font = 'bold 18px serif';
       const runeGlow = 0.55 + Math.sin(time * 1.4) * 0.2;
-      ctx.fillStyle = `rgba(220,160,40,${runeGlow})`;
-      ctx.shadowColor = '#ffaa00';
-      ctx.shadowBlur = 10;
+      ctx.fillStyle = isLight ? `rgba(180, 83, 9, ${Math.min(0.95, runeGlow + 0.22)})` : `rgba(220,160,40,${runeGlow})`;
+      ctx.shadowColor = isLight ? 'rgba(217, 119, 6, 0.45)' : '#ffaa00';
+      ctx.shadowBlur = isLight ? 6 : 10;
       for (let ri = 0; ri < nRunes.length; ri++) {
         ctx.fillText(nRunes[ri], wallW - 85, 55 + ri * 58);
       }
@@ -2637,7 +2691,7 @@ export class Game {
         ctx.restore();
       }
       ctx.restore();
-    } else if (!(this.realm === 'svartalfheim' && (this.city === 'nidavellir' || this.city === 'althjofs-wheel'))) {
+    } else if (this.realm !== 'svartalfheim') {
       // Dynamic Odin Spear Pose on Command
       const balW = Math.min(145, Math.max(90, wallW - 24));
       const balX = (wallW - 8 - balW) / 2;
@@ -2678,17 +2732,24 @@ export class Game {
     const gridX = this.grid.startX;
     const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
-    // === ALTHJOF'S WHEEL: SUBTERRANEAN DWARVEN WATERMILL & OUTER CANAL RAPIDS ===
-    if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+    // === ALTHJOF'S WHEEL & ANDVARI'S FALLS: SUBTERRANEAN DWARVEN WATERWAYS & CANAL RAPIDS ===
+    if (this.isDwarvenWaterwayCity()) {
       ctx.save();
 
       // ── 1. SKY / CAVERN GORGE AMBIENCE ──
       const skyGrad = ctx.createLinearGradient(gridX, 0, w, h * 0.7);
       if (isLight) {
-        skyGrad.addColorStop(0, '#f0fdfa');
-        skyGrad.addColorStop(0.35, '#e6fffa');
-        skyGrad.addColorStop(0.75, '#ccfbf1');
-        skyGrad.addColorStop(1, '#99f6e4');
+        if (this.city === 'andvaris-falls') {
+          skyGrad.addColorStop(0, '#f0f9ff');
+          skyGrad.addColorStop(0.35, '#e0f2fe');
+          skyGrad.addColorStop(0.75, '#bae6fd');
+          skyGrad.addColorStop(1, '#7dd3fc');
+        } else {
+          skyGrad.addColorStop(0, '#f0fdfa');
+          skyGrad.addColorStop(0.35, '#e6fffa');
+          skyGrad.addColorStop(0.75, '#ccfbf1');
+          skyGrad.addColorStop(1, '#99f6e4');
+        }
       } else {
         skyGrad.addColorStop(0, '#0a161b');
         skyGrad.addColorStop(0.35, '#071015');
@@ -3159,8 +3220,8 @@ export class Game {
 
       ctx.restore();
 
-    // === NIDAVELLIR: UNDERGROUND CAVERN, FORGE GLOW, STALACTITES, EMBERS ===
-    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+    // === SVARTALFHEIM FORGE / MINE / CITADEL STRONGHOLDS: UNDERGROUND CAVERN, FORGE GLOW, CLIFFS, EMBERS ===
+    } else if (this.isDwarvenForgeCity()) {
       ctx.save();
 
       // ── 1. SKY: gorge atmosphere ──
@@ -3401,13 +3462,13 @@ export class Game {
       ctx.fillStyle = fogGrad;
       ctx.fillRect(gridX, h * 0.80, w - gridX, h * 0.20);
 
-      // ── 9. FORGE CAVE EMBER SPARKS — subtle, not dominant ──
-      ctx.globalCompositeOperation = 'lighter';
+      // ── 9. FORGE CAVE EMBER SPARKS — subtle, high-contrast in both Light & Dark ──
+      ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
       for (const p of this.weatherParticles) {
         const sparkAlpha = p.alpha * (0.35 + Math.sin(time * 2.5 + p.x * 0.01) * 0.20);
-        ctx.fillStyle = `rgba(255,200,80,${sparkAlpha * 0.5})`;
-        ctx.shadowColor = '#ffaa00';
-        ctx.shadowBlur = 5;
+        ctx.fillStyle = isLight ? `rgba(217, 119, 6, ${Math.min(0.9, sparkAlpha * 0.9)})` : `rgba(255,200,80,${sparkAlpha * 0.5})`;
+        ctx.shadowColor = isLight ? '#d97706' : '#ffaa00';
+        ctx.shadowBlur = isLight ? 4 : 5;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 0.7, 0, Math.PI * 2); ctx.fill();
       }
       ctx.shadowBlur = 0;
@@ -3627,24 +3688,35 @@ export class Game {
     
     // Copy info to avoid mutating the shared object
     info = { ...info };
-    if (this.city === 'althjofs-wheel') {
-      const locName = t('loc_althjofs_wheel_name');
-      info.title      = locName !== 'loc_althjofs_wheel_name' ? locName : "Althjof's Wheel";
-      info.subtitle   = `${t('prologue')} · Dwarven Watermill · Outer Canal`;
-      info.runes      = 'ᚨ ᛚ ᛏ   ·   ᚲ ᚨ ᚾ ᚨ ᛚ';
-      info.color      = '#14b8a6';
-      info.lightColor = '#0f766e';
-    } else if (this.city === 'nidavellir') {
-      info.title      = 'Niðavellir';
-      info.subtitle   = 'The Dwarven Capital · Svartalfheim';
-      info.runes      = 'ᚾ ᛁ ᛞ ᚨ ᚹ ᛖ ᛚ ᛚ ᛁ ᚱ';
-      info.color      = '#ffaa00';
-      info.lightColor = '#b45309';
-    } else if (this.city) {
+    if (this.city) {
       const locKey = `loc_${this.city.replace(/-/g, '_')}_name`;
-      const trans = t(locKey);
-      const cityName = trans !== locKey ? trans : this.city.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
-      info.title = `${info.title} · ${cityName}`;
+      const subKey = `loc_${this.city.replace(/-/g, '_')}_sub`;
+      const transName = t(locKey);
+      const transSub = t(subKey);
+      const resolvedName = transName !== locKey ? transName : this.city.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const resolvedSub = transSub !== subKey ? transSub : info.subtitle;
+
+      const dwarvenCityMeta: Record<string, { chapterKey: string; runes: string; color: string; lightColor: string }> = {
+        'althjofs-wheel':   { chapterKey: 'prologue',    runes: 'ᚨ ᛚ ᛏ   ·   ᚲ ᚨ ᚾ ᚨ ᛚ',   color: '#14b8a6', lightColor: '#0f766e' },
+        'andvaris-falls':   { chapterKey: 'chapter_ii',  runes: 'ᚨ ᚾ ᛞ ᚹ ᚨ ᚱ ᛁ ᛊ   ·   ᚠ ᚨ ᛚ ᛚ', color: '#38bdf8', lightColor: '#0284c7' },
+        'ivaldis-workshop': { chapterKey: 'chapter_iii', runes: 'ᛁ ᚹ ᚨ ᛚ ᛞ ᛁ   ·   ᛊ ᛗ ᛁ ᛞ',     color: '#f59e0b', lightColor: '#b45309' },
+        'jarnsmida-quarry': { chapterKey: 'chapter_iv',  runes: 'ᛃ ᚨ ᚱ ᚾ ᛊ ᛗ ᛁ ᛞ ᚨ',             color: '#fb923c', lightColor: '#c2410c' },
+        'dvalins-depths':   { chapterKey: 'chapter_v',   runes: 'ᛞ ᚹ ᚨ ᛚ ᛁ ᚾ ᛊ   ·   ᛞ ᛖ ᛈ',     color: '#c084fc', lightColor: '#7e22ce' },
+        'sindris-forge':    { chapterKey: 'chapter_vi',  runes: 'ᛊ ᛁ ᚾ ᛞ ᚱ ᛁ ᛊ   ·   ᚠ ᛟ ᚱ ᚷ ᛖ', color: '#f97316', lightColor: '#c2410c' },
+        'nidavellir':       { chapterKey: 'chapter_vii', runes: 'ᚾ ᛁ ᛞ ᚨ ᚹ ᛖ ᛚ ᛚ ᛁ ᚱ',           color: '#ffaa00', lightColor: '#b45309' },
+      };
+
+      const dMeta = dwarvenCityMeta[this.city];
+      if (dMeta) {
+        const chapLabel = t(dMeta.chapterKey);
+        info.title      = resolvedName;
+        info.subtitle   = `${chapLabel} · ${resolvedSub}`;
+        info.runes      = dMeta.runes;
+        info.color      = dMeta.color;
+        info.lightColor = dMeta.lightColor;
+      } else {
+        info.title = `${info.title} · ${resolvedName}`;
+      }
     }
 
     const accentColor = isLight ? info.lightColor : info.color;
@@ -4066,7 +4138,8 @@ export class Game {
       ctx.font = 'bold 13px "Outfit", sans-serif';
       ctx.fillText('↺ Retry', cx - 75, cy + 62);
 
-      // 2. Realms Button (Right)
+      // 2. Realms / Realm Map Button (Right)
+      const defeatReturnLabel = (this.realm === 'svartalfheim' && this.city) ? t('return_to_map') : '« Realms';
       ctx.fillStyle = isLight ? '#f1f5f9' : 'rgba(38, 50, 56, 0.85)';
       ctx.strokeStyle = isLight ? '#0284c7' : 'rgba(212, 175, 55, 0.6)';
       ctx.beginPath();
@@ -4074,7 +4147,7 @@ export class Game {
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = isLight ? '#0f172a' : '#e0e0e0';
-      ctx.fillText('« Realms', cx + 75, cy + 62);
+      ctx.fillText(defeatReturnLabel, cx + 75, cy + 62);
 
     } else if (this.gameState === 'victory') {
       // Victory: Golden Celestial Bifrost Backdrop
@@ -4119,11 +4192,12 @@ export class Game {
       ctx.fillText('✦ Realm Secured ✦', cx, cy - 65);
 
       // Description
+      const currencyLabel = getRealmCurrencyName(this.realm);
       ctx.fillStyle = isLight ? '#334155' : 'rgba(200, 240, 210, 0.85)';
       ctx.font = '500 13px "Outfit", sans-serif';
       ctx.shadowBlur = 0;
       ctx.fillText('All invading waves have been repelled by Odin\'s defense!', cx, cy - 25);
-      ctx.fillText(`Victory Bonus: +500 Sol Energy · Total Defeated: ${this.zombiesKilled}`, cx, cy - 5);
+      ctx.fillText(`Victory Bonus: +500 ${currencyLabel} · Total Defeated: ${this.zombiesKilled}`, cx, cy - 5);
 
       // Buttons
       // 1. Next Level Button (Left)
@@ -4138,7 +4212,8 @@ export class Game {
       ctx.font = 'bold 13px "Outfit", sans-serif';
       ctx.fillText('✦ Next Level', cx - 75, cy + 62);
 
-      // 2. Realms Button (Right)
+      // 2. Realms / Realm Map Button (Right)
+      const victoryReturnLabel = (this.realm === 'svartalfheim' && this.city) ? t('return_to_map') : '« Realms';
       ctx.fillStyle = isLight ? '#f1f5f9' : 'rgba(38, 50, 56, 0.85)';
       ctx.strokeStyle = isLight ? '#0284c7' : 'rgba(212, 175, 55, 0.6)';
       ctx.beginPath();
@@ -4146,7 +4221,7 @@ export class Game {
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = isLight ? '#0f172a' : '#e0e0e0';
-      ctx.fillText('« Realms', cx + 75, cy + 62);
+      ctx.fillText(victoryReturnLabel, cx + 75, cy + 62);
     }
 
     ctx.restore();
@@ -4233,15 +4308,21 @@ export class Game {
       } else if (this.realm === 'jotunheim') {
         bgGradient.addColorStop(0, '#f0f9ff');
         bgGradient.addColorStop(1, '#bae6fd');
-      } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
-        bgGradient.addColorStop(0, '#f0fdfa');
-        bgGradient.addColorStop(0.5, '#ccfbf1');
-        bgGradient.addColorStop(1, '#99f6e4');
-      } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+      } else if (this.isDwarvenWaterwayCity()) {
+        if (this.city === 'andvaris-falls') {
+          bgGradient.addColorStop(0, '#f0f9ff');
+          bgGradient.addColorStop(0.5, '#e0f2fe');
+          bgGradient.addColorStop(1, '#bae6fd');
+        } else {
+          bgGradient.addColorStop(0, '#f0fdfa');
+          bgGradient.addColorStop(0.5, '#ccfbf1');
+          bgGradient.addColorStop(1, '#99f6e4');
+        }
+      } else if (this.isDwarvenForgeCity()) {
         bgGradient.addColorStop(0, '#fffbeb');
         bgGradient.addColorStop(0.6, '#fef3c7');
         bgGradient.addColorStop(1, '#fde68a');
-      } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
+      } else if (this.realm === 'muspelheim') {
         bgGradient.addColorStop(0, '#fff7ed');
         bgGradient.addColorStop(1, '#fed7aa');
       } else {
@@ -4261,11 +4342,11 @@ export class Game {
       } else if (this.realm === 'jotunheim') {
         bgGradient.addColorStop(0, '#0c2338');
         bgGradient.addColorStop(1, '#030b13');
-      } else if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+      } else if (this.isDwarvenWaterwayCity()) {
         bgGradient.addColorStop(0, '#0d191d');
         bgGradient.addColorStop(0.5, '#081013');
         bgGradient.addColorStop(1, '#030608');
-      } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+      } else if (this.isDwarvenForgeCity()) {
         bgGradient.addColorStop(0, '#1a2218');
         bgGradient.addColorStop(0.6, '#101610');
         bgGradient.addColorStop(1, '#070c07');

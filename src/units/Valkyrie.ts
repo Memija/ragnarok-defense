@@ -19,15 +19,17 @@ export class Valkyrie extends Entity {
     
     this.x += this.speed * (deltaTime / 1000);
     
-    if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+    const isDwarvenWaterway = this.realm === 'svartalfheim' && (this.city === 'althjofs-wheel' || this.city === 'andvaris-falls');
+
+    if (isDwarvenWaterway) {
       // Hydrodynamic canal wave bobbing & churning splash particles
       this.y += Math.sin(this.animTimer / 50) * 1.5;
       if (Math.random() < 0.6) {
         game.particles.emit(this.x - 20, this.y + this.height / 2, '#2dd4bf', 4, 3, 2, 200);
         game.particles.emit(this.x - 35, this.y + this.height / 2 + (Math.random() - 0.5) * 16, '#e0f2fe', 3, 2, 2, 180);
       }
-    } else if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
-      // Fiery forge rocket smoke & sparks
+    } else if (this.realm === 'svartalfheim') {
+      // Fiery Dwarven forge siege bolt smoke & sparks
       this.y += Math.sin(this.animTimer / 70) * 1.0;
       if (Math.random() < 0.5) {
         game.particles.emit(this.x - 15, this.y + this.height / 2, '#ff8c00', 4, 3, 2, 220);
@@ -51,10 +53,12 @@ export class Valkyrie extends Entity {
       const cy = this.y + this.height / 2;
       const t = this.animTimer / 60;
 
+      const isDwarvenWaterway = this.realm === 'svartalfheim' && (this.city === 'althjofs-wheel' || this.city === 'andvaris-falls');
+
       // ══════════════════════════════════════════════
-      // 1. SVARTALFHEIM (ALTHJOF'S WHEEL): DWARVEN HYDRAULIC TORRENT RAM
+      // 1. SVARTALFHEIM WATERWAYS (ALTHJOF'S WHEEL & ANDVARI'S FALLS): DWARVEN HYDRAULIC TORRENT RAM
       // ══════════════════════════════════════════════
-      if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
+      if (isDwarvenWaterway) {
         // High-velocity churning tidal wave plume trailing behind
         const plumeGrad = ctx.createLinearGradient(cx - 70, cy, cx - 10, cy);
         plumeGrad.addColorStop(0, 'rgba(14, 165, 233, 0)');
@@ -178,9 +182,9 @@ export class Valkyrie extends Entity {
       }
 
       // ══════════════════════════════════════════════
-      // 2. SVARTALFHEIM (NIDAVELLIR): DWARVEN MOLTEN SIEGE BOLT
+      // 2. SVARTALFHEIM FORGE / MINE / CITADEL STRONGHOLDS: DWARVEN MOLTEN SIEGE BOLT
       // ══════════════════════════════════════════════
-      if (this.realm === 'svartalfheim' && this.city === 'nidavellir') {
+      if (this.realm === 'svartalfheim') {
         // Trailing molten fire plume
         const flameGrad = ctx.createLinearGradient(cx - 60, cy, cx - 10, cy);
         flameGrad.addColorStop(0, 'rgba(255, 61, 0, 0)');

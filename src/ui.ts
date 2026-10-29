@@ -549,7 +549,7 @@ export function initUI() {
     if (levelIndicator) {
       const customTag = customized ? t('customLabel', lang) : t('defaultLabel', lang);
       levelIndicator.innerHTML = `
-        <span class="lvl-title">Level ${currentSettingsLevel}</span>
+        <span class="lvl-title">${t('level', lang)} ${currentSettingsLevel}</span>
         <span class="cfg-badge ${customized ? 'is-custom' : 'is-default'}">${customTag}</span>
       `;
     }

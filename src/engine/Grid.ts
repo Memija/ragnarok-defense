@@ -61,6 +61,9 @@ export class Grid {
     ctx.save();
     const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
+    const isDwarvenWaterway = this.realm === 'svartalfheim' && (this.city === 'althjofs-wheel' || this.city === 'andvaris-falls');
+    const isAndvariFalls = this.city === 'andvaris-falls';
+
     // ── Draw Each Grid Cell with Realm-Specific Luxury Flagstone Style ──
     for (let r = 0; r < this.rows; r++) {
       const y = r * this.cellHeight;
@@ -71,39 +74,59 @@ export class Grid {
 
         ctx.save();
 
-        if (this.realm === 'svartalfheim' && this.city === 'althjofs-wheel') {
-          // ── Althjof's Wheel: Subterranean Dwarven Basalt/Aqua Canal Paving ──
+        if (isDwarvenWaterway) {
+          // ── Althjof's Wheel & Andvari's Falls: Subterranean Dwarven Basalt/Aqua Canal Paving ──
           const tileGrad = ctx.createLinearGradient(x, y, x + this.cellWidth, y + this.cellHeight);
           if (isLight) {
-            tileGrad.addColorStop(0, isAlt ? 'rgba(204, 251, 241, 0.75)' : 'rgba(240, 253, 250, 0.88)');
-            tileGrad.addColorStop(1, isAlt ? 'rgba(153, 246, 228, 0.55)' : 'rgba(204, 251, 241, 0.65)');
+            if (isAndvariFalls) {
+              tileGrad.addColorStop(0, isAlt ? 'rgba(224, 242, 254, 0.78)' : 'rgba(240, 249, 255, 0.90)');
+              tileGrad.addColorStop(1, isAlt ? 'rgba(186, 230, 253, 0.58)' : 'rgba(224, 242, 254, 0.68)');
+            } else {
+              tileGrad.addColorStop(0, isAlt ? 'rgba(204, 251, 241, 0.75)' : 'rgba(240, 253, 250, 0.88)');
+              tileGrad.addColorStop(1, isAlt ? 'rgba(153, 246, 228, 0.55)' : 'rgba(204, 251, 241, 0.65)');
+            }
           } else {
-            tileGrad.addColorStop(0, isAlt ? 'rgba(18, 28, 35, 0.45)' : 'rgba(14, 22, 29, 0.35)');
-            tileGrad.addColorStop(1, isAlt ? 'rgba(10, 18, 24, 0.55)' : 'rgba(8, 14, 20, 0.45)');
+            if (isAndvariFalls) {
+              tileGrad.addColorStop(0, isAlt ? 'rgba(14, 30, 44, 0.48)' : 'rgba(10, 22, 34, 0.38)');
+              tileGrad.addColorStop(1, isAlt ? 'rgba(8, 18, 28, 0.58)' : 'rgba(6, 14, 22, 0.48)');
+            } else {
+              tileGrad.addColorStop(0, isAlt ? 'rgba(18, 28, 35, 0.45)' : 'rgba(14, 22, 29, 0.35)');
+              tileGrad.addColorStop(1, isAlt ? 'rgba(10, 18, 24, 0.55)' : 'rgba(8, 14, 20, 0.45)');
+            }
           }
           ctx.fillStyle = tileGrad;
           ctx.beginPath();
           ctx.roundRect(x + 2, y + 2, this.cellWidth - 4, this.cellHeight - 4, 6);
           ctx.fill();
 
-          // Subtle cyan-teal beveled stone trim
+          // Subtle cyan-teal / cerulean beveled stone trim
           ctx.strokeStyle = isLight
-            ? (isAlt ? 'rgba(13, 148, 136, 0.35)' : 'rgba(20, 184, 166, 0.22)')
-            : (isAlt ? 'rgba(45, 212, 191, 0.22)' : 'rgba(20, 184, 166, 0.12)');
+            ? (isAndvariFalls
+                ? (isAlt ? 'rgba(2, 132, 199, 0.36)' : 'rgba(14, 165, 233, 0.22)')
+                : (isAlt ? 'rgba(13, 148, 136, 0.35)' : 'rgba(20, 184, 166, 0.22)'))
+            : (isAndvariFalls
+                ? (isAlt ? 'rgba(56, 189, 248, 0.24)' : 'rgba(14, 165, 233, 0.13)')
+                : (isAlt ? 'rgba(45, 212, 191, 0.22)' : 'rgba(20, 184, 166, 0.12)'));
           ctx.lineWidth = 1;
           ctx.stroke();
 
           // Tiny corner runes
-          const canalRunes = ['ᚨ', 'ᛚ', 'ᛏ', 'ᛗ', 'ᚲ', 'ᚱ', 'ᚦ', 'ᛟ', 'ᚹ'];
+          const canalRunes = isAndvariFalls
+            ? ['ᚨ', 'ᚾ', 'ᛞ', 'ᚹ', 'ᚨ', 'ᚱ', 'ᛁ', 'ᛚ', 'ᛟ']
+            : ['ᚨ', 'ᛚ', 'ᛏ', 'ᛗ', 'ᚲ', 'ᚱ', 'ᚦ', 'ᛟ', 'ᚹ'];
           const runeChar = canalRunes[(r * this.cols + c) % canalRunes.length];
           ctx.fillStyle = isLight
-            ? (isAlt ? 'rgba(13, 148, 136, 0.45)' : 'rgba(20, 184, 166, 0.30)')
-            : (isAlt ? 'rgba(45, 212, 191, 0.18)' : 'rgba(20, 184, 166, 0.10)');
+            ? (isAndvariFalls
+                ? (isAlt ? 'rgba(2, 132, 199, 0.45)' : 'rgba(14, 165, 233, 0.30)')
+                : (isAlt ? 'rgba(13, 148, 136, 0.45)' : 'rgba(20, 184, 166, 0.30)'))
+            : (isAndvariFalls
+                ? (isAlt ? 'rgba(56, 189, 248, 0.20)' : 'rgba(14, 165, 233, 0.11)')
+                : (isAlt ? 'rgba(45, 212, 191, 0.18)' : 'rgba(20, 184, 166, 0.10)'));
           ctx.font = '9px serif';
           ctx.fillText(runeChar, x + 8, y + 14);
 
         } else if (this.realm === 'svartalfheim') {
-          // ── Svartalfheim General: Warm Amber Forge Obsidian / Sandstone Tiles ──
+          // ── Svartalfheim Forge/Mine/Citadel Strongholds: Warm Amber Forge Obsidian / Sandstone Tiles ──
           const tileGrad = ctx.createLinearGradient(x, y, x + this.cellWidth, y + this.cellHeight);
           if (isLight) {
             tileGrad.addColorStop(0, isAlt ? 'rgba(254, 243, 199, 0.80)' : 'rgba(255, 251, 235, 0.90)');
@@ -122,6 +145,15 @@ export class Grid {
             : (isAlt ? 'rgba(245, 158, 11, 0.22)' : 'rgba(217, 119, 6, 0.12)');
           ctx.lineWidth = 1;
           ctx.stroke();
+
+          // Carved Dwarven forge corner runes
+          const forgeRunes = ['ᚲ', 'ᛞ', 'ᛊ', 'ᚾ', 'ᛁ', 'ᛟ', 'ᛏ', 'ᛗ', 'ᚱ'];
+          const forgeRune = forgeRunes[(r * this.cols + c) % forgeRunes.length];
+          ctx.fillStyle = isLight
+            ? (isAlt ? 'rgba(180, 83, 9, 0.40)' : 'rgba(217, 119, 6, 0.26)')
+            : (isAlt ? 'rgba(245, 158, 11, 0.18)' : 'rgba(217, 119, 6, 0.10)');
+          ctx.font = '9px serif';
+          ctx.fillText(forgeRune, x + 8, y + 14);
 
         } else if (this.realm === 'jotunheim' || this.realm === 'niflheim') {
           // ── Jötunheim / Niflheim: Glacial Permafrost & Crystalline Fissures ──
@@ -218,14 +250,16 @@ export class Grid {
 
     // ── Crisp Outer Lane Borders with Subtle Glow ──
     const laneGlowColor = isLight ? (
-      this.realm === 'svartalfheim' && this.city === 'althjofs-wheel' ? 'rgba(13, 148, 136, 0.45)' :
+      isAndvariFalls ? 'rgba(2, 132, 199, 0.45)' :
+      isDwarvenWaterway ? 'rgba(13, 148, 136, 0.45)' :
       this.realm === 'svartalfheim' ? 'rgba(217, 119, 6, 0.42)' :
       this.realm === 'jotunheim' || this.realm === 'niflheim' ? 'rgba(2, 132, 199, 0.45)' :
       this.realm === 'asgard' ? 'rgba(202, 138, 4, 0.45)' :
       this.realm === 'helheim' || this.realm === 'muspelheim' ? 'rgba(220, 38, 38, 0.42)' :
       'rgba(5, 150, 105, 0.42)'
     ) : (
-      this.realm === 'svartalfheim' && this.city === 'althjofs-wheel' ? 'rgba(45, 212, 191, 0.28)' :
+      isAndvariFalls ? 'rgba(56, 189, 248, 0.28)' :
+      isDwarvenWaterway ? 'rgba(45, 212, 191, 0.28)' :
       this.realm === 'svartalfheim' ? 'rgba(245, 158, 11, 0.25)' :
       this.realm === 'jotunheim' || this.realm === 'niflheim' ? 'rgba(56, 189, 248, 0.28)' :
       this.realm === 'asgard' ? 'rgba(251, 191, 36, 0.30)' :
