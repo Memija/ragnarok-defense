@@ -24,7 +24,7 @@ import { Butter } from '../units/Butter';
 import { Troll } from '../units/Troll';
 import { SmallTroll } from '../units/SmallTroll';
 import { SoundManager } from './SoundManager';
-import { getSavedLoadout, getDefenderSlotLimit, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDefenderAllowedInRealm } from './DefenderRegistry';
+import { getSavedLoadout, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDefenderAllowedInRealm } from './DefenderRegistry';
 import { DEFENDER_ICONS } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
@@ -71,7 +71,7 @@ export class Game {
   level: number = 1;
   selectedUnit: string | null = null;
   selectedDefenders: string[] = [];
-  onOpenRoster?: () => void;
+  onPrepareNextLevel?: (realm: string, nextCity: string | undefined, nextLevel: number, previousSquad: string[]) => void;
   
   defenders: Defender[] = [];
   attackers: Attacker[] = [];
@@ -138,7 +138,7 @@ export class Game {
     city?: string,
     selectedDefenders?: string[],
     level?: number,
-    onOpenRoster?: () => void
+    onPrepareNextLevel?: (realm: string, nextCity: string | undefined, nextLevel: number, previousSquad: string[]) => void
   ) {
     this.canvas = canvas;
     this.ctx = ctx;
@@ -152,7 +152,7 @@ export class Game {
       this.level = 1;
     }
     this.sun = getStartingCurrencyForLevel(this.level);
-    this.onOpenRoster = onOpenRoster;
+    this.onPrepareNextLevel = onPrepareNextLevel;
     const initialSquad = selectedDefenders && selectedDefenders.length > 0
       ? [...selectedDefenders]
       : getSavedLoadout(this.level, this.realm);
@@ -489,37 +489,21 @@ export class Game {
     });
   }
 
-  updateLoadout(defenders: string[]) {
+  startNextBattle(nextCity: string | undefined, nextLevel: number, defenders: string[]) {
+    this.city = nextCity;
+    this.level = nextLevel;
     this.selectedDefenders = [...defenders];
-    this.renderSidebar();
+    this.restartBattle();
   }
 
   bindEvents() {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('languagechange', this.handleLanguageChange);
 
-    const rosterBtn = document.getElementById('roster-btn');
-    if (rosterBtn) {
-      rosterBtn.addEventListener('click', this.handleRosterClick);
-    }
-
     this.canvas.addEventListener('mousemove', this.handleMouseMove);
     this.canvas.addEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.addEventListener('click', this.handleCanvasClick);
 
-    const levelUpBtn = document.getElementById('level-up');
-    const levelDownBtn = document.getElementById('level-down');
-    
-    if (levelUpBtn) {
-      levelUpBtn.addEventListener('click', this.handleLevelUp);
-    }
-    
-    if (levelDownBtn) {
-      levelDownBtn.addEventListener('click', this.handleLevelDown);
-    }
-
-    window.addEventListener('levelconfigchanged', this.handleLevelConfigChange);
-    window.addEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
     window.addEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
     window.addEventListener('ragnarok-theme-changed', this.handleThemeChange);
   }
@@ -527,37 +511,6 @@ export class Game {
   handleThemeChange = () => {
     this.updateRealmHeader();
     this.updateUI();
-  };
-
-  handleLevelUp = () => {
-    SoundManager.getInstance().playClick();
-    this.level++;
-    this.zombiesTotal = 10 + this.level * 5;
-    const maxSlots = getDefenderSlotLimit(this.level);
-    if (this.selectedDefenders.length < maxSlots) {
-      this.selectedDefenders = getSavedLoadout(this.level, this.realm);
-      this.renderSidebar();
-    }
-    this.updateUI();
-  };
-
-  handleLevelDown = () => {
-    if (this.level > 1) {
-      SoundManager.getInstance().playClick();
-      this.level--;
-      this.zombiesTotal = 10 + this.level * 5;
-      const maxSlots = getDefenderSlotLimit(this.level);
-      if (this.selectedDefenders.length > maxSlots) {
-        this.selectedDefenders = this.selectedDefenders.slice(0, maxSlots);
-        this.renderSidebar();
-      }
-      this.updateUI();
-    }
-  };
-
-  handleRosterClick = () => {
-    SoundManager.getInstance().playClick();
-    this.onOpenRoster?.();
   };
 
   handleMouseMove = (e: MouseEvent) => {
@@ -591,24 +544,21 @@ export class Game {
           if (this.city) {
             MapMenu.unlockNextCity(this.city);
           }
+          let nextCity = this.city;
+          let nextLevel = this.level + 1;
           if (this.realm === 'svartalfheim' && this.city) {
             const curIdx = MapMenu.PROGRESSION_ORDER.indexOf(this.city);
             if (curIdx !== -1 && curIdx < MapMenu.PROGRESSION_ORDER.length - 1) {
-              this.city = MapMenu.PROGRESSION_ORDER[curIdx + 1];
-              this.level = CITY_LEVELS[this.city] || (this.level + 1);
-            } else {
-              this.level++;
+              nextCity = MapMenu.PROGRESSION_ORDER[curIdx + 1];
+              nextLevel = CITY_LEVELS[nextCity] || (this.level + 1);
             }
-          } else {
-            this.level++;
           }
-          if (typeof document !== 'undefined') {
-            document.body.className = this.city ? `theme-${this.realm} location-${this.city}` : `theme-${this.realm}`;
-          }
-          if (this.onOpenRoster) {
-            this.onOpenRoster();
+          if (this.onPrepareNextLevel) {
+            this.onPrepareNextLevel(this.realm, nextCity, nextLevel, [...this.selectedDefenders]);
             return;
           }
+          this.startNextBattle(nextCity, nextLevel, this.selectedDefenders);
+          return;
         }
         this.restartBattle();
         return;
@@ -626,26 +576,6 @@ export class Game {
     if (cell && this.selectedUnit) {
       this.placeUnit(cell.row, cell.col, this.selectedUnit);
     }
-  };
-
-  handleLevelConfigChange = (e?: any) => {
-    const affectedLevel = e?.detail?.level;
-    if (affectedLevel === undefined || affectedLevel === this.level) {
-      const maxSlots = getDefenderSlotLimit(this.level);
-      if (this.selectedDefenders.length > maxSlots) {
-        this.selectedDefenders = this.selectedDefenders.slice(0, maxSlots);
-      } else if (this.selectedDefenders.length < maxSlots) {
-        this.selectedDefenders = getSavedLoadout(this.level, this.realm);
-      }
-      this.renderSidebar();
-      this.updateUI();
-    }
-  };
-
-  handleForeignUnitsSettingChange = () => {
-    this.selectedDefenders = getSavedLoadout(this.level, this.realm);
-    this.renderSidebar();
-    this.updateUI();
   };
 
   handleInfiniteResourcesSettingChange = () => {
@@ -4392,25 +4322,11 @@ export class Game {
   stop() {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('languagechange', this.handleLanguageChange);
-    window.removeEventListener('levelconfigchanged', this.handleLevelConfigChange);
-    window.removeEventListener('foreignunitssettingchanged', this.handleForeignUnitsSettingChange);
     window.removeEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
     window.removeEventListener('ragnarok-theme-changed', this.handleThemeChange);
     this.canvas.removeEventListener('mousemove', this.handleMouseMove);
     this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.removeEventListener('click', this.handleCanvasClick);
-    const rosterBtn = document.getElementById('roster-btn');
-    if (rosterBtn) {
-      rosterBtn.removeEventListener('click', this.handleRosterClick);
-    }
-    const levelUpBtn = document.getElementById('level-up');
-    if (levelUpBtn) {
-      levelUpBtn.removeEventListener('click', this.handleLevelUp);
-    }
-    const levelDownBtn = document.getElementById('level-down');
-    if (levelDownBtn) {
-      levelDownBtn.removeEventListener('click', this.handleLevelDown);
-    }
     this.particles.clear();
     cancelAnimationFrame(this.animationId);
   }

@@ -73,21 +73,29 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
     }
   };
 
-  const openRosterForCurrentGame = () => {
-    if (!game) return;
+  const prepareNextLevel = (
+    nextRealm: string,
+    nextCity: string | undefined,
+    nextLevel: number,
+    previousSquad: string[]
+  ) => {
+    if (!game || game.gameState === 'playing') return;
+    const previousBodyClass = document.body.className;
+    document.body.className = nextCity ? `theme-${nextRealm} location-${nextCity}` : `theme-${nextRealm}`;
+
     defenderModal.open({
-      realm: game.realm,
-      city: game.city,
-      level: game.level,
-      initialSelected: game.selectedDefenders,
-      isMidGame: true,
+      realm: nextRealm,
+      city: nextCity,
+      level: nextLevel,
+      initialSelected: previousSquad,
+      isMidGame: false,
       onConfirm: (chosen) => {
         if (game) {
-          game.updateLoadout(chosen);
-          if (game.gameState === 'victory') {
-            game.restartBattle();
-          }
+          game.startNextBattle(nextCity, nextLevel, chosen);
         }
+      },
+      onCancel: () => {
+        document.body.className = previousBodyClass;
       }
     });
   };
@@ -152,13 +160,14 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
       if (game) {
         game.stop();
       }
-      // Passing realm, city, squad, targetLevel, and roster opener
-      game = new Game(canvas, ctx, realm, city, squad, targetLevel, openRosterForCurrentGame);
+      // Passing realm, city, squad, targetLevel, and next-level preparation handler
+      game = new Game(canvas, ctx, realm, city, squad, targetLevel, prepareNextLevel);
       game.start();
     }
   };
 
   const promptDefenderSelection = (realm?: string, city?: string) => {
+    if (game && game.gameState === 'playing') return;
     const activeRealm = realm || 'svartalfheim';
     const targetLevel = city && CITY_LEVELS[city] ? CITY_LEVELS[city] : 1;
     const initialSelected = getSavedLoadout(targetLevel, activeRealm);
@@ -189,6 +198,10 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   };
 
   const returnToYggdrasil = () => {
+    if (game) {
+      game.stop();
+      game = null;
+    }
     if (mapMenu) {
       mapMenu.stop();
       mapMenu = null;
@@ -206,6 +219,10 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   };
 
   const openRealmMap = (realm: string) => {
+    if (game) {
+      game.stop();
+      game = null;
+    }
     mainMenu.stop();
     if (mapMenu) {
       mapMenu.stop();

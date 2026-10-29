@@ -299,6 +299,16 @@ export class DefenderSelectionModal {
         this.render();
       }
     });
+
+    window.addEventListener('levelconfigchanged', () => {
+      if (this.currentOptions && this.modalEl && !this.modalEl.classList.contains('hidden')) {
+        this.limit = getDefenderSlotLimit(this.currentOptions.level);
+        if (this.selected.length > this.limit) {
+          this.selected = this.selected.slice(0, this.limit);
+        }
+        this.render();
+      }
+    });
   }
 
   private hasSelectedCurrencyProducer(): boolean {
@@ -621,6 +631,10 @@ export class DefenderSelectionModal {
   }
 
   public open(options: SelectionModalOptions) {
+    const activeGame = (window as any).__getGame?.();
+    if (options.isMidGame || (activeGame && activeGame.gameState === 'playing')) {
+      return;
+    }
     this.currentOptions = options;
     this.limit = getDefenderSlotLimit(options.level);
 
