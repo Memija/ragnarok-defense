@@ -198,6 +198,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   };
 
   const returnToYggdrasil = () => {
+    if (game && game.gameState === 'playing') return;
     if (game) {
       game.stop();
       game = null;
@@ -219,6 +220,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   };
 
   const openRealmMap = (realm: string) => {
+    if (game && game.gameState === 'playing') return;
     if (game) {
       game.stop();
       game = null;
@@ -262,6 +264,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
 
   if (returnFromMapBtn) {
     returnFromMapBtn.addEventListener('click', () => {
+      if (game && game.gameState === 'playing') return;
       (window as any).__closeSettings?.();
       SoundManager.getInstance().playClick();
       returnToYggdrasil();
@@ -296,6 +299,7 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   };
 
   const handleReturnToMenu = () => {
+    if (game && game.gameState === 'playing') return;
     SoundManager.getInstance().playClick();
     pausedByVisibility = false;
     const shouldReturnToRealmMap = Boolean(game && game.realm === 'svartalfheim' && game.city);
@@ -315,10 +319,6 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
 
   if (returnBtn) {
     returnBtn.addEventListener('click', handleReturnToMenu);
-  }
-  const inGameReturnBtn = document.getElementById('in-game-return-btn');
-  if (inGameReturnBtn) {
-    inGameReturnBtn.addEventListener('click', handleReturnToMenu);
   }
 
   document.addEventListener('visibilitychange', () => {
