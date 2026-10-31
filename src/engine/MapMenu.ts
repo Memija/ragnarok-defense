@@ -217,32 +217,32 @@ export class MapMenu {
     'nidavellir'
   ];
 
+  static readonly INITIAL_UNLOCKED_CITY = 'althjofs-wheel';
+
   static getUnlockedCities(): string[] {
     try {
-      const saved = localStorage.getItem('ragnarok_svartalfheim_unlocked');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const valid = parsed.filter(id => MapMenu.PROGRESSION_ORDER.includes(id));
-          if (valid.length > 0) return valid;
-        }
-      }
+      localStorage.removeItem('ragnarok_svartalfheim_unlocked');
     } catch (e) {}
-    return ['althjofs-wheel'];
+    return [MapMenu.INITIAL_UNLOCKED_CITY];
   }
 
-  static unlockNextCity(currentCityId: string) {
-    const list = MapMenu.getUnlockedCities();
+  static isCityUnlocked(cityId: string): boolean {
+    return MapMenu.getUnlockedCities().includes(cityId);
+  }
+
+  static getNextUnlockedCity(currentCityId: string): string | null {
     const idx = MapMenu.PROGRESSION_ORDER.indexOf(currentCityId);
     if (idx !== -1 && idx < MapMenu.PROGRESSION_ORDER.length - 1) {
       const nextId = MapMenu.PROGRESSION_ORDER[idx + 1];
-      if (!list.includes(nextId)) {
-        list.push(nextId);
-        try {
-          localStorage.setItem('ragnarok_svartalfheim_unlocked', JSON.stringify(list));
-        } catch (e) {}
+      if (MapMenu.isCityUnlocked(nextId)) {
+        return nextId;
       }
     }
+    return null;
+  }
+
+  static unlockNextCity(_currentCityId: string) {
+    // Progression unlocking beyond the first level in Svartalfheim is currently disabled.
   }
 
   initProgression() {
@@ -2429,11 +2429,7 @@ export class MapMenu {
     const btnY = boxY + boxH + 12;
 
     if (loc.locked) {
-      const prevCity = this.getPrerequisiteCity(loc);
-      const prevName = prevCity ? this.getLocalizedLocName(prevCity) : '';
-      const lockMsg = prevName
-        ? `🔒 ${t('sealed_prerequisite').replace('{city}', prevName)}`
-        : `🔒 ${t('locked')}`;
+      const lockMsg = `🔒 ${t('locked')}`;
 
       const lockGrad = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
       if (isLight) {

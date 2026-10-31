@@ -75,18 +75,18 @@
           </div>
 
           <!-- Mythic Runic Tablet Navigation Tabs -->
-          <div class="settings-nav-tabs" role="tablist" aria-label="Settings Categories">
+          <div class="settings-nav-tabs" role="tablist" aria-label="Settings Categories" data-i18n-aria="settingsCategories">
             <button type="button" class="settings-tab-btn active" data-tab="audio" role="tab" aria-selected="true">
               <span class="tab-rune">ᚠ</span>
-              <span class="tab-label">Audio & Display</span>
+              <span class="tab-label" data-i18n="tabAudioDisplay">Audio & Display</span>
             </button>
             <button type="button" class="settings-tab-btn" data-tab="gameplay" role="tab" aria-selected="false">
               <span class="tab-rune">ᛏ</span>
-              <span class="tab-label">Realm Defense</span>
+              <span class="tab-label" data-i18n="tabRealmDefense">Realm Defense</span>
             </button>
             <button type="button" class="settings-tab-btn" data-tab="levels" role="tab" aria-selected="false">
               <span class="tab-rune">ᛊ</span>
-              <span class="tab-label">Level Rules</span>
+              <span class="tab-label" data-i18n="tabLevelRules">Level Rules</span>
             </button>
           </div>
           
@@ -98,12 +98,12 @@
                 <div class="setting-label-group">
                   <span class="setting-icon">🔊</span>
                   <div class="setting-text-group">
-                    <span class="setting-name">Master Volume</span>
-                    <span class="setting-subdesc">Sound effects & synthesizer volume</span>
+                    <span class="setting-name" data-i18n="masterVolume">Master Volume</span>
+                    <span class="setting-subdesc" data-i18n="masterVolumeDesc">Sound effects & synthesizer volume</span>
                   </div>
                 </div>
                 <div class="audio-volume-controls">
-                  <button type="button" id="volume-mute-btn" class="volume-quick-btn" title="Quick Mute/Unmute" aria-label="Quick Mute/Unmute">
+                  <button type="button" id="volume-mute-btn" class="volume-quick-btn" title="Mute Sound" aria-label="Mute Sound" data-i18n-title="muteSound" data-i18n-aria="muteSound">
                     <span id="volume-mute-icon" class="volume-mute-icon-wrap" aria-hidden="true">
                       <svg class="vol-btn-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path class="horn-shape" d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -112,7 +112,7 @@
                       </svg>
                     </span>
                   </button>
-                  <input type="range" id="master-volume-slider" class="volume-slider" min="0" max="100" value="80" aria-label="Master Volume" />
+                  <input type="range" id="master-volume-slider" class="volume-slider" min="0" max="100" value="80" aria-label="Master Volume" data-i18n-aria="masterVolume" />
                   <span id="volume-percent-display" class="volume-percent-badge">80%</span>
                 </div>
               </div>
@@ -144,7 +144,7 @@
                   <span class="setting-icon">🎨</span>
                   <span class="setting-name" data-i18n="theme">Theme</span>
                 </div>
-                <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme">
+                <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme" data-i18n-aria="toggleTheme">
                   <span class="theme-btn-text">☀️ Light Mode</span>
                 </button>
               </div>
@@ -162,40 +162,25 @@
                   </div>
                 </div>
                 <div class="foreign-units-control-group">
-                  <div class="foreign-units-segmented" role="radiogroup" aria-label="Foreign Units Policy">
-                    <button type="button" class="segmented-opt" data-mode="disable" aria-checked="true" title="Disable foreign units (Native defenders only)">
+                  <div class="foreign-units-segmented" role="radiogroup" aria-label="Foreign Units Policy" data-i18n-aria="foreignUnitsPolicy">
+                    <button type="button" class="segmented-opt" data-mode="disable" aria-checked="true" title="Disable foreign units (Native defenders only)" data-i18n-title="foreignUnitsDisableTooltip">
                       <span class="seg-icon">🔒</span>
                       <span class="seg-label" data-i18n="foreignUnitsDisable">Disable</span>
                     </button>
-                    <button type="button" class="segmented-opt" data-mode="limited" aria-checked="false" title="Allow custom selected foreign units">
+                    <button type="button" class="segmented-opt" data-mode="limited" aria-checked="false" title="Allow custom selected foreign units" data-i18n-title="foreignUnitsLimitedTooltip">
                       <span class="seg-icon">⚖️</span>
                       <span class="seg-label" data-i18n="foreignUnitsLimited">Limited</span>
                     </button>
-                    <button type="button" class="segmented-opt" data-mode="allow" aria-checked="false" title="Allow all foreign units">
+                    <button type="button" class="segmented-opt" data-mode="allow" aria-checked="false" title="Allow all foreign units" data-i18n-title="foreignUnitsAllowTooltip">
                       <span class="seg-icon">⚔️</span>
                       <span class="seg-label" data-i18n="foreignUnitsAllow">Allow</span>
                     </button>
                   </div>
-                  <button type="button" id="configure-foreign-units-btn" class="configure-foreign-units-btn" title="Customize Allowed Realms" aria-label="Customize Allowed Realms">
+                  <button type="button" id="configure-foreign-units-btn" class="configure-foreign-units-btn" title="Customize Allowed Realms" aria-label="Customize Allowed Realms" data-i18n-title="configureForeignWorlds" data-i18n-aria="configureForeignWorlds">
                     <span class="cfg-icon">⚙️</span>
                     <span class="cfg-text" data-i18n="configureForeignWorlds">Customize Realms</span>
                   </button>
                 </div>
-              </div>
-
-              <!-- Infinite Resources Row -->
-              <div class="settings-row infinite-resources-settings-row">
-                <div class="setting-label-group">
-                  <span class="setting-icon">♾️</span>
-                  <div class="setting-text-group">
-                    <span class="setting-name" data-i18n="infiniteResourcesTitle">Infinite Resources</span>
-                    <span class="setting-subdesc" data-i18n="infiniteResourcesSubtitle">Unlimited realm currency and unrestricted deployment</span>
-                  </div>
-                </div>
-                <button type="button" id="infinite-resources-toggle" class="theme-btn infinite-toggle-btn" role="switch" aria-checked="false" aria-label="Toggle Infinite Resources" data-i18n-aria="infiniteResources">
-                  <span class="infinite-toggle-icon">🔒</span>
-                  <span class="infinite-toggle-text" data-i18n="disabled">Disabled</span>
-                </button>
               </div>
             </div>
 
@@ -208,12 +193,13 @@
                     <span class="setting-icon">⚙️</span>
                     <span class="setting-name" data-i18n="levelConfigTitle">Level Parameters</span>
                   </div>
-                  <button type="button" id="reset-all-levels-btn" class="settings-text-btn" data-i18n="resetAllLevels" title="Reset all levels to default">Reset All</button>
+                  <button type="button" id="reset-all-levels-btn" class="settings-text-btn" data-i18n="resetAllLevels" title="Reset all levels to default" data-i18n-title="resetAllLevelsTooltip">Reset All</button>
                 </div>
                 <p class="settings-section-subtitle" data-i18n="levelConfigSubtitle">Set starting currency and squad slots per level</p>
 
-                <!-- Level selector pills: 1 to 10 -->
+                <!-- Level selector pills: All + 1 to 10 -->
                 <div class="level-pills-bar" id="settings-level-pills">
+                  <button type="button" class="level-pill level-pill-all" data-level="all" data-i18n="allLevelsPill" title="Configure all levels in bulk" data-i18n-title="allLevelsPillTooltip" aria-label="All Levels" data-i18n-aria="allLevels">All</button>
                   <button type="button" class="level-pill active" data-level="1">1</button>
                   <button type="button" class="level-pill" data-level="2">2</button>
                   <button type="button" class="level-pill" data-level="3">3</button>
@@ -226,11 +212,14 @@
                   <button type="button" class="level-pill" data-level="10">10</button>
                 </div>
 
-                <!-- Config Card for Selected Level -->
+                <!-- Config Card for Selected Level (or All Levels) -->
                 <div class="level-config-card">
                   <div class="config-level-header">
                     <span class="active-level-label" id="config-level-indicator">Level 1</span>
-                    <button type="button" id="reset-current-level-btn" class="settings-text-btn reset-single-btn" data-i18n="resetLevel">Reset Level</button>
+                    <div class="config-level-actions">
+                      <button type="button" id="apply-all-levels-btn" class="settings-text-btn apply-all-btn" data-i18n="applyToAllLevels" title="Copy this level's parameters to all levels" data-i18n-title="applyToAllLevelsTooltip">Apply to All</button>
+                      <button type="button" id="reset-current-level-btn" class="settings-text-btn reset-single-btn" data-i18n="resetLevel" title="Reset level to default" data-i18n-title="resetLevelTooltip">Reset Level</button>
+                    </div>
                   </div>
 
                   <!-- Starting Currency Row -->
@@ -241,9 +230,9 @@
                       <span id="infinite-currency-badge" class="infinite-currency-active-badge hidden" data-i18n="infiniteActive">Unlimited</span>
                     </div>
                     <div class="cfg-stepper">
-                      <button type="button" class="cfg-step-btn" id="currency-minus-btn" aria-label="Decrease currency">-50</button>
-                      <input type="number" id="level-currency-input" class="cfg-number-input" min="25" max="9999" step="25" value="150" />
-                      <button type="button" class="cfg-step-btn" id="currency-plus-btn" aria-label="Increase currency">+50</button>
+                      <button type="button" class="cfg-step-btn" id="currency-minus-btn" aria-label="Decrease currency" data-i18n-aria="decreaseCurrency">-50</button>
+                      <input type="number" id="level-currency-input" class="cfg-number-input" min="25" max="9999" step="25" value="150" aria-label="Starting Currency" data-i18n-aria="startingCurrency" />
+                      <button type="button" class="cfg-step-btn" id="currency-plus-btn" aria-label="Increase currency" data-i18n-aria="increaseCurrency">+50</button>
                     </div>
                   </div>
 
@@ -267,9 +256,9 @@
                       <span class="cfg-text" data-i18n="squadSlots">Squad Slots</span>
                     </div>
                     <div class="cfg-stepper">
-                      <button type="button" class="cfg-step-btn" id="slots-minus-btn" aria-label="Decrease slots">-1</button>
+                      <button type="button" class="cfg-step-btn" id="slots-minus-btn" aria-label="Decrease slots" data-i18n-aria="decreaseSlots">-1</button>
                       <span id="level-slots-display" class="cfg-display-value">4 Slots</span>
-                      <button type="button" class="cfg-step-btn" id="slots-plus-btn" aria-label="Increase slots">+1</button>
+                      <button type="button" class="cfg-step-btn" id="slots-plus-btn" aria-label="Increase slots" data-i18n-aria="increaseSlots">+1</button>
                     </div>
                   </div>
 
@@ -283,9 +272,9 @@
           </div>
 
           <div class="settings-footer">
-            <button id="done-settings-btn" class="settings-done-btn" data-i18n="closeSettings">
+            <button id="done-settings-btn" class="settings-done-btn" aria-label="Close Settings" data-i18n-aria="closeSettings">
               <span class="btn-rune-deco">ᛟ</span>
-              <span class="btn-text">Close Settings</span>
+              <span class="btn-text" data-i18n="closeSettings">Close Settings</span>
               <span class="btn-rune-deco">ᛟ</span>
             </button>
             <div class="footer-badge">
@@ -436,7 +425,7 @@
       <div id="foreign-worlds-modal" class="foreign-worlds-modal hidden" role="dialog" aria-modal="true" aria-labelledby="foreign-worlds-title">
         <div class="foreign-worlds-backdrop"></div>
         <div class="foreign-worlds-content">
-          <button id="close-foreign-worlds-btn" class="close-btn" aria-label="Close" title="Close">&times;</button>
+          <button id="close-foreign-worlds-btn" class="close-btn" aria-label="Close" title="Close" data-i18n-title="close" data-i18n-aria="close">&times;</button>
           
           <div class="modal-header">
             <div class="runic-tag">ᛟ ᚱ ᛖ ᛊ ᛏ ᚱ ᛁ ᚲ ᛏ ᛟ</div>

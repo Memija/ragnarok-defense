@@ -85,6 +85,12 @@ export class ForeignWorldsModal {
         this.selectedWorldIds = new Set(allowed);
       }
     });
+
+    window.addEventListener('languagechange', () => {
+      if (this.isOpen()) {
+        this.render();
+      }
+    });
   }
 
   public isOpen(): boolean {
@@ -166,10 +172,15 @@ export class ForeignWorldsModal {
       const isSelected = this.selectedWorldIds.has(world.id);
       const worldName = t(`world_${world.id}`) || world.name;
       const worldTitle = t(`realm_${world.id}`) || world.title;
+      const rawWorldSub = t(`world_${world.id}_sub`);
+      const worldSub = rawWorldSub && rawWorldSub !== `world_${world.id}_sub` ? rawWorldSub : world.sub;
       const troops = this.getTroopsForWorld(world.id);
-      const troopsText = troops.length > 0
-        ? troops.join(', ')
-        : (world.id === 'midgard' ? 'Solflower' : (world.id === 'alfheim' ? 'Sunstone Prism' : (t('sacredSanctuary') || 'Realm Defenders')));
+      const producerKey = `def_sunflower_${world.id}_name`;
+      const rawProducerName = t(producerKey);
+      const fallbackTroop = rawProducerName && rawProducerName !== producerKey
+        ? rawProducerName
+        : (t('defenders') || 'Realm Defenders');
+      const troopsText = troops.length > 0 ? troops.join(', ') : fallbackTroop;
 
       const card = document.createElement('div');
       card.className = `world-select-card ${isSelected ? 'is-selected' : ''}`;
@@ -197,7 +208,7 @@ export class ForeignWorldsModal {
             <span class="world-name">${worldName}</span>
             <span class="world-badge-tag">${worldTitle}</span>
           </div>
-          <div class="world-subdesc">${world.sub}</div>
+          <div class="world-subdesc">${worldSub}</div>
           <div class="world-troops-preview">
             <span class="troops-tag-icon">⚔️</span>
             <span class="troops-list-text">${troopsText}</span>

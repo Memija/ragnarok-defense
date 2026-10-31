@@ -16,7 +16,7 @@ import {
   isCurrencyProducer,
   isDefenderAllowedInRealm
 } from './DefenderRegistry';
-import { getForeignUnitsMode, getLimitedForeignWorlds, isForeignWorldAllowedInLimited } from './GameConfig';
+import { getForeignUnitsMode, getLimitedForeignWorlds, isForeignWorldAllowedInLimited, getInfiniteResourcesForLevel } from './GameConfig';
 import { ForeignWorldsModal } from './ForeignWorldsModal';
 import { SoundManager } from './SoundManager';
 import { t } from '../i18n';
@@ -217,9 +217,10 @@ export class DefenderSelectionModal {
 
     this.confirmBtn?.addEventListener('click', () => {
       if (this.selected.length === 0) return;
+      const isInfinite = getInfiniteResourcesForLevel(this.currentOptions?.level || 1);
       const producerAvailable = this.isCurrencyProducerAvailable();
       const hasProducer = this.hasSelectedCurrencyProducer();
-      const isMissingProducer = producerAvailable && !hasProducer;
+      const isMissingProducer = !isInfinite && producerAvailable && !hasProducer;
       const isIncomplete = this.selected.length < this.limit;
 
       if (isIncomplete || isMissingProducer) {
@@ -306,6 +307,12 @@ export class DefenderSelectionModal {
         if (this.selected.length > this.limit) {
           this.selected = this.selected.slice(0, this.limit);
         }
+        this.render();
+      }
+    });
+
+    window.addEventListener('infiniteresourcessettingchanged', () => {
+      if (this.currentOptions && this.modalEl && !this.modalEl.classList.contains('hidden')) {
         this.render();
       }
     });
@@ -746,7 +753,8 @@ export class DefenderSelectionModal {
 
     // Update confirm button
     if (this.confirmBtn && this.confirmPillEl) {
-      const isMissingProducer = this.isCurrencyProducerAvailable() && !this.hasSelectedCurrencyProducer();
+      const isInfinite = getInfiniteResourcesForLevel(this.currentOptions?.level || 1);
+      const isMissingProducer = !isInfinite && this.isCurrencyProducerAvailable() && !this.hasSelectedCurrencyProducer();
       this.confirmPillEl.textContent = `${this.selected.length}/${this.limit} ${t('slotsSelected')}`;
       (this.confirmBtn as HTMLButtonElement).disabled = this.selected.length === 0;
       if (isMissingProducer && this.selected.length > 0) {

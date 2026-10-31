@@ -28,7 +28,7 @@ import { getSavedLoadout, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDe
 import { DEFENDER_ICONS } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
-import { getStartingCurrencyForLevel, getDefaultStartingCurrency, getInfiniteResources } from './GameConfig';
+import { getStartingCurrencyForLevel, getDefaultStartingCurrency, getInfiniteResourcesForLevel } from './GameConfig';
 import { t } from '../i18n';
 
 interface WeatherParticle {
@@ -286,7 +286,7 @@ export class Game {
   }
 
   updateUI() {
-    const isInfinite = getInfiniteResources();
+    const isInfinite = getInfiniteResourcesForLevel(this.level);
     const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
     const currency = getRealmCurrency(this.realm);
     const activeColor = isLight ? currency.lightColor : currency.color;
@@ -505,6 +505,7 @@ export class Game {
     this.canvas.addEventListener('click', this.handleCanvasClick);
 
     window.addEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
+    window.addEventListener('levelconfigchanged', this.handleInfiniteResourcesSettingChange);
     window.addEventListener('ragnarok-theme-changed', this.handleThemeChange);
   }
 
@@ -541,23 +542,19 @@ export class Game {
       if (x >= cx - 140 && x <= cx - 10 && y >= cy + 40 && y <= cy + 85) {
         SoundManager.getInstance().playClick();
         if (this.gameState === 'victory') {
-          if (this.city) {
-            MapMenu.unlockNextCity(this.city);
-          }
-          let nextCity = this.city;
-          let nextLevel = this.level + 1;
-          if (this.realm === 'svartalfheim' && this.city) {
-            const curIdx = MapMenu.PROGRESSION_ORDER.indexOf(this.city);
-            if (curIdx !== -1 && curIdx < MapMenu.PROGRESSION_ORDER.length - 1) {
-              nextCity = MapMenu.PROGRESSION_ORDER[curIdx + 1];
-              nextLevel = CITY_LEVELS[nextCity] || (this.level + 1);
+          const nextUnlockedCity = (this.realm === 'svartalfheim' && this.city)
+            ? MapMenu.getNextUnlockedCity(this.city)
+            : null;
+          if (nextUnlockedCity) {
+            const nextLevel = CITY_LEVELS[nextUnlockedCity] || (this.level + 1);
+            if (this.onPrepareNextLevel) {
+              this.onPrepareNextLevel(this.realm, nextUnlockedCity, nextLevel, [...this.selectedDefenders]);
+              return;
             }
-          }
-          if (this.onPrepareNextLevel) {
-            this.onPrepareNextLevel(this.realm, nextCity, nextLevel, [...this.selectedDefenders]);
+            this.startNextBattle(nextUnlockedCity, nextLevel, this.selectedDefenders);
             return;
           }
-          this.startNextBattle(nextCity, nextLevel, this.selectedDefenders);
+          this.restartBattle();
           return;
         }
         this.restartBattle();
@@ -700,7 +697,7 @@ export class Game {
     let unit: Defender | null = null;
     const x = this.grid.startX + col * this.grid.cellWidth + (this.grid.cellWidth - 60) / 2;
     const y = row * this.grid.cellHeight + (this.grid.cellHeight - 80) / 2;
-    const isInf = getInfiniteResources();
+    const isInf = getInfiniteResourcesForLevel(this.level);
 
     if (unitType === 'peashooter' && (isInf || this.sun >= 100)) {
       unit = new PeaShooter(x, y, row, col);
@@ -1035,9 +1032,6 @@ export class Game {
       // Victory Condition check
       if (this.zombiesSpawned >= this.zombiesTotal && this.attackers.length === 0) {
         this.gameState = 'victory';
-        if (this.city) {
-          MapMenu.unlockNextCity(this.city);
-        }
         SoundManager.getInstance().playVictory();
       }
     }
@@ -4130,7 +4124,11 @@ export class Game {
       ctx.fillText(`Victory Bonus: +500 ${currencyLabel} · Total Defeated: ${this.zombiesKilled}`, cx, cy - 5);
 
       // Buttons
-      // 1. Next Level Button (Left)
+      // 1. Next Level (if unlocked) or Play Again Button (Left)
+      const nextUnlockedCity = (this.realm === 'svartalfheim' && this.city)
+        ? MapMenu.getNextUnlockedCity(this.city)
+        : null;
+      const victoryLeftLabel = nextUnlockedCity ? '✦ Next Level' : `↺ ${t('play_again')}`;
       ctx.fillStyle = isLight ? '#15803d' : 'rgba(46, 125, 50, 0.85)';
       ctx.strokeStyle = isLight ? '#166534' : '#81c784';
       ctx.lineWidth = 1.5;
@@ -4139,8 +4137,13 @@ export class Game {
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 13px "Outfit", sans-serif';
-      ctx.fillText('✦ Next Level', cx - 75, cy + 62);
+      let leftBtnFontSize = 13;
+      ctx.font = `bold ${leftBtnFontSize}px "Outfit", sans-serif`;
+      while (leftBtnFontSize > 10.5 && ctx.measureText(victoryLeftLabel).width > 116) {
+        leftBtnFontSize -= 0.5;
+        ctx.font = `bold ${leftBtnFontSize}px "Outfit", sans-serif`;
+      }
+      ctx.fillText(victoryLeftLabel, cx - 75, cy + 62);
 
       // 2. Realms / Realm Map Button (Right)
       const victoryReturnLabel = (this.realm === 'svartalfheim' && this.city) ? t('return_to_map') : '« Realms';
@@ -4323,6 +4326,7 @@ export class Game {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('languagechange', this.handleLanguageChange);
     window.removeEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
+    window.removeEventListener('levelconfigchanged', this.handleInfiniteResourcesSettingChange);
     window.removeEventListener('ragnarok-theme-changed', this.handleThemeChange);
     this.canvas.removeEventListener('mousemove', this.handleMouseMove);
     this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);

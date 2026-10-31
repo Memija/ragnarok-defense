@@ -1,10 +1,15 @@
 import { SoundManager } from './engine/SoundManager';
 import { translations, t, setCurrentLang, type SupportedLang } from './i18n';
 import {
+  CONFIG_LEVELS,
   getStartingCurrencyForLevel,
   setStartingCurrencyForLevel,
+  setStartingCurrencyForAllLevels,
+  adjustStartingCurrencyForAllLevels,
   getSlotLimitForLevel,
   setSlotLimitForLevel,
+  setSlotLimitForAllLevels,
+  adjustSlotLimitForAllLevels,
   isLevelCustomized,
   resetLevelConfig,
   resetAllLevelConfigs,
@@ -15,8 +20,10 @@ import {
   getForeignUnitsMode,
   setForeignUnitsMode,
   type ForeignUnitsMode,
-  getInfiniteResources,
-  setInfiniteResources
+  getInfiniteResourcesForLevel,
+  setInfiniteResourcesForLevel,
+  setInfiniteResourcesForAllLevels,
+  applyLevelConfigToAllLevels
 } from './engine/GameConfig';
 import { ForeignWorldsModal } from './engine/ForeignWorldsModal';
 
@@ -31,16 +38,18 @@ export function initUI() {
   const updateSoundUI = () => {
     const isMuted = soundManager.isMuted;
     const volPct = Math.round(soundManager.volume * 100);
+    const lang = document.body.dataset.lang || localStorage.getItem('ragnarok_lang') || 'en';
 
     if (soundToggleBtn) {
       soundToggleBtn.classList.toggle('is-muted', isMuted);
-      soundToggleBtn.setAttribute('title', isMuted ? 'Unmute Sound (M)' : 'Mute Sound (M)');
-      soundToggleBtn.setAttribute('aria-label', isMuted ? 'Unmute Sound' : 'Mute Sound');
+      soundToggleBtn.setAttribute('title', isMuted ? t('unmuteSoundShortcut', lang) : t('muteSoundShortcut', lang));
+      soundToggleBtn.setAttribute('aria-label', isMuted ? t('unmuteSound', lang) : t('muteSound', lang));
     }
 
     if (volumeMuteBtn) {
       volumeMuteBtn.classList.toggle('is-muted', isMuted);
-      volumeMuteBtn.setAttribute('title', isMuted ? 'Unmute Sound' : 'Mute Sound');
+      volumeMuteBtn.setAttribute('title', isMuted ? t('unmuteSound', lang) : t('muteSound', lang));
+      volumeMuteBtn.setAttribute('aria-label', isMuted ? t('unmuteSound', lang) : t('muteSound', lang));
     }
 
     if (volumeSlider) {
@@ -131,10 +140,10 @@ export function initUI() {
   const modalBackdrop = settingsModal?.querySelector('.settings-modal-backdrop');
 
   let closeTimeout: number | null = null;
-  let currentSettingsLevel: number = 1;
+  let applyFeedbackTimeout: number | null = null;
+  let currentSettingsLevel: number | 'all' = 1;
   let updateLevelSettingsUI: () => void = () => {};
   let updateForeignUnitsUI: () => void = () => {};
-  let updateInfiniteResourcesUI: () => void = () => {};
   let closeLanguageDropdown: () => void = () => {};
 
   const openSettings = () => {
@@ -147,13 +156,12 @@ export function initUI() {
     if (game && typeof game.pause === 'function') {
       game.pause();
     }
-    if (game && typeof game.level === 'number') {
+    if (game && typeof game.level === 'number' && currentSettingsLevel !== 'all') {
       currentSettingsLevel = Math.min(10, Math.max(1, game.level));
     }
     updateSoundUI();
     updateLevelSettingsUI();
     updateForeignUnitsUI();
-    updateInfiniteResourcesUI();
     if (settingsModal) {
       settingsModal.classList.remove('hidden');
       settingsModal.style.pointerEvents = 'auto';
@@ -265,8 +273,16 @@ export function initUI() {
 
   const updateThemeButtonText = (btn: HTMLElement, theme: string, dict: Record<string, string>) => {
     let text = dict['themeSystem'];
-    if (theme === 'light') text = dict['themeLight'];
-    else if (theme === 'dark') text = dict['themeDark'];
+    let ariaLabel = dict['switchToLightMode'] || dict['toggleTheme'] || 'Toggle Theme';
+    if (theme === 'light') {
+      text = dict['themeLight'];
+      ariaLabel = dict['switchToDarkMode'] || dict['toggleTheme'] || 'Toggle Theme';
+    } else if (theme === 'dark') {
+      text = dict['themeDark'];
+      ariaLabel = dict['switchToSystemTheme'] || dict['toggleTheme'] || 'Toggle Theme';
+    }
+
+    btn.setAttribute('aria-label', ariaLabel);
 
     const innerSpan = btn.querySelector('.theme-btn-text');
     if (innerSpan) {
@@ -308,9 +324,9 @@ export function initUI() {
       updateThemeButtonText(themeToggleBtn, document.body.dataset.theme || 'system', dict);
     }
 
+    updateSoundUI();
     updateLevelSettingsUI();
     updateForeignUnitsUI();
-    updateInfiniteResourcesUI();
 
     window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
   };
@@ -330,13 +346,10 @@ export function initUI() {
       // Cycle: dark -> system -> light -> dark
       if (currentTheme === 'dark') {
         document.body.dataset.theme = 'system';
-        themeToggleBtn.setAttribute('aria-label', 'Switch to Light Mode');
       } else if (currentTheme === 'system') {
         document.body.dataset.theme = 'light';
-        themeToggleBtn.setAttribute('aria-label', 'Switch to Dark Mode');
       } else {
         document.body.dataset.theme = 'dark';
-        themeToggleBtn.setAttribute('aria-label', 'Switch to System Theme');
       }
       
       localStorage.setItem('ragnarok_theme', document.body.dataset.theme);
@@ -396,44 +409,12 @@ export function initUI() {
   updateForeignUnitsUI();
   window.addEventListener('foreignunitssettingchanged', updateForeignUnitsUI);
 
-  // Infinite Resources Toggle Control in Settings
-  const infiniteResourcesToggle = document.getElementById('infinite-resources-toggle') as HTMLButtonElement | null;
   const infiniteCurrencyBadge = document.getElementById('infinite-currency-badge');
 
-  updateInfiniteResourcesUI = () => {
-    const isInfinite = getInfiniteResources();
-    const lang = document.body.dataset.lang || 'en';
-    const dict = translations[lang] || translations['en'];
-
-    if (infiniteResourcesToggle) {
-      infiniteResourcesToggle.classList.toggle('active', isInfinite);
-      infiniteResourcesToggle.setAttribute('aria-checked', isInfinite ? 'true' : 'false');
-
-      const iconSpan = infiniteResourcesToggle.querySelector('.infinite-toggle-icon');
-      if (iconSpan) {
-        iconSpan.textContent = isInfinite ? '♾️' : '🔒';
-      }
-
-      const textSpan = infiniteResourcesToggle.querySelector('.infinite-toggle-text');
-      if (textSpan) {
-        textSpan.textContent = isInfinite ? (dict['enabled'] || 'Enabled') : (dict['disabled'] || 'Disabled');
-      }
-    }
-  };
-
-  if (infiniteResourcesToggle) {
-    infiniteResourcesToggle.addEventListener('click', () => {
-      soundManager.playClick();
-      const next = !getInfiniteResources();
-      setInfiniteResources(next);
-      updateInfiniteResourcesUI();
-      updateLevelSettingsUI();
-    });
-  }
-
-  updateInfiniteResourcesUI();
   window.addEventListener('infiniteresourcessettingchanged', () => {
-    updateInfiniteResourcesUI();
+    updateLevelSettingsUI();
+  });
+  window.addEventListener('levelconfigchanged', () => {
     updateLevelSettingsUI();
   });
 
@@ -526,37 +507,193 @@ export function initUI() {
   const slotsMinusBtn = document.getElementById('slots-minus-btn') as HTMLButtonElement | null;
   const slotsPlusBtn = document.getElementById('slots-plus-btn') as HTMLButtonElement | null;
   const slotPipsContainer = document.getElementById('slot-pips-preview');
+  const applyAllLevelsBtn = document.getElementById('apply-all-levels-btn') as HTMLButtonElement | null;
   const resetCurrentLevelBtn = document.getElementById('reset-current-level-btn') as HTMLButtonElement | null;
   const resetAllLevelsBtn = document.getElementById('reset-all-levels-btn') as HTMLButtonElement | null;
 
   updateLevelSettingsUI = () => {
     const lang = document.body.dataset.lang || 'en';
-    const currentCurrency = getStartingCurrencyForLevel(currentSettingsLevel);
-    const currentSlots = getSlotLimitForLevel(currentSettingsLevel);
-    const customized = isLevelCustomized(currentSettingsLevel);
+    const isBulkAll = currentSettingsLevel === 'all';
+    const anyCustomized = CONFIG_LEVELS.some(lvl => isLevelCustomized(lvl));
 
-    // Update level selector pills
+    // Update level selector pills (All + 1..10)
     levelPillButtons.forEach(pill => {
-      const lvl = parseInt(pill.dataset.level || '1', 10);
-      const isCurrent = lvl === currentSettingsLevel;
-      pill.classList.toggle('active', isCurrent);
-      const lvlIsCustom = isLevelCustomized(lvl);
-      pill.classList.toggle('customized', lvlIsCustom);
-      pill.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+      const rawLevel = pill.dataset.level || '1';
+      if (rawLevel === 'all') {
+        const isCurrent = isBulkAll;
+        pill.classList.toggle('active', isCurrent);
+        pill.classList.toggle('customized', anyCustomized);
+        pill.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+        const allLabel = t('allLevels', lang);
+        pill.setAttribute('aria-label', allLabel);
+        pill.title = t('allLevelsPillTooltip', lang);
+      } else {
+        const lvl = parseInt(rawLevel, 10);
+        const isCurrent = !isBulkAll && lvl === currentSettingsLevel;
+        pill.classList.toggle('active', isCurrent);
+        const lvlIsCustom = isLevelCustomized(lvl);
+        pill.classList.toggle('customized', lvlIsCustom);
+        pill.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+        const lvlLabel = `${t('level', lang)} ${lvl}`;
+        pill.setAttribute('aria-label', lvlLabel);
+        pill.title = lvlIsCustom ? `${lvlLabel} (${t('customLabel', lang)})` : lvlLabel;
+      }
     });
+
+    if (isBulkAll) {
+      const currencies = CONFIG_LEVELS.map(lvl => getStartingCurrencyForLevel(lvl));
+      const infinites = CONFIG_LEVELS.map(lvl => getInfiniteResourcesForLevel(lvl));
+      const slotsList = CONFIG_LEVELS.map(lvl => getSlotLimitForLevel(lvl));
+
+      const allInfinite = infinites.every(Boolean);
+      const noneInfinite = infinites.every(v => !v);
+      const someInfinite = !allInfinite && !noneInfinite;
+      const uniformCurrency = noneInfinite && currencies.every(c => c === currencies[0]) ? currencies[0] : null;
+      const minCurrency = Math.min(...currencies);
+      const maxCurrency = Math.max(...currencies);
+
+      const uniformSlots = slotsList.every(s => s === slotsList[0]) ? slotsList[0] : null;
+      const minSlots = Math.min(...slotsList);
+      const maxSlots = Math.max(...slotsList);
+      const isUniformAll = (allInfinite || uniformCurrency !== null) && uniformSlots !== null;
+
+      if (levelIndicator) {
+        let badgeClass = 'is-default';
+        let badgeTag = t('defaultLabel', lang);
+        if (anyCustomized) {
+          if (isUniformAll) {
+            badgeClass = 'is-custom';
+            badgeTag = t('customLabel', lang);
+          } else {
+            badgeClass = 'is-mixed';
+            badgeTag = t('mixedLabel', lang);
+          }
+        }
+        levelIndicator.innerHTML = `
+          <span class="lvl-title">${t('allLevels', lang)}</span>
+          <span class="cfg-badge ${badgeClass}">${badgeTag}</span>
+        `;
+      }
+
+      if (applyAllLevelsBtn) {
+        applyAllLevelsBtn.classList.add('hidden');
+      }
+      if (resetCurrentLevelBtn) {
+        resetCurrentLevelBtn.textContent = t('resetAllLevels', lang);
+        resetCurrentLevelBtn.title = t('resetAllLevelsTooltip', lang);
+      }
+
+      if (currencyInput) {
+        if (allInfinite) {
+          currencyInput.type = 'text';
+          currencyInput.placeholder = '';
+          currencyInput.value = '∞';
+          currencyInput.disabled = true;
+        } else if (uniformCurrency !== null) {
+          currencyInput.type = 'number';
+          currencyInput.disabled = false;
+          currencyInput.placeholder = '';
+          currencyInput.value = uniformCurrency.toString();
+        } else {
+          currencyInput.type = 'number';
+          currencyInput.disabled = false;
+          currencyInput.value = '';
+          currencyInput.placeholder = someInfinite
+            ? `${minCurrency}–∞`
+            : (minCurrency === maxCurrency ? `${minCurrency}` : `${minCurrency}–${maxCurrency}`);
+        }
+      }
+
+      if (currencyMinusBtn) {
+        currencyMinusBtn.disabled = allInfinite || currencies.every((c, idx) => infinites[idx] || c <= MIN_STARTING_CURRENCY);
+      }
+      if (currencyPlusBtn) {
+        currencyPlusBtn.disabled = allInfinite || currencies.every((c, idx) => infinites[idx] || c >= MAX_STARTING_CURRENCY);
+      }
+      if (infiniteCurrencyBadge) {
+        infiniteCurrencyBadge.classList.toggle('hidden', !allInfinite);
+      }
+
+      presetPills.forEach(pill => {
+        const amtStr = pill.dataset.amount;
+        if (amtStr === 'infinite') {
+          pill.classList.toggle('active', allInfinite);
+          pill.setAttribute('aria-pressed', allInfinite ? 'true' : 'false');
+        } else {
+          const amt = parseInt(amtStr || '0', 10);
+          const isActive = !allInfinite && uniformCurrency !== null && amt === uniformCurrency;
+          pill.classList.toggle('active', isActive);
+          pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        }
+      });
+
+      if (slotsDisplay) {
+        const formatStr = t('slotsCount', lang);
+        const countLabel = uniformSlots !== null ? uniformSlots.toString() : `${minSlots}–${maxSlots}`;
+        slotsDisplay.textContent = formatStr.replace('{count}', countLabel);
+      }
+      if (slotsMinusBtn) {
+        slotsMinusBtn.disabled = slotsList.every(s => s <= MIN_SLOTS);
+      }
+      if (slotsPlusBtn) {
+        slotsPlusBtn.disabled = slotsList.every(s => s >= MAX_SLOTS);
+      }
+
+      if (slotPipsContainer) {
+        slotPipsContainer.innerHTML = '';
+        for (let i = 1; i <= MAX_SLOTS; i++) {
+          const pip = document.createElement('button');
+          pip.type = 'button';
+          const stateClass = i <= minSlots ? 'active' : (i <= maxSlots ? 'partial' : 'empty');
+          const statusLabel = i <= minSlots
+            ? t('slotActive', lang)
+            : (i <= maxSlots ? t('slotPartial', lang) : t('locked', lang));
+          const setActionLabel = t('setSlotsTooltip', lang).replace('{count}', i.toString());
+          pip.className = `slot-pip ${stateClass}`;
+          pip.title = `${t('slot', lang)} ${i} (${statusLabel}) — ${setActionLabel}`;
+          pip.setAttribute('aria-label', setActionLabel);
+          pip.innerHTML = `<span class="pip-num">${i}</span>`;
+          pip.addEventListener('click', () => {
+            soundManager.playClick();
+            setSlotLimitForAllLevels(i);
+            updateLevelSettingsUI();
+          });
+          slotPipsContainer.appendChild(pip);
+        }
+      }
+      return;
+    }
+
+    const activeLevel = currentSettingsLevel as number;
+    const currentCurrency = getStartingCurrencyForLevel(activeLevel);
+    const currentSlots = getSlotLimitForLevel(activeLevel);
+    const customized = isLevelCustomized(activeLevel);
 
     // Update level indicator header
     if (levelIndicator) {
       const customTag = customized ? t('customLabel', lang) : t('defaultLabel', lang);
       levelIndicator.innerHTML = `
-        <span class="lvl-title">${t('level', lang)} ${currentSettingsLevel}</span>
+        <span class="lvl-title">${t('level', lang)} ${activeLevel}</span>
         <span class="cfg-badge ${customized ? 'is-custom' : 'is-default'}">${customTag}</span>
       `;
     }
 
-    // Update currency input & presets
-    const isInfinite = getInfiniteResources();
+    if (applyAllLevelsBtn) {
+      applyAllLevelsBtn.classList.remove('hidden');
+      if (!applyAllLevelsBtn.classList.contains('is-applied')) {
+        applyAllLevelsBtn.textContent = t('applyToAllLevels', lang);
+      }
+      applyAllLevelsBtn.title = t('applyToAllLevelsTooltip', lang);
+    }
+    if (resetCurrentLevelBtn) {
+      resetCurrentLevelBtn.textContent = t('resetLevel', lang);
+      resetCurrentLevelBtn.title = t('resetLevelTooltip', lang);
+    }
+
+    // Update currency input & presets (per-level infinite resources)
+    const isInfinite = getInfiniteResourcesForLevel(activeLevel);
     if (currencyInput) {
+      currencyInput.placeholder = '';
       if (isInfinite) {
         currencyInput.type = 'text';
         currencyInput.value = '∞';
@@ -606,11 +743,19 @@ export function initUI() {
     if (slotPipsContainer) {
       slotPipsContainer.innerHTML = '';
       for (let i = 1; i <= MAX_SLOTS; i++) {
-        const pip = document.createElement('div');
+        const pip = document.createElement('button');
+        pip.type = 'button';
         const isActive = i <= currentSlots;
+        const setActionLabel = t('setSlotsTooltip', lang).replace('{count}', i.toString());
         pip.className = `slot-pip ${isActive ? 'active' : 'empty'}`;
-        pip.title = `Slot ${i}${isActive ? ' (Active)' : ' (Locked)'}`;
+        pip.title = `${t('slot', lang)} ${i} (${isActive ? t('slotActive', lang) : t('locked', lang)}) — ${setActionLabel}`;
+        pip.setAttribute('aria-label', setActionLabel);
         pip.innerHTML = `<span class="pip-num">${i}</span>`;
+        pip.addEventListener('click', () => {
+          soundManager.playClick();
+          setSlotLimitForLevel(activeLevel, i);
+          updateLevelSettingsUI();
+        });
         slotPipsContainer.appendChild(pip);
       }
     }
@@ -619,10 +764,11 @@ export function initUI() {
   // Attach event listeners for level settings
   levelPillButtons.forEach(pill => {
     pill.addEventListener('click', () => {
-      const lvl = parseInt(pill.dataset.level || '1', 10);
-      if (lvl !== currentSettingsLevel) {
+      const rawLevel = pill.dataset.level || '1';
+      const nextSelection: number | 'all' = rawLevel === 'all' ? 'all' : parseInt(rawLevel, 10);
+      if (nextSelection !== currentSettingsLevel) {
         soundManager.playClick();
-        currentSettingsLevel = lvl;
+        currentSettingsLevel = nextSelection;
         updateLevelSettingsUI();
       }
     });
@@ -631,12 +777,12 @@ export function initUI() {
   if (currencyMinusBtn) {
     currencyMinusBtn.addEventListener('click', () => {
       soundManager.playClick();
-      if (getInfiniteResources()) {
-        setInfiniteResources(false);
-        updateInfiniteResourcesUI();
+      if (currentSettingsLevel === 'all') {
+        adjustStartingCurrencyForAllLevels(-50);
+      } else {
+        const cur = getStartingCurrencyForLevel(currentSettingsLevel);
+        setStartingCurrencyForLevel(currentSettingsLevel, Math.max(MIN_STARTING_CURRENCY, cur - 50));
       }
-      const cur = getStartingCurrencyForLevel(currentSettingsLevel);
-      setStartingCurrencyForLevel(currentSettingsLevel, Math.max(MIN_STARTING_CURRENCY, cur - 50));
       updateLevelSettingsUI();
     });
   }
@@ -644,12 +790,12 @@ export function initUI() {
   if (currencyPlusBtn) {
     currencyPlusBtn.addEventListener('click', () => {
       soundManager.playClick();
-      if (getInfiniteResources()) {
-        setInfiniteResources(false);
-        updateInfiniteResourcesUI();
+      if (currentSettingsLevel === 'all') {
+        adjustStartingCurrencyForAllLevels(50);
+      } else {
+        const cur = getStartingCurrencyForLevel(currentSettingsLevel);
+        setStartingCurrencyForLevel(currentSettingsLevel, Math.min(MAX_STARTING_CURRENCY, cur + 50));
       }
-      const cur = getStartingCurrencyForLevel(currentSettingsLevel);
-      setStartingCurrencyForLevel(currentSettingsLevel, Math.min(MAX_STARTING_CURRENCY, cur + 50));
       updateLevelSettingsUI();
     });
   }
@@ -657,12 +803,15 @@ export function initUI() {
   if (currencyInput) {
     const handleCurrencyCommit = () => {
       let val = parseInt(currencyInput.value, 10);
+      if (currentSettingsLevel === 'all') {
+        if (!isNaN(val)) {
+          setStartingCurrencyForAllLevels(val);
+        }
+        updateLevelSettingsUI();
+        return;
+      }
       if (isNaN(val)) {
         val = getStartingCurrencyForLevel(currentSettingsLevel);
-      }
-      if (getInfiniteResources()) {
-        setInfiniteResources(false);
-        updateInfiniteResourcesUI();
       }
       setStartingCurrencyForLevel(currentSettingsLevel, val);
       updateLevelSettingsUI();
@@ -681,17 +830,22 @@ export function initUI() {
       soundManager.playClick();
       const amtStr = pill.dataset.amount;
       if (amtStr === 'infinite') {
-        setInfiniteResources(true);
-        updateInfiniteResourcesUI();
+        if (currentSettingsLevel === 'all') {
+          const allInfinite = CONFIG_LEVELS.every(lvl => getInfiniteResourcesForLevel(lvl));
+          setInfiniteResourcesForAllLevels(!allInfinite);
+        } else {
+          const nextInfinite = !getInfiniteResourcesForLevel(currentSettingsLevel);
+          setInfiniteResourcesForLevel(currentSettingsLevel, nextInfinite);
+        }
         updateLevelSettingsUI();
       } else {
         const amt = parseInt(amtStr || '0', 10);
         if (amt > 0) {
-          if (getInfiniteResources()) {
-            setInfiniteResources(false);
-            updateInfiniteResourcesUI();
+          if (currentSettingsLevel === 'all') {
+            setStartingCurrencyForAllLevels(amt);
+          } else {
+            setStartingCurrencyForLevel(currentSettingsLevel, amt);
           }
-          setStartingCurrencyForLevel(currentSettingsLevel, amt);
           updateLevelSettingsUI();
         }
       }
@@ -701,10 +855,15 @@ export function initUI() {
   if (slotsMinusBtn) {
     slotsMinusBtn.addEventListener('click', () => {
       soundManager.playClick();
-      const cur = getSlotLimitForLevel(currentSettingsLevel);
-      if (cur > MIN_SLOTS) {
-        setSlotLimitForLevel(currentSettingsLevel, cur - 1);
+      if (currentSettingsLevel === 'all') {
+        adjustSlotLimitForAllLevels(-1);
         updateLevelSettingsUI();
+      } else {
+        const cur = getSlotLimitForLevel(currentSettingsLevel);
+        if (cur > MIN_SLOTS) {
+          setSlotLimitForLevel(currentSettingsLevel, cur - 1);
+          updateLevelSettingsUI();
+        }
       }
     });
   }
@@ -712,18 +871,48 @@ export function initUI() {
   if (slotsPlusBtn) {
     slotsPlusBtn.addEventListener('click', () => {
       soundManager.playClick();
-      const cur = getSlotLimitForLevel(currentSettingsLevel);
-      if (cur < MAX_SLOTS) {
-        setSlotLimitForLevel(currentSettingsLevel, cur + 1);
+      if (currentSettingsLevel === 'all') {
+        adjustSlotLimitForAllLevels(1);
         updateLevelSettingsUI();
+      } else {
+        const cur = getSlotLimitForLevel(currentSettingsLevel);
+        if (cur < MAX_SLOTS) {
+          setSlotLimitForLevel(currentSettingsLevel, cur + 1);
+          updateLevelSettingsUI();
+        }
       }
+    });
+  }
+
+  if (applyAllLevelsBtn) {
+    applyAllLevelsBtn.addEventListener('click', () => {
+      if (currentSettingsLevel === 'all') return;
+      soundManager.playClick();
+      applyLevelConfigToAllLevels(currentSettingsLevel);
+      const lang = document.body.dataset.lang || 'en';
+      applyAllLevelsBtn.classList.add('is-applied');
+      applyAllLevelsBtn.textContent = `✓ ${t('applied', lang)}`;
+      if (applyFeedbackTimeout) {
+        clearTimeout(applyFeedbackTimeout);
+      }
+      applyFeedbackTimeout = window.setTimeout(() => {
+        applyAllLevelsBtn.classList.remove('is-applied');
+        const curLang = document.body.dataset.lang || 'en';
+        applyAllLevelsBtn.textContent = t('applyToAllLevels', curLang);
+        applyFeedbackTimeout = null;
+      }, 1200);
+      updateLevelSettingsUI();
     });
   }
 
   if (resetCurrentLevelBtn) {
     resetCurrentLevelBtn.addEventListener('click', () => {
       soundManager.playClick();
-      resetLevelConfig(currentSettingsLevel);
+      if (currentSettingsLevel === 'all') {
+        resetAllLevelConfigs();
+      } else {
+        resetLevelConfig(currentSettingsLevel);
+      }
       updateLevelSettingsUI();
     });
   }

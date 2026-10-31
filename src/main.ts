@@ -101,6 +101,9 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   };
 
   const launchGame = (realm: string, city?: string, chosenDefenders?: string[]) => {
+    if (realm !== 'svartalfheim') return;
+    const safeCity = city && MapMenu.isCityUnlocked(city) ? city : MapMenu.INITIAL_UNLOCKED_CITY;
+    city = safeCity;
     if (mainMenuDiv && gameContainer) {
       document.body.className = city ? `theme-${realm} location-${city}` : `theme-${realm}`;
       const realmNames: Record<string, { name: string; icon: string }> = {
@@ -168,7 +171,10 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
 
   const promptDefenderSelection = (realm?: string, city?: string) => {
     if (game && game.gameState === 'playing') return;
-    const activeRealm = realm || 'svartalfheim';
+    const activeRealm = 'svartalfheim';
+    if (realm && realm !== 'svartalfheim') return;
+    const safeCity = city && MapMenu.isCityUnlocked(city) ? city : MapMenu.INITIAL_UNLOCKED_CITY;
+    city = safeCity;
     const targetLevel = city && CITY_LEVELS[city] ? CITY_LEVELS[city] : 1;
     const initialSelected = getSavedLoadout(targetLevel, activeRealm);
     const previousBodyClass = document.body.className;
@@ -252,9 +258,6 @@ if (ctx && canvas.parentElement && menuCtx && mapCtx) {
   mainMenu = new MainMenu(menuCanvas, menuCtx, (realm: string) => {
     if (realm === 'svartalfheim') {
       openRealmMap(realm);
-    } else {
-      // Directly start game for other realms
-      startGame(realm);
     }
   });
   
