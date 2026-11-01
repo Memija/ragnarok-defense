@@ -4,7 +4,7 @@ import { SoundManager } from '../engine/SoundManager';
 import { getRealmCurrency, type RealmCurrency } from '../engine/Currency';
 
 export class SunFlower extends Defender {
-  produceTimer: number = 0;
+  produceTimer: number = 5000;
   produceRate: number = 10000;
   realm: string = 'midgard';
   currentRealm: string = 'midgard';

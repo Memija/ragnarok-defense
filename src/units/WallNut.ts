@@ -3,7 +3,7 @@ import { Game } from '../engine/Game';
 
 export class WallNut extends Defender {
   constructor(x: number, y: number, row: number, col: number) {
-    super(x, y, 60, 80, 500, 50, row, col);
+    super(x, y, 60, 80, 1800, 50, row, col);
   }
 
   update(deltaTime: number, game: Game) {

@@ -6,7 +6,7 @@ import { SoundManager } from '../engine/SoundManager';
 
 export class KernelPult extends Defender {
   fireTimer: number = 0;
-  fireRate: number = 3000; // Slower fire rate than peashooter
+  fireRate: number = 2200; // Steady siege catapult cadence
 
   constructor(x: number, y: number, row: number, col: number) {
     super(x, y, 60, 80, 200, 100, row, col); // Cost 100 sun

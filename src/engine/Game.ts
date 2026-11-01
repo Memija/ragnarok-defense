@@ -128,8 +128,11 @@ export class Game {
   // Cinematic Bifrost entrance transition
   realmEntranceTimer: number = 2.8;
 
+  spawnGraceTimer: number = 14000;
   zombieSpawnTimer: number = 0;
   zombieSpawnInterval: number = 5000;
+  ambientCurrencyTimer: number = 4500;
+  ambientCurrencyInterval: number = 8500;
   
   constructor(
     canvas: HTMLCanvasElement,
@@ -166,6 +169,9 @@ export class Game {
     this.grid = new Grid(cssW, cssH, realm, city);
 
     this.zombiesTotal = 10 + this.level * 5;
+    this.spawnGraceTimer = this.getInitialSpawnGraceMs();
+    this.zombieSpawnInterval = this.computeSpawnIntervalMs();
+    this.ambientCurrencyTimer = 4500;
 
     for (let r = 0; r < this.grid.rows; r++) {
       this.valkyrieAvailable.push(true);
@@ -644,11 +650,30 @@ export class Game {
     }
   }
 
+  private getInitialSpawnGraceMs(): number {
+    return Math.max(8500, 14000 - (this.level - 1) * 700);
+  }
+
+  private computeSpawnIntervalMs(): number {
+    const baseInterval = Math.max(2400, 6200 - (this.level - 1) * 380);
+    const progress = this.zombiesSpawned / Math.max(1, this.zombiesTotal);
+    if (this.zombiesSpawned < 3 || progress < 0.25) {
+      return baseInterval * 1.75;
+    }
+    if (progress < 0.55) {
+      return baseInterval * 1.3;
+    }
+    return baseInterval * 0.9;
+  }
+
   restartBattle() {
     this.gameState = 'playing';
     this.zombiesSpawned = 0;
     this.zombiesKilled = 0;
     this.zombiesTotal = 10 + this.level * 5;
+    this.spawnGraceTimer = this.getInitialSpawnGraceMs();
+    this.zombieSpawnInterval = this.computeSpawnIntervalMs();
+    this.ambientCurrencyTimer = 4500;
     this.zombieSpawnTimer = 0;
     this.waveAnnounced = false;
     this.defenders = [];
@@ -805,7 +830,7 @@ export class Game {
     return false;
   }
 
-  checkCollisions() {
+  checkCollisions(deltaTime: number) {
     this.updateAttackerRowBuckets();
 
     for (let pi = 0; pi < this.projectiles.length; pi++) {
@@ -925,13 +950,24 @@ export class Game {
             }
 
             isEating = true;
-            defender.takeDamage(0.1); 
+            if (!zombie.isStunned) {
+              const effectiveDt = zombie.isSlowed ? deltaTime * 0.5 : deltaTime;
+              zombie.attackTimer += effectiveDt;
+              if (zombie.attackTimer >= zombie.attackRate) {
+                zombie.attackTimer -= zombie.attackRate;
+                defender.takeDamage(zombie.damage);
+                this.particles.emit(defender.x + defender.width * 0.5, defender.y + defender.height * 0.5, '#ef4444', 4, 2.5, 2, 220);
+              }
+            }
             break; 
           }
         }
       }
       if (!zombie.markedForDeletion) {
         zombie.isEating = isEating;
+        if (!isEating) {
+          zombie.attackTimer = Math.min(zombie.attackTimer, zombie.attackRate * 0.4);
+        }
       }
     }
   }
@@ -986,8 +1022,33 @@ export class Game {
     }
 
     if (this.gameState === 'playing') {
-      this.zombieSpawnTimer += deltaTime;
-      this.zombieSpawnInterval = Math.max(1200, 5000 - (this.level * 350));
+      if (this.realmEntranceTimer <= 0) {
+        if (!getInfiniteResourcesForLevel(this.level)) {
+          this.ambientCurrencyTimer += deltaTime;
+          if (this.ambientCurrencyTimer >= this.ambientCurrencyInterval) {
+            this.ambientCurrencyTimer -= this.ambientCurrencyInterval;
+            this.sun += 25;
+            this.updateUI();
+            const currency = getRealmCurrency(this.realm);
+            const dropX = this.grid.startX + (0.15 + Math.random() * 0.55) * Math.max(120, this.width - this.grid.startX);
+            const dropY = Math.max(48, this.height * 0.16 + Math.random() * (this.height * 0.25));
+            this.addFloatingText(dropX, dropY, `+25 ${currency.symbol}`, currency.color, true);
+            this.particles.emit(dropX, dropY, currency.particleColor, 12, 3.5, 2.5, 380);
+            SoundManager.getInstance().playSun();
+          }
+        }
+
+        this.zombieSpawnInterval = this.computeSpawnIntervalMs();
+        if (this.spawnGraceTimer > 0) {
+          this.spawnGraceTimer -= deltaTime;
+          if (this.spawnGraceTimer <= 0) {
+            this.spawnGraceTimer = 0;
+            this.zombieSpawnTimer = this.zombieSpawnInterval;
+          }
+        } else {
+          this.zombieSpawnTimer += deltaTime;
+        }
+      }
 
       // Wave announcement trigger
       if (!this.waveAnnounced && this.zombiesSpawned >= Math.floor(this.zombiesTotal / 2)) {
@@ -996,7 +1057,7 @@ export class Game {
       }
 
       // Spawning attackers
-      if (this.zombieSpawnTimer > this.zombieSpawnInterval && this.zombiesSpawned < this.zombiesTotal) {
+      if (this.spawnGraceTimer <= 0 && this.zombieSpawnTimer >= this.zombieSpawnInterval && this.zombiesSpawned < this.zombiesTotal) {
         this.zombieSpawnTimer = 0;
         this.zombiesSpawned++;
         const randomRow = Math.floor(Math.random() * this.grid.rows);
@@ -1007,7 +1068,9 @@ export class Game {
 
         // Thematic enemy spawns in Jotunheim (more frost trolls & giants)
         if (this.realm === 'jotunheim') {
-          if (rand > 0.55) {
+          if (this.zombiesSpawned <= 2) {
+            this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
+          } else if (rand > 0.6) {
             this.attackers.push(new Troll(spawnX, spawnY - 10, randomRow));
           } else if (rand > 0.25) {
             this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
@@ -1015,13 +1078,21 @@ export class Game {
             this.attackers.push(new ConeheadZombie(spawnX, spawnY, randomRow));
           }
         } else {
-          if (this.level >= 2 && rand > 0.75) {
-            this.attackers.push(new Troll(spawnX, spawnY - 10, randomRow));
-          } else if (this.level >= 3 && rand > 0.6) {
-            this.attackers.push(new BucketheadZombie(spawnX, spawnY, randomRow));
-          } else if (this.level >= 2 && rand > 0.45) {
-            this.attackers.push(new ConeheadZombie(spawnX, spawnY, randomRow));
-          } else if (this.level >= 1 && rand > 0.3) {
+          if (this.zombiesSpawned <= 3) {
+            this.attackers.push(new BasicZombie(spawnX, spawnY, randomRow));
+          } else if (this.level >= 2) {
+            if (this.zombiesSpawned > 5 && rand > 0.8) {
+              this.attackers.push(new Troll(spawnX, spawnY - 10, randomRow));
+            } else if (this.level >= 3 && this.zombiesSpawned > 4 && rand > 0.65) {
+              this.attackers.push(new BucketheadZombie(spawnX, spawnY, randomRow));
+            } else if (rand > 0.48) {
+              this.attackers.push(new ConeheadZombie(spawnX, spawnY, randomRow));
+            } else if (rand > 0.28) {
+              this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
+            } else {
+              this.attackers.push(new BasicZombie(spawnX, spawnY, randomRow));
+            }
+          } else if (rand > 0.65) {
             this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
           } else {
             this.attackers.push(new BasicZombie(spawnX, spawnY, randomRow));
@@ -1047,7 +1118,7 @@ export class Game {
     for (let i = 0; i < numValk; i++) this.valkyries[i].update(deltaTime, this);
     this.particles.update(deltaTime);
     
-    this.checkCollisions();
+    this.checkCollisions(deltaTime);
 
     let anyDefDel = false;
     for (let i = 0; i < this.defenders.length; i++) {

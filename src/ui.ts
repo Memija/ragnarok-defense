@@ -447,6 +447,12 @@ export function initUI() {
       }
     };
 
+    const syncSelectedLangOption = (activeLang: string) => {
+      items.forEach(opt => {
+        opt.classList.toggle('is-selected', (opt as HTMLElement).dataset.lang === activeLang);
+      });
+    };
+
     // Restore saved language selection in dropdown UI
     if (savedLang) {
       const savedOption = customSelect.querySelector(`[data-lang="${savedLang}"]`) as HTMLElement;
@@ -454,6 +460,7 @@ export function initUI() {
         selected.innerHTML = savedOption.innerHTML;
         selected.dataset.lang = savedLang;
       }
+      syncSelectedLangOption(savedLang);
     }
 
     applyLanguage(savedLang);
@@ -472,6 +479,7 @@ export function initUI() {
         // Update selected display
         selected.innerHTML = target.innerHTML;
         selected.dataset.lang = lang;
+        syncSelectedLangOption(lang);
         closeLanguageDropdown();
         
         applyLanguage(lang);

@@ -2,10 +2,10 @@ import { Attacker } from '../entities/Attacker';
 
 export class Troll extends Attacker {
   attackTimer: number = 0;
-  attackRate: number = 1200;
+  attackRate: number = 1550;
 
   constructor(x: number, y: number, row: number) {
-    super(x, y - 10, 70, 110, 300, 15, 40, row); // Tanky, slow, heavy damage
+    super(x, y - 10, 70, 110, 300, 12, 32, row); // Tanky, slow, heavy damage
   }
 
   update(deltaTime: number, ..._args: any[]) {

@@ -4,10 +4,10 @@ import { Game } from '../engine/Game';
 export class PotatoMine extends Defender {
   isArmed: boolean = false;
   armTimer: number = 0;
-  armDuration: number = 15000; 
+  armDuration: number = 12000; 
 
   constructor(x: number, y: number, row: number, col: number) {
-    super(x, y, 60, 80, 25, 50, row, col); 
+    super(x, y, 60, 80, 120, 25, row, col); 
   }
 
   update(deltaTime: number, game: Game) {

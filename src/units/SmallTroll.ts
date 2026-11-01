@@ -2,10 +2,10 @@ import { Attacker } from '../entities/Attacker';
 
 export class SmallTroll extends Attacker {
   attackTimer: number = 0;
-  attackRate: number = 1000;
+  attackRate: number = 1250;
 
   constructor(x: number, y: number, row: number) {
-    super(x, y + 15, 45, 75, 150, 25, 20, row); // Weaker, slightly faster than big troll, less damage
+    super(x, y + 15, 45, 75, 140, 20, 18, row); // Weaker, slightly faster than big troll, less damage
   }
 
   update(deltaTime: number, ..._args: any[]) {

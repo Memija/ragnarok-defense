@@ -128,12 +128,12 @@
                     <img src="/flags/gb.png" alt="EN" /> <span>English</span>
                   </div>
                   <div class="select-items select-hide">
-                    <div data-lang="en"><img src="/flags/gb.png" alt="EN" /> English</div>
-                    <div data-lang="de"><img src="/flags/de.png" alt="DE" /> Deutsch</div>
-                    <div data-lang="id"><img src="/flags/id.png" alt="ID" /> Bahasa Indonesia</div>
-                    <div data-lang="bs"><img src="/flags/ba.png" alt="BA" /> Bosanski</div>
-                    <div data-lang="pl"><img src="/flags/pl.png" alt="PL" /> Polski</div>
-                    <div data-lang="sr-Cyrl"><img src="/flags/rs.png" alt="RS" /> Српски</div>
+                    <div data-lang="en"><img src="/flags/gb.png" alt="EN" /> <span>English</span></div>
+                    <div data-lang="de"><img src="/flags/de.png" alt="DE" /> <span>Deutsch</span></div>
+                    <div data-lang="id"><img src="/flags/id.png" alt="ID" /> <span>Bahasa Indonesia</span></div>
+                    <div data-lang="bs"><img src="/flags/ba.png" alt="BA" /> <span>Bosanski</span></div>
+                    <div data-lang="pl"><img src="/flags/pl.png" alt="PL" /> <span>Polski</span></div>
+                    <div data-lang="sr-Cyrl"><img src="/flags/rs.png" alt="RS" /> <span>Српски</span></div>
                   </div>
                 </div>
               </div>
@@ -511,22 +511,29 @@
 
       <!-- Svartalfheim Map Menu -->
       <div id="map-menu" class="hidden">
-        <button id="return-from-map-btn" class="return-btn tree-return-btn" title="Return to Yggdrasil World Tree" aria-label="Return to Yggdrasil" data-i18n-title="returnToYggdrasilTooltip" data-i18n-aria="returnToYggdrasil">
-          <span class="btn-corner-rune tl">ᛟ</span>
-          <span class="btn-corner-rune br">ᛟ</span>
+        <button type="button" id="return-from-map-btn" class="return-btn tree-return-btn" title="Return to Yggdrasil World Tree" aria-label="Return to Yggdrasil" data-i18n-title="returnToYggdrasilTooltip" data-i18n-aria="returnToYggdrasil">
+          <span class="return-btn-bezel" aria-hidden="true"></span>
 
-          <div class="tree-portal-glyph">
-            <span class="glyph-arrow">‹</span>
-            <div class="tree-icon-frame">
-              <svg viewBox="0 0 24 24" class="yggdrasil-tree-svg" fill="none" stroke="currentColor">
-                <path d="M12 22V13M12 13C12 13 8 10 5 11M12 13C12 13 16 10 19 11M12 9C12 9 8 7 6 4M12 9C12 9 16 7 18 4M12 13V4.5M12 4.5C10 2.5 8 1.5 12 1.5C16 1.5 14 2.5 12 4.5M12 22C10 22 7 21 5.5 18M12 22C14 22 17 21 18.5 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <span class="tree-portal-glyph" aria-hidden="true">
+            <span class="return-arrow-wrap">
+              <svg viewBox="0 0 16 16" class="return-arrow-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.75 3.75L5.5 8L9.75 12.25" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 8H12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
-            </div>
-          </div>
+            </span>
+            <span class="tree-icon-frame">
+              <svg viewBox="0 0 24 24" class="yggdrasil-tree-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path class="tree-canopy-fill" d="M12 2.4C9.15 2.4 7.15 4.05 6.85 6.45C4.85 6.95 3.65 8.75 4.05 10.7C4.4 12.4 6.0 13.5 7.95 13.5H16.05C18.0 13.5 19.6 12.4 19.95 10.7C20.35 8.75 19.15 6.95 17.15 6.45C16.85 4.05 14.85 2.4 12 2.4Z" stroke-width="1.45" stroke-linejoin="round"/>
+                <path class="tree-canopy-highlight" d="M8.35 6.8C8.75 4.95 10.2 3.8 12 3.8C13.8 3.8 15.25 4.95 15.65 6.8" stroke-width="1.15" stroke-linecap="round"/>
+                <path class="tree-trunk" d="M12 8.2V18.6" stroke-width="2.1" stroke-linecap="round"/>
+                <path class="tree-boughs" d="M12 12.8C10.35 12.05 9.05 10.9 7.95 9.45M12 12.2C13.65 11.45 14.95 10.3 16.05 8.85M12 9.4L10.35 7.3M12 9.4L13.65 7.3" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
+                <path class="tree-roots" d="M12 17.8C10.95 19.55 9.2 20.65 7.15 21.15M12 17.8C13.05 19.55 14.8 20.65 16.85 21.15M12 18.2V21.3" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </span>
 
           <span class="btn-text" data-i18n="returnToYggdrasil">Return to Yggdrasil</span>
-          <span class="return-btn-flourish">✧</span>
-          <div class="btn-shimmer-sweep"></div>
+          <span class="btn-shimmer-sweep" aria-hidden="true"></span>
         </button>
         <canvas id="map-canvas"></canvas>
       </div>

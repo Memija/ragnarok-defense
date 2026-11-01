@@ -9,6 +9,8 @@ export abstract class Attacker extends Entity {
   slowTimer: number = 0;
   isStunned: boolean = false;
   stunTimer: number = 0;
+  attackTimer: number = 0;
+  attackRate: number = 1250;
 
   constructor(x: number, y: number, width: number, height: number, health: number, speed: number, damage: number, row: number) {
     super(x, y, width, height, health);

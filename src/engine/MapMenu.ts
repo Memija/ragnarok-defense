@@ -184,6 +184,7 @@ export class MapMenu {
   ambientMotes: any[] = [];
   onReturn: (() => void) | null = null;
   themeLightWeight: number = 0;
+  returnBtnClearance: number = 258;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -205,6 +206,7 @@ export class MapMenu {
     this.loadBackgrounds();
     this.bindEvents();
     this.initParticles();
+    this.updateReturnBtnClearance();
   }
 
   static readonly PROGRESSION_ORDER = [
@@ -301,12 +303,16 @@ export class MapMenu {
   }
 
   getActiveInspectedCity(): LocationNode | null {
-    // If hovering any location (unlocked or locked), inspect its briefing card
-    if (this.hoveredCity) {
+    // If hovering an unlocked location, inspect its briefing card
+    if (this.hoveredCity && !this.hoveredCity.locked) {
       return this.hoveredCity;
     }
+    // Never show the level description card for locked locations
+    if (this.hoveredCity && this.hoveredCity.locked) {
+      return null;
+    }
     // If hovering over the active story card, maintain focus
-    if (this.hoveredCard && this.activeCardRect) {
+    if (this.hoveredCard && this.activeCardRect && !this.activeCardRect.loc.locked) {
       return this.activeCardRect.loc;
     }
     // Default when no location is hovered: present the highest unlocked playable chapter
@@ -369,11 +375,24 @@ export class MapMenu {
     }
   }
 
+  updateReturnBtnClearance = () => {
+    const returnBtnEl = document.getElementById('return-from-map-btn');
+    if (returnBtnEl) {
+      const btnRect = returnBtnEl.getBoundingClientRect();
+      const canvasRect = this.canvas.getBoundingClientRect();
+      if (btnRect.width > 0 && canvasRect.width > 0) {
+        this.returnBtnClearance = Math.max(248, Math.ceil(btnRect.right - canvasRect.left + 16));
+      }
+    }
+  };
+
   bindEvents() {
     this.canvas.addEventListener('mousemove', this.onMouseMove);
     this.canvas.addEventListener('click', this.onClick);
     this.canvas.addEventListener('mouseleave', this.onMouseLeave);
     window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('resize', this.updateReturnBtnClearance);
+    window.addEventListener('languagechange', this.updateReturnBtnClearance);
   }
 
   unbindEvents() {
@@ -381,6 +400,8 @@ export class MapMenu {
     this.canvas.removeEventListener('click', this.onClick);
     this.canvas.removeEventListener('mouseleave', this.onMouseLeave);
     window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('resize', this.updateReturnBtnClearance);
+    window.removeEventListener('languagechange', this.updateReturnBtnClearance);
   }
 
   onKeyDown = (e: KeyboardEvent) => {
@@ -416,22 +437,36 @@ export class MapMenu {
     this.hoveredReturn = false;
     this.canvas.style.cursor = 'default';
 
-    // Check hover on location nodes using aspect-accurate projection
+    // 1. Check hover on unlocked location nodes using aspect-accurate projection
     for (const loc of this.locations) {
+      if (loc.locked) continue;
       const pos = this.getNodeScreenPos(loc, w, h);
       if (Math.hypot(mx - pos.x, my - pos.y) < loc.radius * 1.65) {
         this.hoveredCity = loc;
-        this.canvas.style.cursor = loc.locked ? 'not-allowed' : 'pointer';
+        this.canvas.style.cursor = 'pointer';
         break;
       }
     }
 
-    // If not directly over a node, check if hovering over the active story card
-    if (!this.hoveredCity && this.activeCardRect) {
-      const { x, y, w: cw, h: ch, loc: cardLoc } = this.activeCardRect;
+    // 2. If not over an unlocked node, check if hovering over the active story card (drawn above map nodes)
+    if (!this.hoveredCity && this.activeCardRect && !this.activeCardRect.loc.locked) {
+      const { x, y, w: cw, h: ch } = this.activeCardRect;
       if (mx >= x && mx <= x + cw && my >= y && my <= y + ch) {
         this.hoveredCard = true;
-        this.canvas.style.cursor = cardLoc.locked ? 'default' : 'pointer';
+        this.canvas.style.cursor = 'pointer';
+      }
+    }
+
+    // 3. Otherwise, check hover on locked location nodes
+    if (!this.hoveredCity && !this.hoveredCard) {
+      for (const loc of this.locations) {
+        if (!loc.locked) continue;
+        const pos = this.getNodeScreenPos(loc, w, h);
+        if (Math.hypot(mx - pos.x, my - pos.y) < loc.radius * 1.65) {
+          this.hoveredCity = loc;
+          this.canvas.style.cursor = 'not-allowed';
+          break;
+        }
       }
     }
 
@@ -445,7 +480,7 @@ export class MapMenu {
   onClick = (e?: MouseEvent) => {
     let targetCity = this.hoveredCity;
 
-    if (!targetCity && e) {
+    if (!targetCity && !this.hoveredCard && e) {
       const rect = this.canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
@@ -453,6 +488,7 @@ export class MapMenu {
       const h = rect.height;
 
       for (const loc of this.locations) {
+        if (loc.locked) continue;
         const pos = this.getNodeScreenPos(loc, w, h);
         if (Math.hypot(mx - pos.x, my - pos.y) < loc.radius * 1.65) {
           targetCity = loc;
@@ -460,17 +496,23 @@ export class MapMenu {
         }
       }
 
-      if (!targetCity && this.activeCardRect) {
+      if (!targetCity && this.activeCardRect && !this.activeCardRect.loc.locked) {
         const { x, y, w: cw, h: ch, loc: cardLoc } = this.activeCardRect;
         if (mx >= x && mx <= x + cw && my >= y && my <= y + ch) {
-          if (cardLoc.locked) {
-            SoundManager.getInstance().playLocked();
-            cardLoc.shake = 12;
-            return;
-          }
           SoundManager.getInstance().playClick();
           this.onSelectCity(cardLoc.id);
           return;
+        }
+      }
+
+      if (!targetCity) {
+        for (const loc of this.locations) {
+          if (!loc.locked) continue;
+          const pos = this.getNodeScreenPos(loc, w, h);
+          if (Math.hypot(mx - pos.x, my - pos.y) < loc.radius * 1.65) {
+            targetCity = loc;
+            break;
+          }
         }
       }
     }
@@ -487,12 +529,7 @@ export class MapMenu {
     }
 
     // Click on the story card action area / deploy button
-    if (this.hoveredCard && this.activeCardRect) {
-      if (this.activeCardRect.loc.locked) {
-        SoundManager.getInstance().playLocked();
-        this.activeCardRect.loc.shake = 12;
-        return;
-      }
+    if (this.hoveredCard && this.activeCardRect && !this.activeCardRect.loc.locked) {
       SoundManager.getInstance().playClick();
       this.onSelectCity(this.activeCardRect.loc.id);
       return;
@@ -503,6 +540,7 @@ export class MapMenu {
     this.initProgression();
     this.unbindEvents();
     this.bindEvents();
+    this.updateReturnBtnClearance();
     cancelAnimationFrame(this.animationId);
     this.loop();
   }
@@ -690,15 +728,15 @@ export class MapMenu {
       this.drawNamePlaque(ctx, lx, ly, r, loc, isLight, w, h);
     }
 
-    // ── 7. STORY MISSION BRIEFING CARD (UNLOCKED & LOCKED PREVIEW) ──
+    // ── 7. STORY MISSION BRIEFING CARD (HIDDEN FOR LOCKED LEVELS) ──
     const activeLoc = this.getActiveInspectedCity();
-    if (activeLoc) {
+    if (activeLoc && !activeLoc.locked) {
       this.drawMissionIntelCard(ctx, activeLoc, w, h, isLight, time);
     } else {
       this.activeCardRect = null;
     }
 
-    // ── 8. MAJESTIC DWARVEN REALM TITLE BANNER WITH CAMPAIGN PROGRESS ──
+    // ── 8. MAJESTIC DWARVEN REALM TITLE BANNER ──
     this.drawRealmBanner(ctx, w, isLight);
   }
 
@@ -813,15 +851,15 @@ export class MapMenu {
     ctx.save();
 
     // Reserve safe horizontal clearance for #return-from-map-btn (left) and .top-action-buttons (right)
-    const leftSafe = 248;
+    const leftSafe = this.returnBtnClearance;
     const rightSafe = Math.max(leftSafe + 240, w - 144);
     const maxSafeW = rightSafe - leftSafe;
-    const bannerW = Math.min(460, Math.max(240, Math.min(maxSafeW, w - 360)));
-    const bannerH = 56;
+    const bannerW = Math.min(440, Math.max(240, Math.min(maxSafeW, w - 360)));
+    const bannerH = 46;
     let bannerX = (w - bannerW) / 2;
     if (bannerX < leftSafe) bannerX = leftSafe;
     if (bannerX + bannerW > rightSafe) bannerX = Math.max(leftSafe, rightSafe - bannerW);
-    const bannerY = 12;
+    const bannerY = 14;
     const centerX = bannerX + bannerW * 0.5;
 
     // Banner drop shadow & slate backing
@@ -846,53 +884,18 @@ export class MapMenu {
     // Header Runic Text
     ctx.textAlign = 'center';
     ctx.fillStyle = isLight ? '#92400e' : '#f59e0b';
-    ctx.font = '700 9px "Segoe UI Historic", "Segoe UI Symbol", sans-serif';
-    ctx.fillText(`ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ · ${t('realm_svartalfheim')} · ᛊ ᚹ ᚨ ᚱ ᛏ ᚨ ᛚ ᚠ`, centerX, bannerY + 15);
+    ctx.font = '700 9.5px "Segoe UI Historic", "Segoe UI Symbol", sans-serif';
+    ctx.fillText(
+      `ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ · ${t('realm_svartalfheim')} · ᛊ ᚹ ᚨ ᚱ ᛏ ᚨ ᛚ ᚠ`,
+      centerX,
+      bannerY + 17,
+      bannerW - 24
+    );
 
     // Realm Title
     ctx.fillStyle = isLight ? '#1c1917' : '#fef08a';
-    ctx.font = 'bold 14.5px "Cinzel", "Outfit", "Inter", serif';
-    ctx.fillText(t('world_svartalfheim'), centerX, bannerY + 32);
-
-    // Campaign Progression Strip: 7 Stronghold Gem Pips + Unsealed Counter
-    const unlockedCount = this.locations.filter(l => !l.locked).length;
-    const totalCount = this.locations.length;
-    const progressLabel = t('strongholds_unsealed')
-      .replace('{unlocked}', String(unlockedCount))
-      .replace('{total}', String(totalCount));
-
-    ctx.font = '600 9.5px "Outfit", "Inter", sans-serif';
-    const labelW = ctx.measureText(progressLabel).width;
-    const pipsW = totalCount * 10;
-    const totalStripW = pipsW + 8 + labelW;
-    const stripStartX = centerX - totalStripW * 0.5;
-    const stripY = bannerY + 45;
-
-    for (let i = 0; i < totalCount; i++) {
-      const loc = this.locations[i];
-      const pipX = stripStartX + i * 10 + 4;
-      const isUnlocked = !loc.locked;
-      ctx.beginPath();
-      ctx.moveTo(pipX, stripY - 3.2);
-      ctx.lineTo(pipX + 3.2, stripY);
-      ctx.lineTo(pipX, stripY + 3.2);
-      ctx.lineTo(pipX - 3.2, stripY);
-      ctx.closePath();
-      ctx.fillStyle = isUnlocked
-        ? (isLight ? (loc.lightGemColor || '#b45309') : loc.gemColor)
-        : (isLight ? 'rgba(180, 83, 9, 0.20)' : 'rgba(255, 255, 255, 0.16)');
-      ctx.fill();
-      ctx.strokeStyle = isUnlocked
-        ? (isLight ? '#78350f' : '#fef08a')
-        : (isLight ? 'rgba(120, 53, 15, 0.35)' : 'rgba(212, 175, 55, 0.30)');
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-    }
-
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = isLight ? '#78350f' : '#fde68a';
-    ctx.fillText(progressLabel, stripStartX + pipsW + 8, stripY + 0.5);
+    ctx.font = 'bold 15px "Cinzel", "Outfit", "Inter", serif';
+    ctx.fillText(t('world_svartalfheim'), centerX, bannerY + 36, bannerW - 24);
 
     ctx.restore();
   }
@@ -2214,8 +2217,12 @@ export class MapMenu {
     ctx.restore();
   }
 
-  // ── IMMERSIVE STORY CHAPTER BRIEFING CARD (UNLOCKED & LOCKED PREVIEW) ──
+  // ── IMMERSIVE STORY CHAPTER BRIEFING CARD (UNLOCKED LEVELS ONLY) ──
   drawMissionIntelCard(ctx: CanvasRenderingContext2D, loc: LocationNode, w: number, h: number, isLight: boolean, time: number) {
+    if (loc.locked) {
+      this.activeCardRect = null;
+      return;
+    }
     ctx.save();
     const cardW = Math.min(450, Math.max(320, Math.min(w * 0.34, w - 40)));
     const activeGemColor = isLight ? (loc.lightGemColor || '#b45309') : loc.gemColor;

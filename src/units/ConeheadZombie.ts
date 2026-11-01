@@ -2,7 +2,7 @@ import { Attacker } from '../entities/Attacker';
 
 export class ConeheadZombie extends Attacker {
   constructor(x: number, y: number, row: number) {
-    super(x, y, 50, 90, 250, 30, 20, row);
+    super(x, y, 50, 90, 240, 17, 18, row);
   }
 
   update(deltaTime: number, ..._args: any[]) {

@@ -3,14 +3,14 @@ import { Attacker } from '../entities/Attacker';
 
 export class BasicZombie extends Attacker {
   attackTimer: number = 0;
-  attackRate: number = 1000;
+  attackRate: number = 1250;
 
   constructor(x: number, y: number, row: number) {
-    super(x, y, 50, 90, 100, 30, 20, row);
+    super(x, y, 50, 90, 100, 18, 18, row);
   }
 
   update(deltaTime: number, ..._args: any[]) {
-    super.update(deltaTime);
+    super.update(deltaTime, ..._args);
   }
 
   draw(ctx: CanvasRenderingContext2D) {
