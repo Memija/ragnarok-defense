@@ -406,6 +406,8 @@ export class MapMenu {
 
   onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
+      const foreignModal = document.getElementById('foreign-worlds-modal');
+      if (foreignModal && !foreignModal.classList.contains('hidden')) return;
       const settingsModal = document.getElementById('settings-modal');
       if (settingsModal && !settingsModal.classList.contains('hidden')) return;
       const defenderModal = document.getElementById('defender-modal');

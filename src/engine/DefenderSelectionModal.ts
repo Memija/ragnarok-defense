@@ -98,6 +98,7 @@ export class DefenderSelectionModal {
   private mixPresetsBtn: HTMLElement | null;
   private mixPresetsMenu: HTMLElement | null;
   private synergyBarEl: HTMLElement | null;
+  private synergyTitleEl: HTMLElement | null;
   private synergyTokensListEl: HTMLElement | null;
   private synergyScoreBadgeEl: HTMLElement | null;
   private toastEl: HTMLElement | null;
@@ -141,6 +142,7 @@ export class DefenderSelectionModal {
     this.mixPresetsBtn = document.getElementById('mix-presets-btn');
     this.mixPresetsMenu = document.getElementById('mix-presets-menu');
     this.synergyBarEl = document.getElementById('squad-synergy-bar');
+    this.synergyTitleEl = this.synergyBarEl?.querySelector('.synergy-title') || document.getElementById('synergy-title');
     this.synergyTokensListEl = this.synergyBarEl?.querySelector('#synergy-tokens-list') || document.getElementById('synergy-tokens-list');
     this.synergyScoreBadgeEl = this.synergyBarEl?.querySelector('#synergy-score-badge') || document.getElementById('synergy-score-badge');
     this.toastEl = document.getElementById('squad-toast');
@@ -251,6 +253,13 @@ export class DefenderSelectionModal {
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (ForeignWorldsModal.getInstance()?.isOpen()) {
+          return;
+        }
+        const settingsModal = document.getElementById('settings-modal');
+        if (settingsModal && !settingsModal.classList.contains('hidden')) {
+          return;
+        }
         if (this.mixPresetsMenu && !this.mixPresetsMenu.classList.contains('hidden')) {
           this.closePresetsMenu();
           return;
@@ -278,12 +287,20 @@ export class DefenderSelectionModal {
       }
     });
 
-    this.foreignUnitsBadgeEl?.addEventListener('click', () => {
-      SoundManager.getInstance().playClick();
+    const openForeignUnitsSettings = () => {
       if (getForeignUnitsMode() === 'limited') {
+        SoundManager.getInstance().playClick();
         ForeignWorldsModal.getInstance()?.open();
       } else {
-        (window as any).__openSettings?.();
+        (window as any).__openSettings?.('gameplay');
+      }
+    };
+
+    this.foreignUnitsBadgeEl?.addEventListener('click', openForeignUnitsSettings);
+    this.foreignUnitsBadgeEl?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openForeignUnitsSettings();
       }
     });
 
@@ -637,6 +654,13 @@ export class DefenderSelectionModal {
     }
   }
 
+  public getActiveLevel(): number | null {
+    if (this.modalEl && !this.modalEl.classList.contains('hidden') && this.currentOptions) {
+      return this.currentOptions.level;
+    }
+    return null;
+  }
+
   public open(options: SelectionModalOptions) {
     const activeGame = (window as any).__getGame?.();
     if (options.isMidGame || (activeGame && activeGame.gameState === 'playing')) {
@@ -880,10 +904,20 @@ export class DefenderSelectionModal {
     if (!this.synergyTokensListEl || !this.currentOptions) return;
     const currentRealm = this.currentOptions.realm || 'midgard';
     const report = getSquadSynergies(this.selected, currentRealm);
+    const isOptimal =
+      report.synergyScore >= 100 &&
+      this.selected.length >= this.limit &&
+      this.selected.length >= report.totalPillars;
+
+    if (this.synergyTitleEl) {
+      this.synergyTitleEl.textContent = isOptimal
+        ? (t('squadSynergyOptimal') || 'Optimal Squad Synergy')
+        : (t('squadSynergy') || 'Squad Synergy:');
+    }
 
     if (this.synergyScoreBadgeEl) {
       this.synergyScoreBadgeEl.textContent = `${report.synergyScore}%`;
-      if (report.synergyScore >= 100) {
+      if (isOptimal) {
         this.synergyScoreBadgeEl.classList.add('is-perfect');
       } else {
         this.synergyScoreBadgeEl.classList.remove('is-perfect');
@@ -1016,7 +1050,7 @@ export class DefenderSelectionModal {
               <h3 class="section-title" style="color:${world.color};">${localizedWorldName}</h3>
               ${group.isHomeWorld
                 ? `<span class="section-home-badge">🛡️ ${t('hostRealmDefenses') || 'Host realm'}</span>`
-                : (isRealmLocked ? `<span class="section-foreign-badge">🔒 ${t('foreignRealmRestricted') || 'Foreign realm · Restricted'}</span>` : '')
+                : (isRealmLocked ? `<span class="section-foreign-badge" role="button" tabindex="0" style="cursor:pointer;" title="${t('foreignUnitRestrictedTooltip') || 'Click to open settings'}">🔒 ${t('foreignRealmRestricted') || 'Foreign realm · Restricted'}</span>` : '')
               }
             </div>
             <p class="section-subtitle">${localizedWorldSub}</p>
@@ -1026,6 +1060,17 @@ export class DefenderSelectionModal {
           ${isRealmLocked ? `0 / ${units.length} ${t('available') || 'Available'}` : `${units.length} ${t('available') || 'Available'}`}
         </span>
       `;
+      if (isRealmLocked) {
+        const restrictedBadge = header.querySelector('.section-foreign-badge');
+        restrictedBadge?.addEventListener('click', () => {
+          if (getForeignUnitsMode() === 'limited') {
+            SoundManager.getInstance().playClick();
+            ForeignWorldsModal.getInstance()?.open();
+          } else {
+            (window as any).__openSettings?.('gameplay');
+          }
+        });
+      }
       section.appendChild(header);
 
       // Section Cards Container

@@ -113,23 +113,26 @@ export function initUI() {
   const settingsTabButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.settings-nav-tabs .settings-tab-btn'));
   const settingsTabPanes = Array.from(document.querySelectorAll<HTMLElement>('.settings-body .settings-tab-pane'));
 
+  const activateSettingsTab = (targetTab: string) => {
+    settingsTabButtons.forEach(b => {
+      const isActive = b.dataset.tab === targetTab;
+      b.classList.toggle('active', isActive);
+      b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    settingsTabPanes.forEach(pane => {
+      const paneTab = pane.id.replace('pane-', '');
+      const isActive = paneTab === targetTab;
+      pane.classList.toggle('active', isActive);
+    });
+  };
+
   settingsTabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const targetTab = btn.dataset.tab;
       if (!targetTab) return;
       soundManager.playClick();
-
-      settingsTabButtons.forEach(b => {
-        const isActive = b === btn;
-        b.classList.toggle('active', isActive);
-        b.setAttribute('aria-selected', isActive ? 'true' : 'false');
-      });
-
-      settingsTabPanes.forEach(pane => {
-        const paneTab = pane.id.replace('pane-', '');
-        const isActive = paneTab === targetTab;
-        pane.classList.toggle('active', isActive);
-      });
+      activateSettingsTab(targetTab);
     });
   });
 
@@ -146,7 +149,7 @@ export function initUI() {
   let updateForeignUnitsUI: () => void = () => {};
   let closeLanguageDropdown: () => void = () => {};
 
-  const openSettings = () => {
+  const openSettings = (initialTab?: string) => {
     if (closeTimeout) {
       clearTimeout(closeTimeout);
       closeTimeout = null;
@@ -156,8 +159,15 @@ export function initUI() {
     if (game && typeof game.pause === 'function') {
       game.pause();
     }
-    if (game && typeof game.level === 'number' && currentSettingsLevel !== 'all') {
+    const defenderSelectionModal = (window as any).__defenderSelectionModal;
+    const modalLevel = defenderSelectionModal?.getActiveLevel?.();
+    if (typeof modalLevel === 'number' && currentSettingsLevel !== 'all') {
+      currentSettingsLevel = Math.min(10, Math.max(1, modalLevel));
+    } else if (game && typeof game.level === 'number' && currentSettingsLevel !== 'all') {
       currentSettingsLevel = Math.min(10, Math.max(1, game.level));
+    }
+    if (typeof initialTab === 'string' && initialTab) {
+      activateSettingsTab(initialTab);
     }
     updateSoundUI();
     updateLevelSettingsUI();
@@ -187,8 +197,10 @@ export function initUI() {
       settingsModal.style.visibility = 'hidden';
       settingsModal.setAttribute('aria-hidden', 'true');
     }
+    const defenderModalEl = document.getElementById('defender-modal');
+    const isDefenderModalOpen = defenderModalEl && !defenderModalEl.classList.contains('hidden');
     const game = (window as any).__getGame?.();
-    if (game && typeof game.resume === 'function') {
+    if (game && typeof game.resume === 'function' && !isDefenderModalOpen) {
       game.resume();
     }
     if (document.activeElement instanceof HTMLElement) {
@@ -232,6 +244,10 @@ export function initUI() {
   // Keyboard shortcut (Escape to close settings)
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && settingsModal && !settingsModal.classList.contains('hidden')) {
+      const foreignModalEl = document.getElementById('foreign-worlds-modal');
+      if (foreignModalEl && !foreignModalEl.classList.contains('hidden')) {
+        return;
+      }
       closeSettings();
     }
   });
@@ -392,9 +408,25 @@ export function initUI() {
       setForeignUnitsMode(mode);
       updateForeignUnitsUI();
       if (mode === 'limited') {
+        if (closeTimeout) {
+          clearTimeout(closeTimeout);
+          closeTimeout = null;
+        }
         foreignWorldsModal.open();
-      } else if (foreignWorldsModal.isOpen()) {
-        foreignWorldsModal.close();
+      } else {
+        if (foreignWorldsModal.isOpen()) {
+          foreignWorldsModal.close();
+        }
+        const defenderModalEl = document.getElementById('defender-modal');
+        if (defenderModalEl && !defenderModalEl.classList.contains('hidden')) {
+          if (closeTimeout) {
+            clearTimeout(closeTimeout);
+          }
+          closeTimeout = window.setTimeout(() => {
+            closeSettings();
+            closeTimeout = null;
+          }, 180);
+        }
       }
     });
   });

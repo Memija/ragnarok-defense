@@ -611,8 +611,12 @@ export function getSquadSynergies(selectedIds: string[], realm?: string): SquadS
 
   const hasEconomy = defenders.some(d => isCurrencyProducer(d));
   const hasTank = defenders.some(d => d.id === 'wallnut' || d.id === 'potatomine');
-  const hasDPS = defenders.some(d => d.id === 'peashooter' || d.id === 'repeater' || d.id === 'einherjar' || d.id === 'kernelpult');
-  const hasCrowdControl = defenders.some(d => d.id === 'snowpea' || d.id === 'kernelpult');
+  const hasDedicatedDPS = defenders.some(d => d.id === 'peashooter' || d.id === 'repeater' || d.id === 'einherjar');
+  const hasKernelPult = defenders.some(d => d.id === 'kernelpult');
+  const hasSnowPea = defenders.some(d => d.id === 'snowpea');
+
+  const hasDPS = hasDedicatedDPS || hasKernelPult;
+  const hasCrowdControl = hasSnowPea || (hasKernelPult && hasDedicatedDPS);
   const hasBurstAOE = defenders.some(d => d.id === 'cherrybomb' || d.id === 'jalapeno' || d.id === 'chomper');
 
   const hasFlameBoost = defenders.some(d => d.id === 'torchwood') && defenders.some(d => d.id === 'repeater' || d.id === 'peashooter');
@@ -728,13 +732,13 @@ export function getBestPossibleMixLoadout(level: number, realm?: string, mixType
   if (limit <= 4) {
     bestOrder = [
       preferredSunflowerId,
-      'potatomine',
       'wallnut',
       'peashooter',
       'snowpea',
+      'cherrybomb',
+      'potatomine',
       'kernelpult',
       'repeater',
-      'cherrybomb',
       'einherjar',
       'jalapeno',
       'chomper',
@@ -743,46 +747,31 @@ export function getBestPossibleMixLoadout(level: number, realm?: string, mixType
   } else if (limit <= 6) {
     bestOrder = [
       preferredSunflowerId,
-      'potatomine',
       'wallnut',
       'peashooter',
       'snowpea',
-      'repeater',
       'cherrybomb',
+      'potatomine',
+      'repeater',
       'kernelpult',
       'einherjar',
       'jalapeno',
       'chomper',
       'torchwood'
     ];
-  } else if (limit <= 8) {
-    bestOrder = [
-      preferredSunflowerId,
-      'potatomine',
-      'wallnut',
-      'repeater',
-      'snowpea',
-      'cherrybomb',
-      'kernelpult',
-      'einherjar',
-      'peashooter',
-      'jalapeno',
-      'torchwood',
-      'chomper'
-    ];
   } else {
     bestOrder = [
       preferredSunflowerId,
-      'potatomine',
       'wallnut',
       'repeater',
       'snowpea',
       'cherrybomb',
+      'potatomine',
       'kernelpult',
       'einherjar',
+      'peashooter',
       'jalapeno',
       'torchwood',
-      'peashooter',
       'chomper'
     ];
   }

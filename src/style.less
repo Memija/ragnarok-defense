@@ -2647,7 +2647,7 @@ body[data-active-theme="light"].theme-muspelheim {
   .settings-modal {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 300;
+    z-index: 2500;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2672,6 +2672,7 @@ body[data-active-theme="light"].theme-muspelheim {
 
     .settings-modal-content {
       position: relative;
+      z-index: 10;
       box-sizing: border-box;
       background: var(--frost-bg-panel);
       border: 2px solid var(--frost-ice-border);
@@ -2715,6 +2716,12 @@ body[data-active-theme="light"].theme-muspelheim {
         position: absolute;
         top: 14px;
         right: 18px;
+        z-index: 50;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: transparent;
         border: none;
         color: var(--close-btn-color);
@@ -2722,7 +2729,7 @@ body[data-active-theme="light"].theme-muspelheim {
         line-height: 1;
         cursor: pointer;
         transition: all 0.25s ease;
-        padding: 4px 8px;
+        padding: 0;
         border-radius: 8px;
 
         &:hover {
@@ -4025,6 +4032,12 @@ body[data-active-theme="light"].theme-muspelheim {
         position: absolute;
         top: 14px;
         right: 18px;
+        z-index: 50;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: transparent;
         border: none;
         color: var(--close-btn-color);
@@ -4032,7 +4045,7 @@ body[data-active-theme="light"].theme-muspelheim {
         line-height: 1;
         cursor: pointer;
         transition: all 0.25s ease;
-        padding: 4px 8px;
+        padding: 0;
         border-radius: 8px;
 
         &:hover {
@@ -5519,6 +5532,12 @@ body[data-active-theme="light"].theme-muspelheim {
         position: absolute;
         top: 14px;
         right: 18px;
+        z-index: 50;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: transparent;
         border: none;
         color: var(--close-btn-color);
@@ -5526,7 +5545,7 @@ body[data-active-theme="light"].theme-muspelheim {
         line-height: 1;
         cursor: pointer;
         transition: all 0.25s ease;
-        padding: 4px 8px;
+        padding: 0;
         border-radius: 8px;
 
         &:hover {
@@ -7026,6 +7045,12 @@ body[data-active-theme="light"].theme-muspelheim {
       position: absolute;
       top: 14px;
       right: 18px;
+      z-index: 50;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: transparent;
       border: none;
       color: var(--close-btn-color);
@@ -7033,7 +7058,7 @@ body[data-active-theme="light"].theme-muspelheim {
       line-height: 1;
       cursor: pointer;
       transition: all 0.25s ease;
-      padding: 4px 8px;
+      padding: 0;
       border-radius: 8px;
 
       &:hover {

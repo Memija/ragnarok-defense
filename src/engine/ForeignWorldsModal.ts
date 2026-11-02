@@ -118,6 +118,14 @@ export class ForeignWorldsModal {
   public saveAndClose() {
     setLimitedForeignWorlds(Array.from(this.selectedWorldIds));
     this.close();
+    const defenderModalEl = document.getElementById('defender-modal');
+    const settingsModalEl = document.getElementById('settings-modal');
+    if (
+      defenderModalEl && !defenderModalEl.classList.contains('hidden') &&
+      settingsModalEl && !settingsModalEl.classList.contains('hidden')
+    ) {
+      (window as any).__closeSettings?.();
+    }
   }
 
   private selectAll() {
