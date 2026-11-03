@@ -370,7 +370,7 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
     icon: DEFENDER_ICONS.peashooter,
     desc: 'Kinetic seedling that rapidly fires mystic energy orbs at approaching invaders.',
     tooltip: 'Peashooter: Reliable ranged attacker firing mystic orbs down the row.',
-    role: 'Ranged DPS',
+    role: 'Ranged Attacker',
     origin: 'Vanaheim',
     world: 'vanaheim'
   },
@@ -422,7 +422,7 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
     categoryName: 'Tower',
     cost: 50,
     icon: DEFENDER_ICONS.wallnut,
-    desc: 'Fortified Norse stone bastion tower with colossal vitality (4000 HP) that blocks advancing hordes.',
+    desc: 'Fortified Norse stone bastion tower with colossal vitality (4000 health) that blocks advancing hordes.',
     tooltip: 'Rune Bastion: High-health fortress bastion tower to buy crucial time for your defense line.',
     role: 'Defensive Bastion',
     origin: 'Jötunheim',

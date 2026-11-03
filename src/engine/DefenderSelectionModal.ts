@@ -50,16 +50,16 @@ export const PRESET_DEFINITIONS: Record<SquadMixPreset, PresetMeta> = {
     icon: '⚡',
     tag: 'Optimal',
     titleKey: 'presetBestDesc',
-    defaultTitle: 'Ideal synergy of Economy, Tank, DPS & Crowd Control'
+    defaultTitle: 'Ideal synergy of Economy, Defense, Ranged Attack & Crowd Control'
   },
   heavy_attack: {
     id: 'heavy_attack',
     nameKey: 'presetHeavyName',
     defaultName: 'Heavy Firepower',
     icon: '⚔️',
-    tag: 'DPS',
+    tag: 'Attack',
     titleKey: 'presetHeavyDesc',
-    defaultTitle: 'Maximum sustained DPS, fireballs & explosive burst'
+    defaultTitle: 'Maximum sustained damage, fireballs & explosive burst'
   },
   fortified: {
     id: 'fortified',
@@ -68,7 +68,7 @@ export const PRESET_DEFINITIONS: Record<SquadMixPreset, PresetMeta> = {
     icon: '🛡️',
     tag: 'Defense',
     titleKey: 'presetFortifiedDesc',
-    defaultTitle: 'High HP stone walls, icy slow & paralyzing butter'
+    defaultTitle: 'High health stone walls, icy slow & paralyzing butter'
   },
   balanced: {
     id: 'balanced',
@@ -452,7 +452,7 @@ export class DefenderSelectionModal {
         callout.innerHTML = `
           <span class="callout-icon">⚠️</span>
           <span class="callout-text">
-            <strong>${t('noProducerAlert') || 'Missing Currency Producer'}</strong>: ${currency.symbol} ${currencyName} (+25 / 10s)
+            <strong>${t('noProducerAlert') || 'Missing Currency Producer'}</strong>: ${currency.symbol} ${currencyName} (${t('currencyRate') || '+25 / 10 seconds'})
           </span>
         `;
         this.warningSlotStripEl.appendChild(callout);
@@ -473,18 +473,38 @@ export class DefenderSelectionModal {
     this.currentOptions?.onConfirm(chosen);
   }
 
+  private isWorldUnlocked(
+    group: { world: { id: WorldId }; defenders: { id: string }[]; isHomeWorld: boolean },
+    currentRealm: string
+  ): boolean {
+    if (group.isHomeWorld) return true;
+    const mode = getForeignUnitsMode();
+    if (mode === 'disable') return false;
+    if (mode === 'limited' && !isForeignWorldAllowedInLimited(group.world.id)) return false;
+    return group.defenders.some(d => isDefenderAllowedInRealm(d.id, currentRealm));
+  }
+
   private renderWorldTabs() {
     if (!this.tabsContainerEl) return;
     this.tabsContainerEl.innerHTML = '';
     const currentRealm = this.currentOptions?.realm || 'midgard';
     const defendersList = getDefendersListForRealm(currentRealm);
     const groups = getDefendersGroupedByWorld(currentRealm);
+    const unlockedGroups = groups.filter(g => this.isWorldUnlocked(g, currentRealm));
     const mode = getForeignUnitsMode();
 
     this.tabsContainerEl.style.display = 'flex';
 
     // 1. Active Home Realm Tab First!
-    const hostGroup = groups.find(g => g.isHomeWorld);
+    const hostGroup = unlockedGroups.find(g => g.isHomeWorld);
+    const unlockedOtherGroups = unlockedGroups.filter(g => !g.isHomeWorld);
+    if (
+      (unlockedOtherGroups.length === 0 && this.activeWorldFilter === 'all') ||
+      (this.activeWorldFilter !== 'all' && !unlockedGroups.some(g => g.world.id === this.activeWorldFilter))
+    ) {
+      this.activeWorldFilter = hostGroup ? hostGroup.world.id : (currentRealm.toLowerCase().trim() as WorldId);
+    }
+
     if (hostGroup) {
       const world = hostGroup.world;
       const count = hostGroup.defenders.length;
@@ -507,44 +527,43 @@ export class DefenderSelectionModal {
       this.tabsContainerEl.appendChild(hostTab);
     }
 
-    // 2. All Worlds Tab
-    const allTab = document.createElement('button');
-    allTab.className = `cat-tab ${this.activeWorldFilter === 'all' ? 'active' : ''}`;
-    allTab.dataset.world = 'all';
-    const totalAvailableCount = mode === 'allow'
-      ? defendersList.length
-      : defendersList.filter(d => isDefenderAllowedInRealm(d.id, currentRealm)).length;
-    allTab.innerHTML = `
-      <span class="tab-icon">🌐</span>
-      <span class="tab-label">${t('allWorlds') || 'All Worlds'}</span>
-      <span class="tab-count">${totalAvailableCount}</span>
-    `;
-    allTab.addEventListener('click', () => {
-      this.activeWorldFilter = 'all';
-      this.updateActiveTabStyles();
-      SoundManager.getInstance().playClick();
-      this.renderGrid();
-    });
-    this.tabsContainerEl.appendChild(allTab);
+    // 2. All Worlds Tab (only when at least one other world is unlocked)
+    if (unlockedOtherGroups.length > 0) {
+      const allTab = document.createElement('button');
+      allTab.className = `cat-tab ${this.activeWorldFilter === 'all' ? 'active' : ''}`;
+      allTab.dataset.world = 'all';
+      const totalAvailableCount = mode === 'allow'
+        ? defendersList.length
+        : defendersList.filter(d => isDefenderAllowedInRealm(d.id, currentRealm)).length;
+      allTab.innerHTML = `
+        <span class="tab-icon">🌐</span>
+        <span class="tab-label">${t('allWorlds') || 'All Worlds'}</span>
+        <span class="tab-count">${totalAvailableCount}</span>
+      `;
+      allTab.addEventListener('click', () => {
+        this.activeWorldFilter = 'all';
+        this.updateActiveTabStyles();
+        SoundManager.getInstance().playClick();
+        this.renderGrid();
+      });
+      this.tabsContainerEl.appendChild(allTab);
+    }
 
-    // 3. Other World Tabs
-    groups.filter(g => !g.isHomeWorld).forEach(group => {
+    // 3. Other World Tabs (only unlocked worlds)
+    unlockedOtherGroups.forEach(group => {
       const world = group.world;
       const allowedCountInGroup = group.defenders.filter(d => isDefenderAllowedInRealm(d.id, currentRealm)).length;
-      const isLockedTab = allowedCountInGroup === 0;
+      if (allowedCountInGroup === 0) return;
       const btn = document.createElement('button');
-      btn.className = `cat-tab ${isLockedTab ? 'foreign-locked-tab' : ''} ${this.activeWorldFilter === world.id ? 'active' : ''}`;
+      btn.className = `cat-tab ${this.activeWorldFilter === world.id ? 'active' : ''}`;
       btn.dataset.world = world.id;
       btn.style.setProperty('--world-color', world.color);
       const worldName = t(`world_${world.id}`) || world.name;
       btn.innerHTML = `
         <span class="tab-icon">${world.icon}</span>
-        <span class="tab-label">${worldName}${isLockedTab ? ' 🔒' : ''}</span>
-        <span class="tab-count">${isLockedTab ? 0 : allowedCountInGroup}</span>
+        <span class="tab-label">${worldName}</span>
+        <span class="tab-count">${allowedCountInGroup}</span>
       `;
-      if (isLockedTab) {
-        btn.title = t('foreignUnitRestrictedTooltip') || 'Foreign defenders restricted when defending the home world';
-      }
       btn.addEventListener('click', () => {
         this.activeWorldFilter = world.id;
         this.updateActiveTabStyles();
@@ -604,21 +623,37 @@ export class DefenderSelectionModal {
       clearText.textContent = t('clearRoster') || 'Clear';
     }
 
+    if (this.mixPresetsBtn) {
+      this.mixPresetsBtn.title = t('tacticalSquadPresets') || 'Tactical Squad Presets';
+    }
+
+    if (this.closeBtn) {
+      const cancelLabel = t('cancelSelection') || 'Cancel Selection';
+      this.closeBtn.title = cancelLabel;
+      this.closeBtn.setAttribute('aria-label', cancelLabel);
+    }
+
+    if (this.closeWarningBtn) {
+      const closeWarnLabel = t('closeWarning') || 'Close Warning';
+      this.closeWarningBtn.title = closeWarnLabel;
+      this.closeWarningBtn.setAttribute('aria-label', closeWarnLabel);
+    }
+
     if (this.mixPresetsMenu) {
       const bestName = this.mixPresetsMenu.querySelector('[data-preset="best"] .preset-name');
       if (bestName) bestName.textContent = t('presetBestName') || 'Best Possible Mix';
       const bestDesc = this.mixPresetsMenu.querySelector('[data-preset="best"] .preset-desc');
-      if (bestDesc) bestDesc.textContent = t('presetBestDesc') || 'Ideal synergy of Economy, Tank, DPS & CC';
+      if (bestDesc) bestDesc.textContent = t('presetBestDesc') || 'Ideal synergy of Economy, Defense, Ranged Attack & Crowd Control';
 
       const heavyName = this.mixPresetsMenu.querySelector('[data-preset="heavy_attack"] .preset-name');
       if (heavyName) heavyName.textContent = t('presetHeavyName') || 'Heavy Firepower';
       const heavyDesc = this.mixPresetsMenu.querySelector('[data-preset="heavy_attack"] .preset-desc');
-      if (heavyDesc) heavyDesc.textContent = t('presetHeavyDesc') || 'Maximum sustained DPS, fireballs & explosive burst';
+      if (heavyDesc) heavyDesc.textContent = t('presetHeavyDesc') || 'Maximum sustained damage, fireballs & explosive burst';
 
       const fortName = this.mixPresetsMenu.querySelector('[data-preset="fortified"] .preset-name');
       if (fortName) fortName.textContent = t('presetFortifiedName') || 'Fortified Bastion';
       const fortDesc = this.mixPresetsMenu.querySelector('[data-preset="fortified"] .preset-desc');
-      if (fortDesc) fortDesc.textContent = t('presetFortifiedDesc') || 'High HP stone walls, icy slow & paralyzing butter';
+      if (fortDesc) fortDesc.textContent = t('presetFortifiedDesc') || 'High health stone walls, icy slow & paralyzing butter';
 
       const balName = this.mixPresetsMenu.querySelector('[data-preset="balanced"] .preset-name');
       if (balName) balName.textContent = t('presetBalancedName') || 'Balanced Squad';
@@ -925,40 +960,40 @@ export class DefenderSelectionModal {
     }
 
     this.synergyTokensListEl.innerHTML = `
-      <div class="synergy-chip ${report.hasEconomy ? 'is-active' : 'is-inactive'}" title="${report.hasEconomy ? 'Produces realm currency (+25/10s)' : 'Missing currency producer!'}">
+      <div class="synergy-chip ${report.hasEconomy ? 'is-active' : 'is-inactive'}" title="${report.hasEconomy ? (t('synergyEconomyActiveTooltip') || 'Produces realm currency (+25 every 10 seconds)') : (t('synergyEconomyInactiveTooltip') || 'Missing currency producer!')}">
         <span class="chip-icon">🪙</span>
         <span class="chip-label">${t('synergyEconomy') || 'Economy'}</span>
         <span class="chip-check">${report.hasEconomy ? '✓' : '✕'}</span>
       </div>
-      <div class="synergy-chip ${report.hasTank ? 'is-active' : 'is-inactive'}" title="${report.hasTank ? 'Frontline wall/stalling defense' : 'No defensive walls or mines!'}">
+      <div class="synergy-chip ${report.hasTank ? 'is-active' : 'is-inactive'}" title="${report.hasTank ? (t('synergyDefenseActiveTooltip') || 'Frontline defensive wall or trap protection') : (t('synergyDefenseInactiveTooltip') || 'No defensive walls or mines selected!')}">
         <span class="chip-icon">🛡️</span>
         <span class="chip-label">${t('synergyDefense') || 'Defense'}</span>
         <span class="chip-check">${report.hasTank ? '✓' : '✕'}</span>
       </div>
-      <div class="synergy-chip ${report.hasDPS ? 'is-active' : 'is-inactive'}" title="${report.hasDPS ? 'Continuous ranged firepower' : 'No ranged DPS units!'}">
+      <div class="synergy-chip ${report.hasDPS ? 'is-active' : 'is-inactive'}" title="${report.hasDPS ? (t('synergyDPSActiveTooltip') || 'Continuous ranged firepower') : (t('synergyDPSInactiveTooltip') || 'No ranged attack units selected!')}">
         <span class="chip-icon">🏹</span>
-        <span class="chip-label">${t('synergyDPS') || 'Ranged DPS'}</span>
+        <span class="chip-label">${t('synergyDPS') || 'Ranged Attack'}</span>
         <span class="chip-check">${report.hasDPS ? '✓' : '✕'}</span>
       </div>
-      <div class="synergy-chip ${report.hasCrowdControl ? 'is-active' : 'is-inactive'}" title="${report.hasCrowdControl ? 'Slowing frost or butter stun' : 'No crowd control slows/stuns!'}">
+      <div class="synergy-chip ${report.hasCrowdControl ? 'is-active' : 'is-inactive'}" title="${report.hasCrowdControl ? (t('synergyCrowdControlActiveTooltip') || 'Slowing frost or immobilizing pitch') : (t('synergyCrowdControlInactiveTooltip') || 'No crowd control slowing or stunning units!')}">
         <span class="chip-icon">❄️</span>
         <span class="chip-label">${t('synergyCrowdControl') || 'Crowd Control'}</span>
         <span class="chip-check">${report.hasCrowdControl ? '✓' : '✕'}</span>
       </div>
-      <div class="synergy-chip ${report.hasBurstAOE ? 'is-active' : 'is-inactive'}" title="${report.hasBurstAOE ? 'Instant emergency blast demolition' : 'No emergency area clear!'}">
+      <div class="synergy-chip ${report.hasBurstAOE ? 'is-active' : 'is-inactive'}" title="${report.hasBurstAOE ? (t('synergyBurstActiveTooltip') || 'Instant emergency area blast demolition') : (t('synergyBurstInactiveTooltip') || 'No emergency area blast units!')}">
         <span class="chip-icon">💥</span>
         <span class="chip-label">${t('synergyBurst') || 'Area Blast'}</span>
         <span class="chip-check">${report.hasBurstAOE ? '✓' : '✕'}</span>
       </div>
       ${report.hasFlameBoost ? `
-        <div class="synergy-chip is-bonus" title="Torchwood ignites repeater/peashooter projectiles into 2x damage fireballs!">
+        <div class="synergy-chip is-bonus" title="${t('synergyFlameBoostTooltip') || 'Fire Spire ignites passing projectiles into fireballs dealing double damage!'}">
           <span class="chip-icon">🔥</span>
-          <span class="chip-label">${t('synergyFlameBoost') || 'Flame Boost'}</span>
-          <span class="chip-check">2x</span>
+          <span class="chip-label">${t('synergyFlameBoost') || 'Flame Synergy'}</span>
+          <span class="chip-check">✦</span>
         </div>
       ` : ''}
       ${report.hasFreezeCombo ? `
-        <div class="synergy-chip is-bonus" title="Snow Pea slow + Kernel-Pult butter stun combo creates impenetrable crowd control!">
+        <div class="synergy-chip is-bonus" title="${t('synergyFreezeComboTooltip') || 'Frost Sprite slow combined with Dwarven Catapult stun creates impenetrable crowd control!'}">
           <span class="chip-icon">🧊</span>
           <span class="chip-label">${t('synergyFreezeCombo') || 'Freeze & Stun'}</span>
           <span class="chip-check">✦</span>
@@ -1009,20 +1044,23 @@ export class DefenderSelectionModal {
     const isFull = this.selected.length >= this.limit;
     const currentRealm = this.currentOptions?.realm || 'midgard';
 
-    const allGroups = getDefendersGroupedByWorld(currentRealm);
+    const unlockedGroups = getDefendersGroupedByWorld(currentRealm).filter(g =>
+      this.isWorldUnlocked(g, currentRealm)
+    );
     const groupsToRender = this.activeWorldFilter === 'all'
-      ? allGroups
-      : allGroups.filter(g => g.world.id === this.activeWorldFilter);
+      ? unlockedGroups
+      : unlockedGroups.filter(g => g.world.id === this.activeWorldFilter);
     const mode = getForeignUnitsMode();
 
     groupsToRender.forEach(group => {
       const world = group.world;
-      const units = group.defenders;
+      const units = group.defenders.filter(d => isDefenderAllowedInRealm(d.id, currentRealm));
       if (units.length === 0) return;
 
       const isForeignRealm = !group.isHomeWorld;
       const isWorldAllowed = mode === 'allow' || (mode === 'limited' && isForeignWorldAllowedInLimited(world.id));
       const isRealmLocked = isForeignRealm && !isWorldAllowed;
+      if (isRealmLocked) return;
 
       const section = document.createElement('section');
       section.className = `roster-section section-world section-${world.id} ${group.isHomeWorld ? 'is-home-realm' : ''} ${isRealmLocked ? 'is-foreign-restricted' : ''}`;
@@ -1042,7 +1080,6 @@ export class DefenderSelectionModal {
       header.innerHTML = `
         <div class="section-title-group">
           <div class="section-icon-frame" style="border-color:${world.badgeBorder}; background:${world.badgeBg};">
-            <span class="section-rune">${world.rune}</span>
             <span class="section-icon">${world.icon}</span>
           </div>
           <div>
@@ -1122,7 +1159,7 @@ export class DefenderSelectionModal {
             <div class="currency-producer-badge-header">
               <span class="currency-pip-glow">🪙</span>
               <span class="currency-tag-text">${currencyName} ${t('currencyProducer') || 'Producer'}</span>
-              <span class="currency-rate">+25 / 10s</span>
+              <span class="currency-rate">${t('currencyRate') || '+25 / 10 seconds'}</span>
             </div>
           ` : ''}
 
@@ -1134,7 +1171,7 @@ export class DefenderSelectionModal {
               <span class="card-name">${def.name}</span>
               <span class="card-origin" style="color:${world.color}">✦ ${def.origin}</span>
             </div>
-            <div class="card-cost ${isCurrency ? 'currency-producer-cost' : ''}" title="${currencyName} Cost">
+            <div class="card-cost ${isCurrency ? 'currency-producer-cost' : ''}" title="${(t('currencyCostTooltip') || '{currency} Cost').replace('{currency}', currencyName)}">
               <span class="currency-icon">${currency.symbol}</span> ${def.cost}
             </div>
           </div>
