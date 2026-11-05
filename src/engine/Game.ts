@@ -3834,9 +3834,9 @@ export class Game {
       ctx.textBaseline = 'middle';
       ctx.fillText(`⛔ ${t('occupied')}`, cx + cellW / 2, cy + cellH / 2);
     } else {
-      // Valid Placement: Glowing Norse Rune Circle (Cyan for Towers, Green for Plants)
+      // Valid Placement: Glowing Norse Rune Circle (Cyan for Towers/Siege/Ordnance, Green for Plants)
       const defenderInfo = getDefenderInfo(this.selectedUnit, this.realm);
-      const isTower = defenderInfo?.category === 'towers';
+      const isTower = defenderInfo?.category !== 'plants';
       const pulse = (Math.sin(now * 4) + 1) / 2;
 
       const ringColor = isTower

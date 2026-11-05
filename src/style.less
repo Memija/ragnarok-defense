@@ -1552,6 +1552,16 @@ body[data-active-theme="light"],
     background: #e0f2fe !important;
     border-color: #7dd3fc !important;
   }
+  .roster-card[data-category="siege"] .role-pill {
+    color: #c2410c !important;
+    background: #ffedd5 !important;
+    border-color: #fdba74 !important;
+  }
+  .roster-card[data-category="ordnance"] .role-pill {
+    color: #b91c1c !important;
+    background: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+  }
   .roster-card.is-currency-producer .role-pill,
   .roster-card .role-pill.role-pill-currency,
   .role-pill.role-pill-currency {
@@ -2227,6 +2237,16 @@ body[data-active-theme="light"],
                 background: #e0f2fe !important;
                 border-color: rgba(2, 132, 199, 0.4) !important;
                 color: #0369a1 !important;
+              }
+              &.cat-siege {
+                background: #ffedd5 !important;
+                border-color: rgba(234, 88, 12, 0.45) !important;
+                color: #c2410c !important;
+              }
+              &.cat-ordnance {
+                background: #fee2e2 !important;
+                border-color: rgba(220, 38, 38, 0.45) !important;
+                color: #b91c1c !important;
               }
               &.cat-economy {
                 background: #fef3c7 !important;
@@ -4676,7 +4696,7 @@ body[data-active-theme="light"].theme-muspelheim {
           background: linear-gradient(150deg, rgba(16, 26, 42, 0.88) 0%, rgba(9, 15, 25, 0.95) 100%);
           border: 1.5px solid rgba(56, 189, 248, 0.22);
           border-radius: 16px;
-          padding: 16px 14px;
+          padding: 14px 14px 16px 14px;
           cursor: pointer;
           user-select: none;
           text-align: left;
@@ -4730,22 +4750,35 @@ body[data-active-theme="light"].theme-muspelheim {
 
             .card-foreign-lock-tag {
               position: absolute;
-              top: 10px;
-              right: 10px;
+              top: 8px;
+              right: 14px;
+              height: 20px;
+              box-sizing: border-box;
+              max-width: calc(100% - 28px);
               display: inline-flex;
               align-items: center;
               gap: 4px;
-              padding: 2px 8px;
+              padding: 0 8px;
               border-radius: 999px;
               background: rgba(15, 23, 42, 0.92);
               border: 1px solid rgba(239, 68, 68, 0.6);
               color: #fca5a5;
               font-family: 'Cinzel', serif;
-              font-size: 0.68rem;
+              font-size: 0.65rem;
               font-weight: 800;
+              line-height: 1;
               letter-spacing: 0.4px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
               box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
               z-index: 5;
+
+              .lock-text {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              }
             }
           }
 
@@ -4782,6 +4815,9 @@ body[data-active-theme="light"].theme-muspelheim {
             display: flex;
             align-items: center;
             gap: 6px;
+            margin-top: auto;
+            min-height: 28px;
+            box-sizing: border-box;
             padding: 4px 10px;
             border-radius: 8px;
             background: linear-gradient(90deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.08) 100%);
@@ -4796,11 +4832,13 @@ body[data-active-theme="light"].theme-muspelheim {
             .currency-pip-glow {
               font-size: 0.85rem;
               line-height: 1;
+              flex-shrink: 0;
               filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.7));
             }
 
             .currency-tag-text {
               flex: 1;
+              min-width: 0;
               font-family: 'Cinzel', serif;
               white-space: nowrap;
               overflow: hidden;
@@ -4815,6 +4853,8 @@ body[data-active-theme="light"].theme-muspelheim {
               border-radius: 6px;
               border: 1px solid rgba(245, 158, 11, 0.35);
               color: #fef08a;
+              white-space: nowrap;
+              flex-shrink: 0;
             }
           }
 
@@ -4827,15 +4867,17 @@ body[data-active-theme="light"].theme-muspelheim {
 
           .card-check {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 22px;
-            height: 22px;
+            top: 8px;
+            right: 14px;
+            width: 20px;
+            height: 20px;
+            box-sizing: border-box;
             border-radius: 50%;
             background: #38bdf8;
             color: #08111e;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 900;
+            line-height: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -4849,14 +4891,20 @@ body[data-active-theme="light"].theme-muspelheim {
           .card-slot-badge {
             position: absolute;
             top: 8px;
-            left: 10px;
+            left: 14px;
+            height: 20px;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             background: rgba(7, 12, 22, 0.92);
             border: 1px solid rgba(56, 189, 248, 0.65);
             color: #7dd3fc;
             font-family: 'Cinzel', serif;
             font-size: 0.65rem;
             font-weight: 800;
-            padding: 2px 7px;
+            line-height: 1;
+            padding: 0 7px;
             border-radius: 6px;
             z-index: 5;
           }
@@ -4864,8 +4912,9 @@ body[data-active-theme="light"].theme-muspelheim {
           .card-top-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-top: 8px;
+            gap: 10px;
+            margin-top: 20px;
+            min-height: 44px;
 
             .card-icon-frame {
               width: 44px;
@@ -4894,24 +4943,34 @@ body[data-active-theme="light"].theme-muspelheim {
             .card-identity {
               display: flex;
               flex-direction: column;
+              justify-content: center;
+              gap: 2px;
               flex-grow: 1;
               min-width: 0;
 
               .card-name {
                 font-family: 'Cinzel', serif;
-                font-size: 1.02rem;
+                font-size: 0.93rem;
                 font-weight: 800;
                 color: var(--modal-card-name);
-                letter-spacing: 0.4px;
-                line-height: 1.25;
+                letter-spacing: 0.2px;
+                line-height: 1.2;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
                 word-break: break-word;
               }
 
               .card-origin {
                 font-size: 0.72rem;
+                line-height: 1.2;
                 color: var(--modal-card-origin);
                 font-weight: 600;
                 letter-spacing: 0.3px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
               }
             }
 
@@ -4919,19 +4978,25 @@ body[data-active-theme="light"].theme-muspelheim {
               font-family: 'Cinzel', serif;
               font-size: 0.85rem;
               font-weight: 800;
+              line-height: 1;
               color: var(--modal-card-cost-color);
               background: var(--modal-card-cost-bg);
-              padding: 4px 10px;
+              height: 28px;
+              box-sizing: border-box;
+              padding: 0 10px;
               border-radius: 12px;
               border: 1px solid var(--modal-card-cost-border);
               display: inline-flex;
               align-items: center;
+              justify-content: center;
               gap: 4px;
+              white-space: nowrap;
               flex-shrink: 0;
 
               .sun-icon,
               .currency-icon {
                 font-size: 0.78rem;
+                line-height: 1;
               }
             }
           }
@@ -4941,15 +5006,28 @@ body[data-active-theme="light"].theme-muspelheim {
             align-items: center;
             justify-content: space-between;
             gap: 6px;
+            min-height: 24px;
+            height: 24px;
 
             .role-pill {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              height: 24px;
+              box-sizing: border-box;
               font-family: 'Cinzel', serif;
               font-size: 0.68rem;
               font-weight: 700;
-              letter-spacing: 0.5px;
-              padding: 3px 8px;
+              line-height: 1;
+              letter-spacing: 0.4px;
+              padding: 0 8px;
               border-radius: 6px;
               border: 1px solid transparent;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              min-width: 0;
+              flex-shrink: 1;
 
               &.role-pill-currency {
                 border-color: rgba(245, 158, 11, 0.5);
@@ -4959,17 +5037,23 @@ body[data-active-theme="light"].theme-muspelheim {
             }
 
             .category-mini-pill {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              height: 24px;
+              box-sizing: border-box;
               font-size: 0.68rem;
               font-weight: 700;
-              letter-spacing: 0.5px;
-              padding: 3px 8px;
+              line-height: 1;
+              letter-spacing: 0.4px;
+              padding: 0 8px;
               border-radius: 6px;
               background: rgba(255, 255, 255, 0.06);
               border: 1px solid rgba(255, 255, 255, 0.14);
               color: var(--color-text-muted);
-              display: inline-flex;
-              align-items: center;
               gap: 4px;
+              white-space: nowrap;
+              flex-shrink: 0;
 
               &.cat-plants {
                 background: rgba(76, 175, 80, 0.14);
@@ -4983,6 +5067,18 @@ body[data-active-theme="light"].theme-muspelheim {
                 color: #90caf9;
               }
 
+              &.cat-siege {
+                background: rgba(249, 115, 22, 0.16);
+                border-color: rgba(249, 115, 22, 0.4);
+                color: #fdba74;
+              }
+
+              &.cat-ordnance {
+                background: rgba(239, 68, 68, 0.16);
+                border-color: rgba(239, 68, 68, 0.4);
+                color: #fca5a5;
+              }
+
               &.cat-economy {
                 background: rgba(245, 158, 11, 0.18);
                 border-color: rgba(245, 158, 11, 0.5);
@@ -4994,6 +5090,7 @@ body[data-active-theme="light"].theme-muspelheim {
           }
 
           .card-desc {
+            flex: 1 1 auto;
             font-size: 0.84rem;
             color: var(--modal-card-desc);
             line-height: 1.45;
@@ -5271,6 +5368,8 @@ body[data-active-theme="light"].theme-muspelheim {
                   display: flex;
                   flex-direction: column;
                   gap: 2px;
+                  flex: 1;
+                  min-width: 0;
 
                   .preset-name {
                     font-family: 'Cinzel', serif;
@@ -5296,12 +5395,14 @@ body[data-active-theme="light"].theme-muspelheim {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
+                    gap: 8px;
 
                     &::after {
                       content: '✓';
                       font-size: 0.95rem;
                       font-weight: 800;
                       color: #38bdf8;
+                      flex-shrink: 0;
                     }
                   }
 

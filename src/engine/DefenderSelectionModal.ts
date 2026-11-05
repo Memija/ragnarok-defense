@@ -1012,11 +1012,13 @@ export class DefenderSelectionModal {
       const currentRealm = this.currentOptions?.realm || 'midgard';
       if (unitId && (DEFENDERS_MAP[unitId] || unitId === 'sunflower' || unitId.startsWith('sunflower_'))) {
         const unit = getDefenderInfo(unitId, currentRealm) || DEFENDERS_MAP[unitId];
-        const categoryLabel = t(`cat_${unit.category}_title`) || (unit.category === 'plants' ? t('catPlants') : t('catTowers'));
+        const isCurrency = isCurrencyProducer(unit);
+        const categoryLabel = isCurrency
+          ? (t('cat_economy_title') || 'Economy')
+          : (t(`cat_${unit.category}_title`) || unit.categoryName || (unit.category === 'plants' ? t('catPlants') : t('catTowers')));
         const worldMeta = getWorldMeta(unit.world);
         const worldName = t(`world_${worldMeta.id}`) || worldMeta.name;
 
-        const isCurrency = isCurrencyProducer(unit);
         token.className = `slot-token filled ${isCurrency ? 'is-currency-producer' : ''}`;
         token.title = `${unit.name} (${worldName} · ${categoryLabel}) — ${t('clickToRemove')}`;
         token.style.borderColor = isCurrency ? '#ffd700' : worldMeta.badgeBorder;
@@ -1130,6 +1132,15 @@ export class DefenderSelectionModal {
         const catName = isCurrency
           ? (t('cat_economy_title') || 'Economy')
           : (t(`cat_${catKey}_title`) || catMeta?.name || def.categoryName);
+        const catEmoji = isCurrency
+          ? '🪙'
+          : catKey === 'plants'
+            ? '🌿'
+            : catKey === 'siege'
+              ? '⚙️'
+              : catKey === 'ordnance'
+                ? '💣'
+                : '🏰';
 
         const card = document.createElement('div');
         card.className = `roster-card ${isCurrency ? 'is-currency-producer' : ''} ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled-cap' : ''} ${isForeignLocked ? 'foreign-locked' : ''} card-world-${world.id}`;
@@ -1155,21 +1166,12 @@ export class DefenderSelectionModal {
           ${isSelected ? `<span class="card-slot-badge">#${slotIdx}</span>` : ''}
           <div class="card-check">✓</div>
 
-          ${isCurrency ? `
-            <div class="currency-producer-badge-header">
-              <span class="currency-pip-glow">🪙</span>
-              <span class="currency-tag-text">${currencyName} ${t('currencyProducer') || 'Producer'}</span>
-              <span class="currency-rate">${t('currencyRate') || '+25 / 10 seconds'}</span>
-            </div>
-          ` : ''}
-
           <div class="card-top-row">
             <div class="card-icon-frame" style="border-color:${isCurrency ? '#ffd700' : world.badgeBorder}">
               <span class="card-icon">${def.icon}</span>
             </div>
             <div class="card-identity">
               <span class="card-name">${def.name}</span>
-              <span class="card-origin" style="color:${world.color}">✦ ${def.origin}</span>
             </div>
             <div class="card-cost ${isCurrency ? 'currency-producer-cost' : ''}" title="${(t('currencyCostTooltip') || '{currency} Cost').replace('{currency}', currencyName)}">
               <span class="currency-icon">${currency.symbol}</span> ${def.cost}
@@ -1181,11 +1183,19 @@ export class DefenderSelectionModal {
               ${def.role}
             </span>
             <span class="category-mini-pill ${isCurrency ? 'cat-economy' : `cat-${catKey}`}">
-              ${isCurrency ? '🪙' : (catKey === 'plants' ? '🌿' : '🏰')} ${catName}
+              ${catEmoji} ${catName}
             </span>
           </div>
 
           <p class="card-desc">${def.desc}</p>
+
+          ${isCurrency ? `
+            <div class="currency-producer-badge-header">
+              <span class="currency-pip-glow">🪙</span>
+              <span class="currency-tag-text">${currencyName} ${t('currencyProducer') || 'Producer'}</span>
+              <span class="currency-rate">${t('currencyRate') || '+25 / 10 seconds'}</span>
+            </div>
+          ` : ''}
         `;
 
         card.addEventListener('click', () => {

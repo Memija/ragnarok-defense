@@ -2,7 +2,7 @@ import { t } from '../i18n';
 import { DEFENDER_ICONS } from './DefenderIcons';
 import { getSlotLimitForLevel, getForeignUnitsMode, isForeignWorldAllowedInLimited } from './GameConfig';
 
-export type DefenderCategory = 'plants' | 'towers';
+export type DefenderCategory = 'plants' | 'towers' | 'siege' | 'ordnance';
 
 export type WorldId =
   | 'svartalfheim'
@@ -183,10 +183,28 @@ export const CATEGORIES: Record<DefenderCategory, CategoryMeta> = {
     id: 'towers',
     name: 'Towers',
     icon: DEFENDER_ICONS.cat_towers,
-    subtitle: 'Ancient runic fortifications, artillery, spires, and bastions',
+    subtitle: 'Ancient runic fortifications, spires, and bastions',
     color: '#38bdf8',
     badgeBg: 'rgba(56, 189, 248, 0.18)',
     badgeBorder: 'rgba(56, 189, 248, 0.45)'
+  },
+  siege: {
+    id: 'siege',
+    name: 'Siege',
+    icon: DEFENDER_ICONS.kernelpult,
+    subtitle: 'Heavy dwarven artillery and mechanical war engines',
+    color: '#fb923c',
+    badgeBg: 'rgba(251, 146, 60, 0.18)',
+    badgeBorder: 'rgba(251, 146, 60, 0.45)'
+  },
+  ordnance: {
+    id: 'ordnance',
+    name: 'Ordnance',
+    icon: DEFENDER_ICONS.cherrybomb,
+    subtitle: 'Runic mines, magma explosives, and thermal charges',
+    color: '#f87171',
+    badgeBg: 'rgba(248, 113, 113, 0.18)',
+    badgeBorder: 'rgba(248, 113, 113, 0.45)'
   }
 };
 
@@ -444,12 +462,12 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
   {
     id: 'potatomine',
     name: 'Rune Mine',
-    category: 'towers',
-    categoryName: 'Tower',
+    category: 'ordnance',
+    categoryName: 'Ordnance',
     cost: 25,
     icon: DEFENDER_ICONS.potatomine,
-    desc: 'Subterranean runic ward monolith tower. Takes 14 seconds to arm, then detonates for 1800 contact damage.',
-    tooltip: 'Rune Mine: Low-cost runic ward tower. Arms underground and eliminates the first enemy that steps on it.',
+    desc: 'Subterranean runic ward mine. Takes 14 seconds to arm, then detonates for 1800 contact damage.',
+    tooltip: 'Rune Mine: Low-cost runic ward mine. Arms underground and eliminates the first enemy that steps on it.',
     role: 'Ambush Ward',
     origin: 'Svartalfheim',
     world: 'svartalfheim'
@@ -457,12 +475,12 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
   {
     id: 'kernelpult',
     name: 'Dwarven Catapult',
-    category: 'towers',
-    categoryName: 'Tower',
+    category: 'siege',
+    categoryName: 'Siege',
     cost: 100,
     icon: DEFENDER_ICONS.kernelpult,
-    desc: 'Artisan dwarven siege catapult tower that lobs runic boulders and adhesive pitch flasks that immobilize foes.',
-    tooltip: 'Dwarven Catapult: Artillery siege tower that lobs heavy boulders and paralyzing adhesive pitch.',
+    desc: 'Artisan dwarven siege catapult that lobs runic boulders and adhesive pitch flasks that immobilize foes.',
+    tooltip: 'Dwarven Catapult: Artillery siege engine that lobs heavy boulders and paralyzing adhesive pitch.',
     role: 'Siege Artillery',
     origin: 'Svartalfheim',
     world: 'svartalfheim'
@@ -470,12 +488,12 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
   {
     id: 'cherrybomb',
     name: 'Forge Blaster',
-    category: 'towers',
-    categoryName: 'Tower',
+    category: 'ordnance',
+    categoryName: 'Ordnance',
     cost: 150,
     icon: DEFENDER_ICONS.cherrybomb,
-    desc: 'Heavy dwarven magma blast ordnance turret that detonates instantly in a devastating 3x3 radius.',
-    tooltip: 'Forge Blaster: Instant area-of-effect blast ordnance turret that obliterates tight enemy clusters.',
+    desc: 'Heavy dwarven magma blast ordnance charge that detonates instantly in a devastating 3x3 radius.',
+    tooltip: 'Forge Blaster: Instant area-of-effect blast ordnance charge that obliterates tight enemy clusters.',
     role: 'Area Demolition',
     origin: 'Svartalfheim',
     world: 'svartalfheim'
@@ -483,8 +501,8 @@ export const DEFENDERS_LIST: DefenderInfo[] = [
   {
     id: 'jalapeno',
     name: 'Forge Dragonfire',
-    category: 'towers',
-    categoryName: 'Tower',
+    category: 'ordnance',
+    categoryName: 'Ordnance',
     cost: 125,
     icon: DEFENDER_ICONS.jalapeno,
     desc: 'Unleashes Nidavellir blast furnace dragonfire, incinerating all invaders across an entire lane for 1000 damage.',
