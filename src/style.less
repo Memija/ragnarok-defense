@@ -1682,8 +1682,8 @@ body[data-active-theme="light"],
       border: 2px solid rgba(2, 132, 199, 0.5) !important;
       box-shadow: 0 25px 70px rgba(15, 23, 42, 0.18), 0 0 25px rgba(56, 189, 248, 0.2) !important;
       color: #0f172a !important;
-      height: 90vh !important;
-      max-height: 90vh !important;
+      height: 95vh !important;
+      max-height: 95vh !important;
       overflow: hidden !important;
       display: flex !important;
       flex-direction: column !important;
@@ -4010,14 +4010,14 @@ body[data-active-theme="light"].theme-muspelheim {
 
     .defender-modal-content {
       position: relative;
-      width: 95%;
-      max-width: 1040px;
-      height: 90vh;
-      max-height: 90vh;
+      width: 96vw;
+      max-width: 1180px;
+      height: 95vh;
+      max-height: 95vh;
       background: var(--modal-bg);
       border: 2px solid var(--frost-ice-border);
-      border-radius: 22px;
-      padding: 24px 30px 18px 30px;
+      border-radius: 20px;
+      padding: 12px 22px 12px 22px;
       box-shadow: var(--frost-modal-shadow);
       z-index: 10;
       color: var(--text-color);
@@ -4025,7 +4025,7 @@ body[data-active-theme="light"].theme-muspelheim {
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
       box-sizing: border-box;
 
       .modal-header {
@@ -4044,24 +4044,24 @@ body[data-active-theme="light"].theme-muspelheim {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; height: 3px;
-        border-radius: 22px 22px 0 0;
+        border-radius: 20px 20px 0 0;
         background: linear-gradient(90deg, transparent, var(--frost-ice-primary), transparent);
       }
 
       .close-btn {
         position: absolute;
-        top: 14px;
-        right: 18px;
+        top: 8px;
+        right: 14px;
         z-index: 50;
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
         background: transparent;
         border: none;
         color: var(--close-btn-color);
-        font-size: 2rem;
+        font-size: 1.7rem;
         line-height: 1;
         cursor: pointer;
         transition: all 0.25s ease;
@@ -4076,65 +4076,42 @@ body[data-active-theme="light"].theme-muspelheim {
       }
 
       .modal-header {
-        text-align: center;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        padding-right: 36px;
         margin-bottom: 0;
 
-        .runic-tag {
-          font-family: 'Cinzel', serif;
-          font-size: 0.88rem;
-          font-weight: 700;
-          letter-spacing: 8px;
-          color: var(--frost-rune-color);
-          opacity: 0.92;
-          margin-bottom: 4px;
-          text-shadow: 0 0 12px var(--frost-ice-glow);
+        .runic-tag,
+        .gold-divider {
+          display: none;
         }
 
         .logo {
           display: flex;
           align-items: center;
-          justify-content: center;
 
           .logo-title {
             font-family: 'Cinzel', serif;
-            font-size: 1.85rem;
+            font-size: 1.25rem;
             font-weight: 900;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
+            line-height: 1.15;
             background: linear-gradient(135deg, #ffffff 0%, #bae6fd 55%, #38bdf8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.45));
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.4));
           }
         }
 
         .selection-subtitle {
-          margin: 6px 0 0 0;
-          font-size: 0.92rem;
-          color: #cbd5e1;
-          opacity: 0.9;
-          letter-spacing: 0.3px;
-        }
-
-        .gold-divider {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-top: 10px;
+          margin: 0;
           font-size: 0.8rem;
-          color: var(--frost-ice-border);
-          letter-spacing: 5px;
+          color: #cbd5e1;
           opacity: 0.85;
-
-          &::before, &::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--frost-ice-border), transparent);
-          }
-          span {
-            padding: 0 12px;
-            text-shadow: 0 0 8px var(--frost-ice-glow);
-          }
+          letter-spacing: 0.2px;
         }
       }
 
@@ -4144,31 +4121,32 @@ body[data-active-theme="light"].theme-muspelheim {
         flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
-        gap: 14px;
+        gap: 6px 12px;
         background: var(--frost-bg-panel);
         border: 1.5px solid rgba(56, 189, 248, 0.25);
-        border-radius: 16px;
-        padding: 12px 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(56, 189, 248, 0.12);
+        border-radius: 12px;
+        padding: 7px 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 12px rgba(56, 189, 248, 0.1);
 
         .capacity-info {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
+          flex-wrap: wrap;
 
           .capacity-label {
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.84rem;
             color: #94a3b8;
           }
 
           .capacity-value {
             font-family: 'Cinzel', serif;
             font-weight: 800;
-            font-size: 1.35rem;
+            font-size: 1.1rem;
             color: #38bdf8;
-            text-shadow: 0 0 12px var(--frost-ice-glow);
-            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px var(--frost-ice-glow);
+            letter-spacing: 0.4px;
           }
 
           .capacity-level-badge {
@@ -4176,23 +4154,23 @@ body[data-active-theme="light"].theme-muspelheim {
             border: 1px solid rgba(56, 189, 248, 0.45);
             color: #bae6fd;
             font-family: 'Cinzel', serif;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
-            letter-spacing: 0.6px;
+            padding: 2px 9px;
+            border-radius: 16px;
+            letter-spacing: 0.5px;
           }
 
           .foreign-units-rule-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 11px;
-            border-radius: 20px;
+            gap: 5px;
+            padding: 2px 9px;
+            border-radius: 16px;
             font-family: 'Cinzel', serif;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.3px;
             cursor: pointer;
             user-select: none;
             transition: all 0.2s ease;
@@ -4241,26 +4219,26 @@ body[data-active-theme="light"].theme-muspelheim {
         .equipped-slots {
           display: flex;
           align-items: center;
-          gap: 9px;
+          gap: 6px;
           flex-wrap: wrap;
 
           .slot-token {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
             background: rgba(8, 14, 24, 0.7);
             border: 1.5px dashed rgba(56, 189, 248, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.35rem;
+            font-size: 1.1rem;
             position: relative;
             cursor: default;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
             .token-icon {
-              width: 28px;
-              height: 28px;
+              width: 22px;
+              height: 22px;
               display: flex;
               align-items: center;
               justify-content: center;
@@ -4271,12 +4249,12 @@ body[data-active-theme="light"].theme-muspelheim {
               border-style: solid;
               border-color: #38bdf8;
               background: linear-gradient(135deg, rgba(14, 165, 233, 0.24) 0%, rgba(2, 132, 199, 0.4) 100%);
-              box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+              box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
 
               &:hover {
-                transform: scale(1.12);
+                transform: scale(1.1);
                 border-color: #f87171;
-                box-shadow: 0 0 16px rgba(248, 113, 113, 0.65);
+                box-shadow: 0 0 14px rgba(248, 113, 113, 0.65);
 
                 .token-remove-hint {
                   opacity: 1;
@@ -4286,13 +4264,13 @@ body[data-active-theme="light"].theme-muspelheim {
 
             &.is-currency-producer {
               border-color: #f59e0b !important;
-              box-shadow: 0 0 14px rgba(245, 158, 11, 0.45);
+              box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
 
               .token-coin-pip {
                 position: absolute;
-                bottom: -4px;
-                left: -4px;
-                font-size: 0.7rem;
+                bottom: -3px;
+                left: -3px;
+                font-size: 0.62rem;
                 line-height: 1;
                 filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.7));
                 pointer-events: none;
@@ -4303,10 +4281,10 @@ body[data-active-theme="light"].theme-muspelheim {
             .token-remove-hint {
               position: absolute;
               inset: 0;
-              border-radius: 12px;
+              border-radius: 9px;
               background: rgba(239, 68, 68, 0.85);
               color: white;
-              font-size: 1rem;
+              font-size: 0.88rem;
               font-weight: 800;
               display: flex;
               align-items: center;
@@ -4317,16 +4295,16 @@ body[data-active-theme="light"].theme-muspelheim {
 
             .slot-num {
               position: absolute;
-              bottom: -4px;
-              right: -4px;
+              bottom: -3px;
+              right: -3px;
               background: #070e1a;
               border: 1px solid rgba(56, 189, 248, 0.6);
               color: #bae6fd;
               font-family: 'Cinzel', serif;
-              font-size: 0.62rem;
+              font-size: 0.56rem;
               font-weight: 800;
-              width: 17px;
-              height: 17px;
+              width: 15px;
+              height: 15px;
               border-radius: 50%;
               display: flex;
               align-items: center;
@@ -4341,25 +4319,25 @@ body[data-active-theme="light"].theme-muspelheim {
           align-items: center;
           justify-content: space-between;
           width: 100%;
-          gap: 12px;
-          padding-top: 10px;
-          margin-top: 2px;
+          gap: 6px 10px;
+          padding-top: 6px;
+          margin-top: 0;
           border-top: 1px dashed rgba(56, 189, 248, 0.22);
           flex-wrap: wrap;
 
           .synergy-title-group {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 6px;
             font-family: 'Cinzel', serif;
-            font-size: 0.82rem;
+            font-size: 0.74rem;
             font-weight: 700;
             color: #7dd3fc;
-            letter-spacing: 0.6px;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
 
             .synergy-rune {
-              font-size: 1rem;
+              font-size: 0.88rem;
               color: #38bdf8;
               filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.7));
             }
@@ -4368,12 +4346,12 @@ body[data-active-theme="light"].theme-muspelheim {
               background: rgba(14, 165, 233, 0.18);
               border: 1px solid rgba(56, 189, 248, 0.5);
               color: #bae6fd;
-              padding: 2px 8px;
-              border-radius: 10px;
+              padding: 1px 7px;
+              border-radius: 8px;
               font-family: 'Cinzel', serif;
-              font-size: 0.74rem;
+              font-size: 0.68rem;
               font-weight: 800;
-              letter-spacing: 0.4px;
+              letter-spacing: 0.3px;
               transition: all 0.25s ease;
 
               &.is-perfect {
@@ -4388,26 +4366,26 @@ body[data-active-theme="light"].theme-muspelheim {
           .synergy-tokens-list {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 5px;
             flex-wrap: wrap;
 
             .synergy-chip {
               display: inline-flex;
               align-items: center;
-              gap: 5px;
-              padding: 4px 10px;
-              border-radius: 9px;
-              font-size: 0.74rem;
+              gap: 4px;
+              padding: 2px 8px;
+              border-radius: 7px;
+              font-size: 0.68rem;
               font-weight: 600;
               user-select: none;
               transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
               .chip-icon {
-                font-size: 0.85rem;
+                font-size: 0.78rem;
               }
 
               .chip-check {
-                font-size: 0.7rem;
+                font-size: 0.65rem;
                 font-weight: 800;
               }
 
@@ -4415,7 +4393,7 @@ body[data-active-theme="light"].theme-muspelheim {
                 background: rgba(14, 165, 233, 0.16);
                 border: 1px solid rgba(56, 189, 248, 0.48);
                 color: #bae6fd;
-                box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+                box-shadow: 0 0 8px rgba(56, 189, 248, 0.22);
 
                 .chip-check {
                   color: #38bdf8;
@@ -4437,7 +4415,7 @@ body[data-active-theme="light"].theme-muspelheim {
                 background: rgba(245, 158, 11, 0.18);
                 border: 1px solid rgba(245, 158, 11, 0.6);
                 color: #fde047;
-                box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+                box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
               }
             }
           }
@@ -4447,39 +4425,50 @@ body[data-active-theme="light"].theme-muspelheim {
       /* Category Filter Tabs */
       .category-tabs {
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        padding: 4px 0;
+        gap: 6px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 2px 0 6px 0;
         border-bottom: 1px solid var(--modal-section-divider);
-        padding-bottom: 12px;
+        scrollbar-width: thin;
+
+        &::-webkit-scrollbar {
+          height: 4px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background: var(--frost-ice-border);
+          border-radius: 2px;
+        }
 
         .cat-tab {
           background: rgba(14, 22, 36, 0.7);
           border: 1px solid rgba(56, 189, 248, 0.22);
           color: #94a3b8;
           font-family: 'Cinzel', serif;
-          font-size: 0.82rem;
+          font-size: 0.76rem;
           font-weight: 700;
-          letter-spacing: 0.8px;
-          padding: 8px 16px;
-          border-radius: 12px;
+          letter-spacing: 0.5px;
+          padding: 5px 11px;
+          border-radius: 10px;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
+          white-space: nowrap;
+          flex-shrink: 0;
           transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 
           .tab-icon {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
           }
 
           .tab-count {
             background: rgba(4, 8, 16, 0.6);
             border: 1px solid rgba(56, 189, 248, 0.25);
-            font-size: 0.72rem;
+            font-size: 0.66rem;
             font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
             color: #7dd3fc;
           }
 
@@ -4541,7 +4530,7 @@ body[data-active-theme="light"].theme-muspelheim {
         padding-right: 6px;
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 12px;
 
         &::-webkit-scrollbar {
           width: 6px;
@@ -4558,14 +4547,14 @@ body[data-active-theme="light"].theme-muspelheim {
         .roster-section {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 8px;
           transition: all 0.25s ease;
 
           &.is-home-realm {
             background: radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.06), transparent 70%);
             border: 1px solid rgba(56, 189, 248, 0.35);
-            border-radius: 18px;
-            padding: 16px;
+            border-radius: 14px;
+            padding: 10px 12px;
             box-shadow: inset 0 0 20px rgba(56, 189, 248, 0.04);
           }
 
@@ -4579,28 +4568,28 @@ body[data-active-theme="light"].theme-muspelheim {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 8px;
+            padding-bottom: 5px;
             border-bottom: 1px solid var(--modal-section-divider);
 
             .section-title-group {
               display: flex;
               align-items: center;
-              gap: 12px;
+              gap: 9px;
 
               .section-icon-frame {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 6px;
-                padding: 6px 10px;
-                border-radius: 12px;
+                gap: 5px;
+                padding: 4px 7px;
+                border-radius: 9px;
                 border: 1.5px solid rgba(56, 189, 248, 0.25);
                 background: rgba(8, 14, 24, 0.6);
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 
                 .section-rune {
                   font-family: 'Cinzel', serif;
-                  font-size: 1.25rem;
+                  font-size: 1.05rem;
                   font-weight: 800;
                   color: var(--world-accent, #38bdf8);
                   text-shadow: 0 0 10px currentColor;
@@ -4608,7 +4597,7 @@ body[data-active-theme="light"].theme-muspelheim {
                 }
 
                 .section-icon {
-                  font-size: 1.3rem;
+                  font-size: 1.05rem;
                   line-height: 1;
                   display: flex;
                   align-items: center;
@@ -4619,15 +4608,15 @@ body[data-active-theme="light"].theme-muspelheim {
               .section-title-line {
                 display: flex;
                 align-items: center;
-                gap: 10px;
+                gap: 8px;
                 flex-wrap: wrap;
 
                 .section-home-badge {
                   font-family: 'Cinzel', serif;
-                  font-size: 0.72rem;
+                  font-size: 0.68rem;
                   font-weight: 700;
                   letter-spacing: 0.4px;
-                  padding: 3px 8px;
+                  padding: 2px 7px;
                   border-radius: 6px;
                   background: rgba(56, 189, 248, 0.14);
                   border: 1px solid rgba(56, 189, 248, 0.45);
@@ -4637,10 +4626,10 @@ body[data-active-theme="light"].theme-muspelheim {
 
                 .section-foreign-badge {
                   font-family: 'Cinzel', serif;
-                  font-size: 0.72rem;
+                  font-size: 0.68rem;
                   font-weight: 700;
                   letter-spacing: 0.4px;
-                  padding: 3px 8px;
+                  padding: 2px 7px;
                   border-radius: 6px;
                   background: rgba(239, 68, 68, 0.14);
                   border: 1px solid rgba(239, 68, 68, 0.45);
@@ -4652,28 +4641,28 @@ body[data-active-theme="light"].theme-muspelheim {
               .section-title {
                 margin: 0;
                 font-family: 'Cinzel', serif;
-                font-size: 1.25rem;
+                font-size: 1.02rem;
                 font-weight: 800;
                 color: #f0f9ff;
-                letter-spacing: 0.6px;
+                letter-spacing: 0.5px;
               }
 
               .section-subtitle {
-                margin: 2px 0 0 0;
-                font-size: 0.82rem;
+                margin: 1px 0 0 0;
+                font-size: 0.74rem;
                 color: #94a3b8;
-                letter-spacing: 0.3px;
+                letter-spacing: 0.2px;
               }
             }
 
             .section-badge {
               font-family: 'Cinzel', serif;
-              font-size: 0.74rem;
+              font-size: 0.7rem;
               font-weight: 700;
-              padding: 3px 10px;
-              border-radius: 12px;
+              padding: 2px 9px;
+              border-radius: 10px;
               border: 1px solid transparent;
-              letter-spacing: 0.5px;
+              letter-spacing: 0.4px;
 
               &.is-locked-badge {
                 border-color: rgba(239, 68, 68, 0.35) !important;
@@ -4685,8 +4674,8 @@ body[data-active-theme="light"].theme-muspelheim {
 
           .section-cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+            gap: 10px;
           }
         }
 
@@ -4695,18 +4684,18 @@ body[data-active-theme="light"].theme-muspelheim {
           position: relative;
           background: linear-gradient(150deg, rgba(16, 26, 42, 0.88) 0%, rgba(9, 15, 25, 0.95) 100%);
           border: 1.5px solid rgba(56, 189, 248, 0.22);
-          border-radius: 16px;
-          padding: 14px 14px 16px 14px;
+          border-radius: 14px;
+          padding: 10px 12px 12px 12px;
           cursor: pointer;
           user-select: none;
           text-align: left;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 7px;
           transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
           backdrop-filter: blur(6px);
           outline: none;
-          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
           &:hover:not(.disabled-cap) {
             background: linear-gradient(150deg, rgba(22, 36, 58, 0.92) 0%, rgba(12, 20, 34, 0.96) 100%);
@@ -4750,21 +4739,21 @@ body[data-active-theme="light"].theme-muspelheim {
 
             .card-foreign-lock-tag {
               position: absolute;
-              top: 8px;
-              right: 14px;
-              height: 20px;
+              top: 6px;
+              right: 12px;
+              height: 18px;
               box-sizing: border-box;
-              max-width: calc(100% - 28px);
+              max-width: calc(100% - 24px);
               display: inline-flex;
               align-items: center;
               gap: 4px;
-              padding: 0 8px;
+              padding: 0 7px;
               border-radius: 999px;
               background: rgba(15, 23, 42, 0.92);
               border: 1px solid rgba(239, 68, 68, 0.6);
               color: #fca5a5;
               font-family: 'Cinzel', serif;
-              font-size: 0.65rem;
+              font-size: 0.62rem;
               font-weight: 800;
               line-height: 1;
               letter-spacing: 0.4px;
@@ -4814,23 +4803,23 @@ body[data-active-theme="light"].theme-muspelheim {
           .currency-producer-badge-header {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             margin-top: auto;
-            min-height: 28px;
+            min-height: 24px;
             box-sizing: border-box;
-            padding: 4px 10px;
-            border-radius: 8px;
+            padding: 3px 8px;
+            border-radius: 7px;
             background: linear-gradient(90deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.08) 100%);
             border: 1px solid rgba(245, 158, 11, 0.45);
             font-family: 'Cinzel', serif;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 700;
             color: #fde047;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             box-shadow: inset 0 0 8px rgba(245, 158, 11, 0.1);
 
             .currency-pip-glow {
-              font-size: 0.85rem;
+              font-size: 0.8rem;
               line-height: 1;
               flex-shrink: 0;
               filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.7));
@@ -4846,11 +4835,11 @@ body[data-active-theme="light"].theme-muspelheim {
             }
 
             .currency-rate {
-              font-size: 0.68rem;
+              font-size: 0.64rem;
               font-weight: 800;
               background: rgba(0, 0, 0, 0.45);
-              padding: 2px 6px;
-              border-radius: 6px;
+              padding: 1px 5px;
+              border-radius: 5px;
               border: 1px solid rgba(245, 158, 11, 0.35);
               color: #fef08a;
               white-space: nowrap;
@@ -4867,15 +4856,15 @@ body[data-active-theme="light"].theme-muspelheim {
 
           .card-check {
             position: absolute;
-            top: 8px;
-            right: 14px;
-            width: 20px;
-            height: 20px;
+            top: 6px;
+            right: 12px;
+            width: 18px;
+            height: 18px;
             box-sizing: border-box;
             border-radius: 50%;
             background: #38bdf8;
             color: #08111e;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 900;
             line-height: 1;
             display: flex;
@@ -4890,9 +4879,9 @@ body[data-active-theme="light"].theme-muspelheim {
 
           .card-slot-badge {
             position: absolute;
-            top: 8px;
-            left: 14px;
-            height: 20px;
+            top: 6px;
+            left: 12px;
+            height: 18px;
             box-sizing: border-box;
             display: inline-flex;
             align-items: center;
@@ -4901,42 +4890,44 @@ body[data-active-theme="light"].theme-muspelheim {
             border: 1px solid rgba(56, 189, 248, 0.65);
             color: #7dd3fc;
             font-family: 'Cinzel', serif;
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             font-weight: 800;
             line-height: 1;
-            padding: 0 7px;
-            border-radius: 6px;
+            padding: 0 6px;
+            border-radius: 5px;
             z-index: 5;
           }
 
           .card-top-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-            min-height: 44px;
+            gap: 9px;
+            margin-top: 16px;
+            min-height: 46px;
 
             .card-icon-frame {
-              width: 44px;
-              height: 44px;
+              width: 46px;
+              height: 46px;
               border-radius: 12px;
-              background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(0, 0, 0, 0.45) 100%);
-              border: 1.5px solid rgba(56, 189, 248, 0.25);
+              background: radial-gradient(circle at 50% 35%, var(--world-bg, rgba(56, 189, 248, 0.18)) 0%, rgba(6, 11, 20, 0.78) 100%);
+              border: 1.5px solid var(--world-border, rgba(56, 189, 248, 0.38));
+              box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), 0 3px 10px rgba(0, 0, 0, 0.45);
               display: flex;
               align-items: center;
               justify-content: center;
               flex-shrink: 0;
+              transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 
               .card-icon {
-                width: 32px;
-                height: 32px;
+                width: 38px;
+                height: 38px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 font-size: 28px;
                 line-height: 1;
-                filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
-                transition: transform 0.2s ease;
+                filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
+                transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
               }
             }
 
@@ -4950,11 +4941,11 @@ body[data-active-theme="light"].theme-muspelheim {
 
               .card-name {
                 font-family: 'Cinzel', serif;
-                font-size: 0.93rem;
+                font-size: 0.88rem;
                 font-weight: 800;
                 color: var(--modal-card-name);
                 letter-spacing: 0.2px;
-                line-height: 1.2;
+                line-height: 1.18;
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
@@ -4963,7 +4954,7 @@ body[data-active-theme="light"].theme-muspelheim {
               }
 
               .card-origin {
-                font-size: 0.72rem;
+                font-size: 0.7rem;
                 line-height: 1.2;
                 color: var(--modal-card-origin);
                 font-weight: 600;
@@ -4976,15 +4967,15 @@ body[data-active-theme="light"].theme-muspelheim {
 
             .card-cost {
               font-family: 'Cinzel', serif;
-              font-size: 0.85rem;
+              font-size: 0.8rem;
               font-weight: 800;
               line-height: 1;
               color: var(--modal-card-cost-color);
               background: var(--modal-card-cost-bg);
-              height: 28px;
+              height: 25px;
               box-sizing: border-box;
-              padding: 0 10px;
-              border-radius: 12px;
+              padding: 0 8px;
+              border-radius: 10px;
               border: 1px solid var(--modal-card-cost-border);
               display: inline-flex;
               align-items: center;
@@ -4995,7 +4986,7 @@ body[data-active-theme="light"].theme-muspelheim {
 
               .sun-icon,
               .currency-icon {
-                font-size: 0.78rem;
+                font-size: 0.74rem;
                 line-height: 1;
               }
             }
@@ -5006,22 +4997,22 @@ body[data-active-theme="light"].theme-muspelheim {
             align-items: center;
             justify-content: space-between;
             gap: 6px;
-            min-height: 24px;
-            height: 24px;
+            min-height: 22px;
+            height: 22px;
 
             .role-pill {
               display: inline-flex;
               align-items: center;
               justify-content: center;
-              height: 24px;
+              height: 22px;
               box-sizing: border-box;
               font-family: 'Cinzel', serif;
-              font-size: 0.68rem;
+              font-size: 0.65rem;
               font-weight: 700;
               line-height: 1;
-              letter-spacing: 0.4px;
-              padding: 0 8px;
-              border-radius: 6px;
+              letter-spacing: 0.3px;
+              padding: 0 7px;
+              border-radius: 5px;
               border: 1px solid transparent;
               white-space: nowrap;
               overflow: hidden;
@@ -5040,14 +5031,14 @@ body[data-active-theme="light"].theme-muspelheim {
               display: inline-flex;
               align-items: center;
               justify-content: center;
-              height: 24px;
+              height: 22px;
               box-sizing: border-box;
-              font-size: 0.68rem;
+              font-size: 0.65rem;
               font-weight: 700;
               line-height: 1;
-              letter-spacing: 0.4px;
-              padding: 0 8px;
-              border-radius: 6px;
+              letter-spacing: 0.3px;
+              padding: 0 7px;
+              border-radius: 5px;
               background: rgba(255, 255, 255, 0.06);
               border: 1px solid rgba(255, 255, 255, 0.14);
               color: var(--color-text-muted);
@@ -5091,9 +5082,9 @@ body[data-active-theme="light"].theme-muspelheim {
 
           .card-desc {
             flex: 1 1 auto;
-            font-size: 0.84rem;
+            font-size: 0.78rem;
             color: var(--modal-card-desc);
-            line-height: 1.45;
+            line-height: 1.38;
             margin: 0;
             opacity: 0.95;
           }
@@ -5106,9 +5097,9 @@ body[data-active-theme="light"].theme-muspelheim {
         margin-top: auto;
         display: flex;
         justify-content: space-between;
-        align-items: flex-end;
-        gap: 16px;
-        padding-top: 14px;
+        align-items: center;
+        gap: 12px;
+        padding-top: 8px;
         border-top: 1px solid var(--modal-section-divider);
         flex-wrap: wrap;
         position: relative;
@@ -5117,16 +5108,16 @@ body[data-active-theme="light"].theme-muspelheim {
         .footer-aux-actions {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           flex-wrap: wrap;
 
           .best-mix-action-group {
             position: relative;
             display: inline-flex;
             align-items: stretch;
-            height: 42px;
+            height: 36px;
             box-sizing: border-box;
-            border-radius: 12px;
+            border-radius: 10px;
             vertical-align: middle;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -5426,19 +5417,19 @@ body[data-active-theme="light"].theme-muspelheim {
             background: var(--modal-btn-aux-bg);
             border: 1px solid var(--modal-btn-aux-border);
             color: #cbd5e1;
-            height: 42px;
+            height: 36px;
             box-sizing: border-box;
-            padding: 0 18px;
-            border-radius: 12px;
+            padding: 0 14px;
+            border-radius: 10px;
             cursor: pointer;
             font-family: 'Cinzel', serif;
             font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
+            font-size: 0.8rem;
+            letter-spacing: 0.4px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 7px;
+            gap: 6px;
             line-height: 1;
             vertical-align: middle;
             transition: all 0.2s ease;
@@ -5459,30 +5450,30 @@ body[data-active-theme="light"].theme-muspelheim {
           color: #fff;
           font-family: 'Cinzel', serif;
           font-weight: 800;
-          font-size: 0.95rem;
-          letter-spacing: 1px;
-          height: 42px;
+          font-size: 0.88rem;
+          letter-spacing: 0.8px;
+          height: 36px;
           box-sizing: border-box;
-          padding: 0 22px;
-          border-radius: 12px;
+          padding: 0 18px;
+          border-radius: 10px;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           box-shadow: 0 4px 22px rgba(2, 132, 199, 0.45), 0 0 20px rgba(56, 189, 248, 0.45);
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
           .btn-icon {
-            font-size: 1.2rem;
+            font-size: 1.05rem;
           }
 
           .btn-slot-pill {
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
-            padding: 3px 10px;
+            border-radius: 10px;
+            padding: 2px 8px;
             font-family: 'Cinzel', serif;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
           }
 
@@ -6693,20 +6684,20 @@ body[data-active-theme="light"].theme-muspelheim {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 38px;
-            height: 38px;
-            border-radius: 9px;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(0, 0, 0, 0.35) 100%);
-            border: 1px solid rgba(56, 189, 248, 0.22);
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 2px 5px rgba(0, 0, 0, 0.35);
+            width: 44px;
+            height: 44px;
+            border-radius: 11px;
+            background: radial-gradient(circle at 50% 35%, rgba(56, 189, 248, 0.16) 0%, rgba(0, 0, 0, 0.45) 100%);
+            border: 1.5px solid rgba(56, 189, 248, 0.28);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 3px 8px rgba(0, 0, 0, 0.45);
 
             .icon {
-              width: 32px;
-              height: 32px;
+              width: 36px;
+              height: 36px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 26px;
+              font-size: 28px;
               line-height: 1;
               filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
               transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);

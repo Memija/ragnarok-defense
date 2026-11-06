@@ -556,15 +556,15 @@ export const DEFENDER_ICONS: Record<string, string> = {
   <path d="M24 22 L24 30 M24 24 L20 22 M24 24 L28 22" stroke="url(#bst-gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#bst-glow)"/>
 </svg>`,
 
-  // 🪨 Rune Mine / Potato Mine (Tower)
+  // 🪨 Rune Mine / Potato Mine (Ordnance)
   potatomine: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-potatomine">
   <defs>
-    <linearGradient id="mine-stone" x1="16" y1="12" x2="32" y2="40" gradientUnits="userSpaceOnUse">
+    <radialGradient id="mine-stone" cx="38%" cy="32%" r="65%">
       <stop offset="0%" stop-color="#64748b"/>
-      <stop offset="40%" stop-color="#475569"/>
+      <stop offset="45%" stop-color="#334155"/>
       <stop offset="85%" stop-color="#1e293b"/>
       <stop offset="100%" stop-color="#0f172a"/>
-    </linearGradient>
+    </radialGradient>
     <linearGradient id="mine-lava" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#fef08a"/>
       <stop offset="40%" stop-color="#f97316"/>
@@ -576,17 +576,21 @@ export const DEFENDER_ICONS: Record<string, string> = {
       <feComposite in="SourceGraphic" in2="blur" operator="over"/>
     </filter>
   </defs>
-  <ellipse cx="24" cy="40" rx="18" ry="5" fill="#1c1917" stroke="#44403c" stroke-width="1"/>
-  <path d="M8 41 L14 39 L19 41 M29 41 L34 39 L40 41" stroke="#f97316" stroke-width="0.9" opacity="0.8"/>
-  <polygon points="17,39 20,18 28,18 31,39" fill="url(#mine-stone)" stroke="#0f172a" stroke-width="1.2"/>
-  <polygon points="20,18 24,14 28,18 24,39" fill="#475569" opacity="0.6"/>
-  <path d="M22 23 L24 21 L26 23 L24 28 L22 28" stroke="url(#mine-lava)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" filter="url(#mine-glow)"/>
-  <path d="M22 31 L26 31 M24 31 L24 35" stroke="url(#mine-lava)" stroke-width="1.4" stroke-linecap="round" filter="url(#mine-glow)"/>
-  <line x1="24" y1="14" x2="24" y2="8" stroke="#ca8a04" stroke-width="1.6" stroke-linecap="round"/>
-  <polygon points="24,4 27,8 24,12 21,8" fill="url(#mine-lava)" stroke="#fef08a" stroke-width="0.8" filter="url(#mine-glow)"/>
-  <circle cx="24" cy="8" r="1.5" fill="#ffffff"/>
-  <circle cx="20" cy="6" r="0.8" fill="#fdba74"/>
-  <circle cx="28" cy="6" r="0.8" fill="#fdba74"/>
+  <ellipse cx="24" cy="36" rx="20" ry="7" fill="#1c1917" stroke="#b45309" stroke-width="1.3"/>
+  <ellipse cx="24" cy="36" rx="18" ry="5.5" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3 2" opacity="0.85"/>
+  <path d="M9 34 Q11 20 24 20 Q37 20 39 34 Z" fill="url(#mine-stone)" stroke="#0f172a" stroke-width="1.4"/>
+  <ellipse cx="24" cy="34" rx="15" ry="5" fill="#1e293b" stroke="#78350f" stroke-width="1.1"/>
+  <circle cx="13" cy="33" r="1.2" fill="#fbbf24"/>
+  <circle cx="18" cy="35" r="1.2" fill="#fbbf24"/>
+  <circle cx="24" cy="35.8" r="1.2" fill="#fbbf24"/>
+  <circle cx="30" cy="35" r="1.2" fill="#fbbf24"/>
+  <circle cx="35" cy="33" r="1.2" fill="#fbbf24"/>
+  <path d="M15 28 L20 25 M33 28 L28 25 M24 31 L24 26" stroke="url(#mine-lava)" stroke-width="1.5" stroke-linecap="round" filter="url(#mine-glow)"/>
+  <ellipse cx="24" cy="21" rx="6.5" ry="3.2" fill="url(#mine-lava)" stroke="#fde047" stroke-width="1"/>
+  <polygon points="24,8 28.5,16 24,21 19.5,16" fill="url(#mine-lava)" stroke="#fef08a" stroke-width="0.9" filter="url(#mine-glow)"/>
+  <circle cx="24" cy="15" r="1.8" fill="#ffffff"/>
+  <circle cx="17" cy="11" r="1" fill="#fde047"/>
+  <circle cx="31" cy="11" r="1" fill="#f97316"/>
 </svg>`,
 
   // 🪴 Chomper (Sacred Flora)
