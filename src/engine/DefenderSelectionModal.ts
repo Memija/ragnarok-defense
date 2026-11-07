@@ -304,6 +304,14 @@ export class DefenderSelectionModal {
       }
     });
 
+    this.tabsContainerEl?.addEventListener('wheel', (e) => {
+      if (!this.tabsContainerEl) return;
+      if (this.tabsContainerEl.scrollWidth > this.tabsContainerEl.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        this.tabsContainerEl.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+
     window.addEventListener('foreignunitssettingchanged', () => {
       if (this.currentOptions) {
         const realm = this.currentOptions.realm;
@@ -521,6 +529,7 @@ export class DefenderSelectionModal {
       hostTab.addEventListener('click', () => {
         this.activeWorldFilter = world.id;
         this.updateActiveTabStyles();
+        hostTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
         SoundManager.getInstance().playClick();
         this.renderGrid();
       });
@@ -543,6 +552,7 @@ export class DefenderSelectionModal {
       allTab.addEventListener('click', () => {
         this.activeWorldFilter = 'all';
         this.updateActiveTabStyles();
+        allTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
         SoundManager.getInstance().playClick();
         this.renderGrid();
       });
@@ -567,6 +577,7 @@ export class DefenderSelectionModal {
       btn.addEventListener('click', () => {
         this.activeWorldFilter = world.id;
         this.updateActiveTabStyles();
+        btn.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
         SoundManager.getInstance().playClick();
         this.renderGrid();
       });

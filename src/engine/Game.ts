@@ -1325,46 +1325,289 @@ export class Game {
         ctx.fillRect(tx - 1.5, 0, 3, tLen);
       }
 
-      // ── 2. HEAVY DWARVEN BRONZE BORDER BEAM WITH WATER-WARD RIVETS ──
-      ctx.fillStyle = isLight ? '#0d9488' : '#081216';
-      ctx.fillRect(wallW - 12, 0, 12, h);
-      const beamG = ctx.createLinearGradient(wallW - 12, 0, wallW, 0);
-      if (isLight) {
-        beamG.addColorStop(0, '#14b8a6');
-        beamG.addColorStop(0.35, '#2dd4bf');
-        beamG.addColorStop(0.7, '#0f766e');
-        beamG.addColorStop(1, '#0d9488');
-      } else {
-        beamG.addColorStop(0, '#0a161b');
-        beamG.addColorStop(0.35, '#14b8a6');
-        beamG.addColorStop(0.7, '#0f766e');
-        beamG.addColorStop(1, '#061014');
-      }
-      ctx.fillStyle = beamG;
-      ctx.fillRect(wallW - 10, 0, 10, h);
-
-      // Water-ward glowing teal rivets
-      ctx.fillStyle = '#14b8a6';
-      ctx.shadowColor = '#2dd4bf';
-      ctx.shadowBlur = 5;
-      for (let ri = 0; ri < Math.floor(h / 30); ri++) {
-        ctx.beginPath();
-        ctx.arc(wallW - 5, 15 + ri * 30, 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.shadowBlur = 0;
+      // ── 2. INNER BASTION SEAM & SUBTERRANEAN GLOW ──
+      const quayWidth = 60;
+      const quayLeft = wallW - quayWidth;
+      const seamShadow = ctx.createLinearGradient(quayLeft - 10, 0, quayLeft + 4, 0);
+      seamShadow.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      seamShadow.addColorStop(0.7, isLight ? 'rgba(15, 23, 42, 0.18)' : 'rgba(2, 6, 8, 0.75)');
+      seamShadow.addColorStop(1, 'rgba(20, 184, 166, 0.18)');
+      ctx.fillStyle = seamShadow;
+      ctx.fillRect(quayLeft - 10, 0, 14, h);
 
       // ── BASTION INTERIOR BOUNDS ──
       const bastionLeft = Math.max(76, Math.round(wallW * 0.28));
       const bastionRight = wallW - 58;
       const bastionW = Math.max(56, bastionRight - bastionLeft);
       const bastionCenterX = Math.round((bastionLeft + bastionRight) / 2);
+      const wingW = bastionLeft - 8;
+      const wingCenterX = Math.round(wingW / 2) + 2;
+      const balconyFloorY = Math.round(h * 0.28);
+      const embTopY = Math.max(38, balconyFloorY - 85);
+      const gateTop = Math.round(balconyFloorY + 34);
+      const gateH = Math.max(120, h - gateTop - 28);
+      const gateW = Math.min(84, bastionW + 4);
+      const gateX = bastionCenterX - gateW / 2;
+
+      // ── 2b. UPPER CAVERN VAULT CORNICE & DWARVEN BRONZE FRIEZE (0 to quayLeft) ──
+      const corniceGrad = ctx.createLinearGradient(0, 0, 0, 24);
+      if (isLight) {
+        corniceGrad.addColorStop(0, '#94a3b8');
+        corniceGrad.addColorStop(0.6, '#cbd5e1');
+        corniceGrad.addColorStop(1, 'rgba(203, 213, 225, 0)');
+      } else {
+        corniceGrad.addColorStop(0, '#030709');
+        corniceGrad.addColorStop(0.6, '#0a161c');
+        corniceGrad.addColorStop(1, 'rgba(10, 22, 28, 0)');
+      }
+      ctx.fillStyle = corniceGrad;
+      ctx.fillRect(0, 0, quayLeft, 24);
+
+      // Overhanging stone corbel teeth & bronze frieze bar along top of wall
+      ctx.fillStyle = isLight ? '#64748b' : '#081318';
+      ctx.fillRect(0, 0, quayLeft, 12);
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(0, 12, quayLeft, 3.5);
+      ctx.fillStyle = '#14b8a6';
+      ctx.fillRect(0, 15.5, quayLeft, 1.5);
+      for (let cx = 10; cx < quayLeft - 12; cx += 22) {
+        ctx.fillStyle = isLight ? '#94a3b8' : '#0d1d24';
+        ctx.fillRect(cx, 17, 12, 6);
+        ctx.strokeStyle = '#0f766e';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx, 17, 12, 6);
+      }
+
+      // ── 2c. FAR-LEFT DWARVEN HYDRO-FORGE WING & SLUICE WINCH TOWER (0 to bastionLeft) ──
+      // Structural Basalt & Bronze Dividing Pilaster between Left Wing and Central Bastion
+      const pilasterX = bastionLeft - 8;
+      const pilasterGrad = ctx.createLinearGradient(pilasterX, 0, pilasterX + 8, 0);
+      if (isLight) {
+        pilasterGrad.addColorStop(0, '#94a3b8');
+        pilasterGrad.addColorStop(0.5, '#cbd5e1');
+        pilasterGrad.addColorStop(1, '#64748b');
+      } else {
+        pilasterGrad.addColorStop(0, '#050c0f');
+        pilasterGrad.addColorStop(0.5, '#12252e');
+        pilasterGrad.addColorStop(1, '#04090c');
+      }
+      ctx.fillStyle = pilasterGrad;
+      ctx.fillRect(pilasterX, 16, 7, h - 16);
+      ctx.fillStyle = '#0f766e';
+      ctx.fillRect(pilasterX + 2.5, 16, 2, h - 16);
+
+      // Bronze clamp rings along the dividing pilaster
+      for (let py = 48; py < h - 30; py += 68) {
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(pilasterX - 1, py, 9, 5);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 0.9;
+        ctx.strokeRect(pilasterX - 1, py, 9, 5);
+      }
+
+      // (A) Upper Dwarven Guild Crest & Ancestral Medallion (Top of Left Wing)
+      const crestY = Math.max(58, embTopY + 18);
+      const crestR = Math.min(24, Math.floor(wingW * 0.36));
+      ctx.save();
+      ctx.translate(wingCenterX, crestY);
+      // Octagonal basalt & bronze plaque
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#071217';
+      ctx.beginPath();
+      for (let oi = 0; oi < 8; oi++) {
+        const ang = (oi * Math.PI) / 4 + Math.PI / 8;
+        const ox = Math.cos(ang) * crestR;
+        const oy = Math.sin(ang) * crestR;
+        if (oi === 0) ctx.moveTo(ox, oy);
+        else ctx.lineTo(ox, oy);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+
+      // Inner teal runic ring
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, 0, crestR - 5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Embossed Dwarven Great-Hammer & Waterwheel Emblem
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(-2, -10, 4, 21); // Hammer shaft
+      ctx.beginPath();
+      ctx.moveTo(-11, -11);
+      ctx.lineTo(11, -11);
+      ctx.lineTo(9, -4);
+      ctx.lineTo(-9, -4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Glowing teal center rune gem
+      ctx.fillStyle = '#2dd4bf';
+      ctx.shadowColor = '#14b8a6';
+      ctx.shadowBlur = 5;
+      ctx.beginPath();
+      ctx.arc(0, -7.5, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // (B) Mid-Wall Subterranean Hydro-Boiler Furnace Alcove (Left Wing)
+      const boilerW = Math.min(48, wingW - 12);
+      const boilerX = wingCenterX - boilerW / 2;
+      const boilerBotY = balconyFloorY + 18;
+      const boilerTopY = boilerBotY - 58;
+
+      // Overhead copper steam-pressure pipe connecting Boiler to Central Bastion & Artillery Manifold
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(wingCenterX - 3, boilerTopY - 22, 6, 24);
+      ctx.fillRect(wingCenterX - 3, boilerTopY - 22, quayLeft - wingCenterX + 3, 5);
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(wingCenterX - 1.5, boilerTopY - 21, 3, 22);
+      ctx.fillRect(wingCenterX - 1.5, boilerTopY - 20.5, quayLeft - wingCenterX + 1.5, 2.5);
+
+      // Boiler Furnace Arched Recess
+      ctx.fillStyle = isLight ? '#475569' : '#04080b';
+      ctx.beginPath();
+      ctx.moveTo(boilerX, boilerTopY + boilerW / 2);
+      ctx.arc(wingCenterX, boilerTopY + boilerW / 2, boilerW / 2, Math.PI, 0);
+      ctx.lineTo(boilerX + boilerW, boilerBotY);
+      ctx.lineTo(boilerX, boilerBotY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Molten amber forge-coal glow inside boiler
+      const boilerGlow = ctx.createRadialGradient(wingCenterX, boilerBotY - 12, 2, wingCenterX, boilerBotY - 14, boilerW * 0.65);
+      boilerGlow.addColorStop(0, 'rgba(251, 191, 36, 0.85)');
+      boilerGlow.addColorStop(0.45, 'rgba(234, 88, 12, 0.55)');
+      boilerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = boilerGlow;
+      ctx.fill();
+
+      // Copper Boiler Dome Hood & Riveted Arch Rim
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(wingCenterX, boilerTopY + boilerW / 2, boilerW / 2, Math.PI, 0);
+      ctx.stroke();
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Heavy Iron Furnace Grate Bars over glowing coals
+      ctx.strokeStyle = isLight ? '#1e293b' : '#0f172a';
+      ctx.lineWidth = 2.4;
+      for (let gb = -2; gb <= 2; gb++) {
+        const gbx = wingCenterX + gb * (boilerW * 0.17);
+        ctx.beginPath();
+        ctx.moveTo(gbx, boilerTopY + boilerW * 0.42);
+        ctx.lineTo(gbx, boilerBotY - 2);
+        ctx.stroke();
+      }
+      // Horizontal bronze crossbar & stone hearth sill
+      ctx.fillStyle = '#92400e';
+      ctx.fillRect(boilerX + 2, boilerBotY - 18, boilerW - 4, 4);
+      ctx.fillStyle = isLight ? '#94a3b8' : '#0b181f';
+      ctx.fillRect(boilerX - 3, boilerBotY - 3, boilerW + 6, 7);
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(boilerX - 3, boilerBotY - 3, boilerW + 6, 7);
+
+      // (C) Lower Floodgate Counterweight Winch & Gear-Train Alcove (Left Wing)
+      const winchW = Math.min(50, wingW - 10);
+      const winchX = wingCenterX - winchW / 2;
+      const winchTopY = gateTop + 8;
+      const winchH = Math.max(105, gateH - 18);
+
+      // Recessed Gear-Bay Chamber
+      ctx.fillStyle = isLight ? '#64748b' : '#03070a';
+      ctx.beginPath();
+      ctx.roundRect(winchX, winchTopY, winchW, winchH, 6);
+      ctx.fill();
+      ctx.strokeStyle = '#0f766e';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      // Vertical Aquamarine Hydraulic Pressure Cylinder inside Winch Bay
+      const cylX = winchX + 10;
+      const cylGrad = ctx.createLinearGradient(cylX - 5, 0, cylX + 5, 0);
+      cylGrad.addColorStop(0, '#0f766e');
+      cylGrad.addColorStop(0.5, '#5eead4');
+      cylGrad.addColorStop(1, '#115e59');
+      ctx.fillStyle = cylGrad;
+      ctx.fillRect(cylX - 4, winchTopY + 12, 8, winchH - 24);
+      // Brass cylinder collars
+      ctx.fillStyle = '#b45309';
+      for (let cy = winchTopY + 12; cy <= winchTopY + winchH - 16; cy += 26) {
+        ctx.fillRect(cylX - 6, cy, 12, 4);
+      }
+
+      // Taut Iron Hoist Chain connecting Winch Bay over Upper Pulley Sheaf to the Sluice Floodgate
+      const pulleyY = gateTop + 14;
+      ctx.strokeStyle = isLight ? '#334155' : '#64748b';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([4, 2]);
+      ctx.beginPath();
+      ctx.moveTo(wingCenterX + 8, winchTopY + winchH - 28);
+      ctx.lineTo(wingCenterX + 8, pulleyY);
+      ctx.lineTo(gateX + 12, pulleyY);
+      ctx.lineTo(gateX + 12, gateTop + 42);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Upper Bronze Pulley Wheel
+      ctx.fillStyle = '#b45309';
+      ctx.beginPath();
+      ctx.arc(wingCenterX + 8, pulleyY, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Suspended Heavy Basalt & Bronze Counterweight Block
+      const cwX = wingCenterX + 1;
+      const cwY = winchTopY + winchH - 36;
+      ctx.fillStyle = isLight ? '#475569' : '#0f1f26';
+      ctx.fillRect(cwX, cwY, 15, 22);
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1.4;
+      ctx.strokeRect(cwX, cwY, 15, 22);
+      ctx.fillStyle = '#2dd4bf';
+      ctx.font = 'bold 9px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ᚢ', cwX + 7.5, cwY + 14);
 
       // ── 3. FORTIFIED STONE BALCONY & DWARVEN SENTRY EMBRASURE ──
       const embW = Math.min(76, bastionW);
       const embX = bastionCenterX - embW / 2;
-      const balconyFloorY = Math.round(h * 0.28);
-      const embTopY = Math.max(38, balconyFloorY - 85);
+
+      // Hanging Dwarven Clan Banners beneath the Balcony Corbels
+      const bannerPositions = [embX + 10, embX + embW - 22];
+      for (let bi = 0; bi < bannerPositions.length; bi++) {
+        const bx = bannerPositions[bi];
+        const byTop = balconyFloorY + 4;
+        ctx.fillStyle = '#0f2930';
+        ctx.beginPath();
+        ctx.moveTo(bx, byTop);
+        ctx.lineTo(bx + 12, byTop);
+        ctx.lineTo(bx + 12, byTop + 22);
+        ctx.lineTo(bx + 6, byTop + 28);
+        ctx.lineTo(bx, byTop + 22);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.fillStyle = '#2dd4bf';
+        ctx.font = 'bold 8px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(bi === 0 ? 'ᛟ' : 'ᛏ', bx + 6, byTop + 16);
+      }
 
       // Carved Stone Corbel Brackets
       ctx.fillStyle = isLight ? '#94a3b8' : '#060d10';
@@ -1382,6 +1625,19 @@ export class Game {
         ctx.stroke();
       }
 
+      // Outer Dressed Stone Arch Surround around Embrasure
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#0b181f';
+      ctx.beginPath();
+      ctx.moveTo(embX - 5, embTopY + embW / 2);
+      ctx.arc(bastionCenterX, embTopY + embW / 2, embW / 2 + 5, Math.PI, 0);
+      ctx.lineTo(embX + embW + 5, balconyFloorY);
+      ctx.lineTo(embX - 5, balconyFloorY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
       // Arched Embrasure Window into Mountain Foundries
       ctx.fillStyle = isLight ? '#64748b' : '#03070a';
       ctx.beginPath();
@@ -1394,8 +1650,8 @@ export class Game {
 
       // Soft interior forge warmth
       const innerForge = ctx.createRadialGradient(bastionCenterX, embTopY + 45, 4, bastionCenterX, embTopY + 45, embW * 0.65);
-      innerForge.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
-      innerForge.addColorStop(0.65, 'rgba(13, 148, 136, 0.12)');
+      innerForge.addColorStop(0, 'rgba(245, 158, 11, 0.42)');
+      innerForge.addColorStop(0.65, 'rgba(13, 148, 136, 0.16)');
       innerForge.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = innerForge;
       ctx.fill();
@@ -1410,10 +1666,10 @@ export class Game {
       // Embrasure Arch Keystone with Rune ᛟ
       ctx.fillStyle = isLight ? '#cbd5e1' : '#14252e';
       ctx.beginPath();
-      ctx.moveTo(bastionCenterX - 8, embTopY - 2);
-      ctx.lineTo(bastionCenterX + 8, embTopY - 2);
-      ctx.lineTo(bastionCenterX + 6, embTopY + 16);
-      ctx.lineTo(bastionCenterX - 6, embTopY + 16);
+      ctx.moveTo(bastionCenterX - 8, embTopY - 4);
+      ctx.lineTo(bastionCenterX + 8, embTopY - 4);
+      ctx.lineTo(bastionCenterX + 6, embTopY + 15);
+      ctx.lineTo(bastionCenterX - 6, embTopY + 15);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#14b8a6';
@@ -1424,10 +1680,10 @@ export class Game {
       ctx.shadowBlur = 5;
       ctx.font = 'bold 9px serif';
       ctx.textAlign = 'center';
-      ctx.fillText('ᛟ', bastionCenterX, embTopY + 11);
+      ctx.fillText('ᛟ', bastionCenterX, embTopY + 10);
       ctx.shadowBlur = 0;
 
-      // Sentry / Canal Engineer in Embrasure
+      // Sentry / Master Canal Engineer in Embrasure
       ctx.save();
       ctx.translate(bastionCenterX, balconyFloorY - 14);
 
@@ -1437,11 +1693,19 @@ export class Game {
       ctx.ellipse(0, 10, 18, 5, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Dwarven Chainmail Hauberk
+      // Dwarven Chainmail Hauberk & Bronze Shoulder Pauldrons
       ctx.fillStyle = '#1e293b';
       ctx.beginPath();
-      ctx.roundRect(-15, -16, 30, 26, 4);
+      ctx.roundRect(-16, -16, 32, 26, 4);
       ctx.fill();
+      ctx.fillStyle = '#b45309';
+      ctx.beginPath();
+      ctx.arc(-13, -10, 5.5, 0, Math.PI * 2);
+      ctx.arc(13, -10, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
       // Polished Dwarven Bronze Breastplate
       ctx.fillStyle = '#92400e';
@@ -1475,14 +1739,23 @@ export class Game {
       ctx.arc(0, -14, 3.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Dwarven Artisan Helmet with Bronze Rim
+      // Dwarven Master Artisan Helmet with Bronze Wings & Runic Brow
       ctx.fillStyle = '#1e293b';
       ctx.beginPath();
       ctx.arc(0, -18, 9.5, Math.PI, 0);
       ctx.fill();
       ctx.fillStyle = '#d97706';
-      ctx.fillRect(-9.5, -19, 19, 3);
-      ctx.fillRect(-1.5, -23, 3, 8);
+      ctx.fillRect(-10, -19, 20, 3);
+      ctx.fillRect(-1.5, -24, 3, 9);
+      // Small bronze helm side-horns/wings
+      ctx.beginPath();
+      ctx.moveTo(-9, -18);
+      ctx.lineTo(-14, -23);
+      ctx.lineTo(-8, -21);
+      ctx.moveTo(9, -18);
+      ctx.lineTo(14, -23);
+      ctx.lineTo(8, -21);
+      ctx.fill();
 
       // Hydraulic Valve Control Wheel in Sentry Hands
       ctx.fillStyle = '#d97706';
@@ -1512,22 +1785,28 @@ export class Game {
       }
       ctx.fillStyle = parapetGrad;
       ctx.beginPath();
-      ctx.roundRect(embX - 3, parapetTop, embW + 6, balconyFloorY - parapetTop + 4, 3);
+      ctx.roundRect(embX - 4, parapetTop, embW + 8, balconyFloorY - parapetTop + 4, 3);
       ctx.fill();
       ctx.strokeStyle = '#0f766e';
       ctx.lineWidth = 1.6;
       ctx.stroke();
 
+      // Decorative Bronze Parapet Shields along Balcony Front
+      for (const sx of [embX + 14, bastionCenterX, embX + embW - 14]) {
+        ctx.fillStyle = '#92400e';
+        ctx.beginPath();
+        ctx.arc(sx, parapetTop + 8, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
       // Bronze Coping Rail on parapet
       ctx.fillStyle = '#14b8a6';
-      ctx.fillRect(embX - 5, parapetTop - 2, embW + 10, 4);
+      ctx.fillRect(embX - 6, parapetTop - 2, embW + 12, 4);
 
       // ── 4. ARCHITECTURAL CANAL SLUICE ARCH & HEAVY FLOODGATE ──
-      const gateTop = Math.round(balconyFloorY + 34);
-      const gateH = Math.max(120, h - gateTop - 28);
-      const gateW = Math.min(84, bastionW + 4);
-      const gateX = bastionCenterX - gateW / 2;
-
       // Heavy Dressed Arch Keystone & Voussoirs
       ctx.fillStyle = isLight ? '#cbd5e1' : '#0a161c';
       ctx.beginPath();
@@ -1540,6 +1819,13 @@ export class Game {
       ctx.strokeStyle = '#0f766e';
       ctx.lineWidth = 2;
       ctx.stroke();
+
+      // Bronze clamp-irons along sluice jambs
+      ctx.fillStyle = '#b45309';
+      for (let jy = gateTop + 36; jy < gateTop + gateH - 16; jy += 32) {
+        ctx.fillRect(gateX - 8, jy, 6, 4);
+        ctx.fillRect(gateX + gateW + 2, jy, 6, 4);
+      }
 
       // Deep Culvert Void
       ctx.fillStyle = isLight ? '#475569' : '#020507';
@@ -1640,64 +1926,223 @@ export class Game {
         ctx.stroke();
       }
 
-      // Heavy Dressed Basalt Quay Masonry Along Border
+      // ── 5. FORTIFIED DWARVEN ARTILLERY QUAY & CASEMATE BULWARK (Right Defensive Edge) ──
       const rows = this.grid.rows;
       const wallX = this.grid.startX;
-      const quayGrad = ctx.createLinearGradient(wallX - 60, 0, wallX, 0);
+      const qX = wallX - 60;
+
+      // Semi-translucent basalt quay overlay so underlying ashlar masonry remains visible
+      const quayGrad = ctx.createLinearGradient(qX, 0, wallX, 0);
       if (isLight) {
-        quayGrad.addColorStop(0, '#e2e8f0');
-        quayGrad.addColorStop(0.5, '#cbd5e1');
-        quayGrad.addColorStop(1, '#94a3b8');
+        quayGrad.addColorStop(0, 'rgba(226, 232, 240, 0.82)');
+        quayGrad.addColorStop(0.5, 'rgba(203, 213, 225, 0.88)');
+        quayGrad.addColorStop(1, 'rgba(148, 163, 184, 0.92)');
       } else {
-        quayGrad.addColorStop(0, '#09151a');
-        quayGrad.addColorStop(0.5, '#102229');
-        quayGrad.addColorStop(1, '#071014');
+        quayGrad.addColorStop(0, 'rgba(9, 21, 26, 0.78)');
+        quayGrad.addColorStop(0.5, 'rgba(16, 34, 41, 0.85)');
+        quayGrad.addColorStop(1, 'rgba(7, 16, 20, 0.92)');
       }
       ctx.fillStyle = quayGrad;
-      ctx.fillRect(wallX - 60, 0, 60, h);
+      ctx.fillRect(qX, 0, 60, h);
 
-      // Course lines and stone corbel teeth on the quay
-      ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(2, 6, 8, 0.7)';
-      for (let r = 0; r <= rows; r++) {
-        const ly = r * this.grid.cellHeight;
-        ctx.fillRect(wallX - 60, ly - 1.5, 60, 3);
-        ctx.fillStyle = isLight ? '#94a3b8' : '#0a171d';
-        ctx.beginPath();
-        ctx.moveTo(wallX - 60, ly - 6);
-        ctx.lineTo(wallX - 50, ly - 6);
-        ctx.lineTo(wallX - 54, ly + 6);
-        ctx.lineTo(wallX - 60, ly + 6);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(2, 6, 8, 0.7)';
+      // Stepped inner parapet molding & bronze trim along quay left edge (wallX - 60)
+      ctx.fillStyle = isLight ? '#64748b' : '#050c0f';
+      ctx.fillRect(qX - 2, 0, 4, h);
+      ctx.fillStyle = '#0f766e';
+      ctx.fillRect(qX + 1, 0, 1.5, h);
+
+      // Dressed stone block courses & vertical joints specifically across the 60px defensive quay
+      const qCourseH = 28;
+      for (let qy = 0, qi = 0; qy < h; qy += qCourseH, qi++) {
+        ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.14)' : 'rgba(2, 6, 8, 0.72)';
+        ctx.fillRect(qX + 2, qy, 46, 2);
+        ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.45)' : 'rgba(45, 212, 191, 0.08)';
+        ctx.fillRect(qX + 2, qy + 2, 46, 1);
+
+        const vJointX = qX + 18 + ((qi % 2) * 16);
+        ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(2, 6, 8, 0.65)';
+        ctx.fillRect(vJointX, qy, 2, qCourseH);
       }
 
-      // Hydraulic conduit pipe running vertically behind stations
-      const pipeX = wallX - 52;
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(pipeX - 2, 0, 5, h);
-      const pipeG = ctx.createLinearGradient(pipeX - 2, 0, pipeX + 3, 0);
-      pipeG.addColorStop(0, '#b45309');
-      pipeG.addColorStop(0.45, '#f59e0b');
-      pipeG.addColorStop(1, '#78350f');
-      ctx.fillStyle = pipeG;
-      ctx.fillRect(pipeX - 2, 0, 4, h);
+      // Recessed Octagonal Gun-Bay Casemate Alcoves for each lane's defender launcher
+      const casemateRunes = ['ᚲ', 'ᚨ', 'ᚾ', 'ᚨ', 'ᛚ'];
       for (let r = 0; r < rows; r++) {
         const by = (r + 0.5) * this.grid.cellHeight;
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(pipeX - 4, by - 26, 8, 4);
-        ctx.fillRect(pipeX - 4, by + 22, 8, 4);
-        ctx.fillStyle = pipeG;
-        ctx.fillRect(pipeX + 2, by - 2, 10, 4);
+        const bayH = Math.min(64, this.grid.cellHeight * 0.68);
+        const bayTop = by - bayH / 2;
+        const bayLeft = wallX - 48;
+        const bayW = 36;
+
+        // Deep recessed basalt casemate bay
+        ctx.fillStyle = isLight ? '#cbd5e1' : '#040a0e';
+        ctx.beginPath();
+        ctx.moveTo(bayLeft + 6, bayTop);
+        ctx.lineTo(bayLeft + bayW, bayTop);
+        ctx.lineTo(bayLeft + bayW, bayTop + bayH);
+        ctx.lineTo(bayLeft + 6, bayTop + bayH);
+        ctx.lineTo(bayLeft, bayTop + bayH - 6);
+        ctx.lineTo(bayLeft, bayTop + 6);
+        ctx.closePath();
+        ctx.fill();
+
+        // Inner hydraulic reservoir glow inside casemate
+        const bayGlow = ctx.createRadialGradient(wallX - 28, by, 3, wallX - 28, by, 26);
+        bayGlow.addColorStop(0, 'rgba(20, 184, 166, 0.28)');
+        bayGlow.addColorStop(0.6, 'rgba(13, 148, 136, 0.10)');
+        bayGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = bayGlow;
+        ctx.fill();
+
+        // Beveled bronze casemate frame & corner gussets
+        ctx.strokeStyle = isLight ? '#0d9488' : '#0f766e';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+
+        // Top & bottom bronze anchor plates with gold rivets
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(bayLeft + 8, bayTop - 2, bayW - 10, 4);
+        ctx.fillRect(bayLeft + 8, bayTop + bayH - 2, bayW - 10, 4);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(bayLeft + 11, bayTop - 1, 3, 2);
+        ctx.fillRect(bayLeft + bayW - 7, bayTop - 1, 3, 2);
+        ctx.fillRect(bayLeft + 11, bayTop + bayH - 1, 3, 2);
+        ctx.fillRect(bayLeft + bayW - 7, bayTop + bayH - 1, 3, 2);
       }
 
-      // Heavy Bronze Canal Rim Coping
-      const rimG = ctx.createLinearGradient(wallX - 6, 0, wallX, 0);
-      rimG.addColorStop(0, '#14b8a6');
-      rimG.addColorStop(0.5, '#0f766e');
-      rimG.addColorStop(1, '#081216');
-      ctx.fillStyle = rimG;
-      ctx.fillRect(wallX - 6, 0, 6, h);
+      // Fortified Stone Buttress Piers & Runic Partition Corbels between lanes
+      for (let r = 0; r <= rows; r++) {
+        const ly = r * this.grid.cellHeight;
+        // Heavy stone divider pier
+        const pierGrad = ctx.createLinearGradient(qX, ly - 8, wallX, ly + 8);
+        if (isLight) {
+          pierGrad.addColorStop(0, '#94a3b8');
+          pierGrad.addColorStop(0.5, '#cbd5e1');
+          pierGrad.addColorStop(1, '#64748b');
+        } else {
+          pierGrad.addColorStop(0, '#071116');
+          pierGrad.addColorStop(0.5, '#132830');
+          pierGrad.addColorStop(1, '#050c10');
+        }
+        ctx.fillStyle = pierGrad;
+        ctx.beginPath();
+        ctx.moveTo(qX - 3, ly - 7);
+        ctx.lineTo(wallX, ly - 5);
+        ctx.lineTo(wallX, ly + 5);
+        ctx.lineTo(qX - 3, ly + 7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#0f766e';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Bronze-capped bastion buttress nose protruding into the canal edge
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(wallX - 16, ly - 4, 16, 8);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(wallX - 16, ly - 4, 16, 8);
+
+        // Glowing teal ward-gem set into each lane divider pier
+        ctx.fillStyle = '#2dd4bf';
+        ctx.shadowColor = '#14b8a6';
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(wallX - 24, ly, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        if (r < rows) {
+          // Carved dwarven ward rune on the upper casemate lintel
+          ctx.fillStyle = 'rgba(45, 212, 191, 0.65)';
+          ctx.font = 'bold 9px serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(casemateRunes[r % casemateRunes.length], wallX - 38, ly + 13);
+        }
+      }
+
+      // Twin Hydraulic Pressure Manifold & Runic Aquamarine Conduit behind stations
+      const pipeX = wallX - 53;
+      // Secondary runic water-pressure tube
+      ctx.fillStyle = '#042f2e';
+      ctx.fillRect(pipeX - 6, 0, 3, h);
+      ctx.fillStyle = 'rgba(45, 212, 191, 0.7)';
+      ctx.fillRect(pipeX - 5.5, 0, 1.8, h);
+
+      // Primary heavy copper/bronze hydraulic manifold
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(pipeX - 2, 0, 6, h);
+      const pipeG = ctx.createLinearGradient(pipeX - 2, 0, pipeX + 4, 0);
+      pipeG.addColorStop(0, '#92400e');
+      pipeG.addColorStop(0.45, '#f59e0b');
+      pipeG.addColorStop(0.8, '#b45309');
+      pipeG.addColorStop(1, '#451a03');
+      ctx.fillStyle = pipeG;
+      ctx.fillRect(pipeX - 1.5, 0, 5, h);
+
+      for (let r = 0; r < rows; r++) {
+        const by = (r + 0.5) * this.grid.cellHeight;
+        // Heavy iron pipe clamps
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(pipeX - 8, by - 26, 14, 4);
+        ctx.fillRect(pipeX - 8, by + 22, 14, 4);
+        ctx.strokeStyle = '#14b8a6';
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(pipeX - 8, by - 26, 14, 4);
+        ctx.strokeRect(pipeX - 8, by + 22, 14, 4);
+
+        // Twin branch feed pipes into the turret mount
+        ctx.fillStyle = pipeG;
+        ctx.fillRect(pipeX + 3, by - 8, 12, 4);
+        ctx.fillRect(pipeX + 3, by + 4, 12, 4);
+        // Brass junction valve box
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(pipeX - 3, by - 10, 7, 20);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(pipeX - 3, by - 10, 7, 20);
+      }
+
+      // ── 6. HEAVY DWARVEN BRONZE BORDER BEAM & CRENELLATED CANAL COPING (wallX - 12 to wallX) ──
+      ctx.fillStyle = isLight ? '#0d9488' : '#061014';
+      ctx.fillRect(wallX - 12, 0, 12, h);
+      const beamG = ctx.createLinearGradient(wallX - 12, 0, wallX, 0);
+      if (isLight) {
+        beamG.addColorStop(0, '#0f766e');
+        beamG.addColorStop(0.35, '#2dd4bf');
+        beamG.addColorStop(0.7, '#0d9488');
+        beamG.addColorStop(1, '#115e59');
+      } else {
+        beamG.addColorStop(0, '#071318');
+        beamG.addColorStop(0.35, '#14b8a6');
+        beamG.addColorStop(0.7, '#0f766e');
+        beamG.addColorStop(1, '#040b0e');
+      }
+      ctx.fillStyle = beamG;
+      ctx.fillRect(wallX - 11, 0, 11, h);
+
+      // Bronze battlement merlon plates flanking each launcher port along the border beam
+      for (let r = 0; r < rows; r++) {
+        const by = (r + 0.5) * this.grid.cellHeight;
+        const merlonPositions = [by - 28, by + 16];
+        for (const my of merlonPositions) {
+          ctx.fillStyle = isLight ? '#cbd5e1' : '#0c1c24';
+          ctx.fillRect(wallX - 13, my, 13, 12);
+          ctx.strokeStyle = '#d97706';
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(wallX - 13, my, 13, 12);
+        }
+      }
+
+      // Glowing water-ward teal rivets along the front defensive border beam
+      ctx.fillStyle = '#2dd4bf';
+      ctx.shadowColor = '#2dd4bf';
+      ctx.shadowBlur = 5;
+      for (let ri = 0; ri < Math.floor(h / 24); ri++) {
+        ctx.beginPath();
+        ctx.arc(wallX - 5.5, 12 + ri * 24, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
 
       ctx.restore();
     } else if (this.isDwarvenForgeCity()) {
@@ -2217,6 +2662,8 @@ export class Game {
       const bastionRight = wallW - 58;
       const bastionW = Math.max(56, bastionRight - bastionLeft);
       const bastionCenterX = Math.round((bastionLeft + bastionRight) / 2);
+      const wingW = bastionLeft - 8;
+      const wingCenterX = Math.round(wingW / 2) + 2;
       const balconyFloorY = Math.round(h * 0.28);
       const embTopY = Math.max(38, balconyFloorY - 85);
       const gateTop = Math.round(balconyFloorY + 34);
@@ -2225,7 +2672,49 @@ export class Game {
       const gateX = bastionCenterX - gateW / 2;
       const spillTop = gateTop + gateH - 32;
 
-      // Churning water ripple lines & foam
+      // 1. Dynamic Hydro-Boiler Furnace Ember Pulse & Sparks (Left Wing)
+      const boilerBotY = balconyFloorY + 18;
+      const boilerFlicker = 0.75 + Math.sin(time * 7.2) * 0.25;
+      const emberHalo = ctx.createRadialGradient(wingCenterX, boilerBotY - 12, 2, wingCenterX, boilerBotY - 14, 24 * boilerFlicker);
+      emberHalo.addColorStop(0, `rgba(254, 240, 138, ${0.55 * boilerFlicker})`);
+      emberHalo.addColorStop(0.5, `rgba(249, 115, 22, ${0.28 * boilerFlicker})`);
+      emberHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = emberHalo;
+      ctx.beginPath();
+      ctx.arc(wingCenterX, boilerBotY - 12, 24 * boilerFlicker, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Interlocking Rotating Bronze Cogwheels inside Floodgate Winch Bay (Left Wing)
+      const winchTopY = gateTop + 8;
+      const gears = [
+        { x: wingCenterX + 4, y: winchTopY + 28, r: 11, teeth: 8, speed: 1.1, color: '#d97706' },
+        { x: wingCenterX - 6, y: winchTopY + 46, r: 8.5, teeth: 6, speed: -1.45, color: '#b45309' }
+      ];
+      for (const g of gears) {
+        ctx.save();
+        ctx.translate(g.x, g.y);
+        ctx.rotate(time * g.speed);
+        ctx.fillStyle = g.color;
+        for (let ti = 0; ti < g.teeth; ti++) {
+          const ta = (ti * Math.PI * 2) / g.teeth;
+          ctx.save();
+          ctx.rotate(ta);
+          ctx.fillRect(g.r - 1.5, -2, 3.5, 4);
+          ctx.restore();
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, g.r, 0, Math.PI * 2);
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.stroke();
+        ctx.fillStyle = '#2dd4bf';
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 3. Churning water ripple lines & foam at Sluice Spillway
       ctx.strokeStyle = 'rgba(240, 253, 250, 0.85)';
       ctx.lineWidth = 1.4;
       for (let wLine = 0; wLine < 3; wLine++) {
@@ -2239,7 +2728,7 @@ export class Game {
         ctx.stroke();
       }
 
-      // Water-ward wall lanterns (dynamic flicker and light halo)
+      // 4. Water-ward wall lanterns (dynamic flicker and light halo)
       const lanterns = [
         { x: bastionLeft - 4, y: Math.max(42, embTopY + 10) },
         { x: bastionLeft - 4, y: Math.min(h - 55, gateTop + 45) }
@@ -2266,7 +2755,7 @@ export class Game {
         ctx.shadowBlur = 0;
       }
 
-      // Carved Canal Water Runes Glow
+      // 5. Carved Canal Water Runes Glow
       const aRunes = ['ᚨ', 'ᛚ', 'ᛏ', '·', 'ᚲ', 'ᚨ', 'ᚾ', 'ᚨ', 'ᛚ'];
       ctx.font = 'bold 13px serif';
       ctx.textAlign = 'center';
@@ -2297,28 +2786,42 @@ export class Game {
         const isReady = this.valkyrieAvailable[r];
         const isHovered = hoveredLauncherRow === r;
 
-        ctx.fillStyle = isLight ? '#f1f5f9' : '#0a161d';
+        // Base Turret Sponson Plate & Toothed Bronze Gear Ring
+        ctx.fillStyle = isLight ? '#f1f5f9' : '#081319';
         ctx.beginPath();
-        ctx.ellipse(wallX - 30, by, 22, 16, 0, 0, Math.PI * 2);
+        ctx.ellipse(wallX - 30, by, 23, 17, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = isReady ? '#0f766e' : (isLight ? '#94a3b8' : '#1e293b');
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.2;
         ctx.stroke();
+
+        // Radial bronze gear teeth around turret ring
+        ctx.save();
+        ctx.translate(wallX - 30, by);
+        ctx.fillStyle = isReady ? '#b45309' : (isLight ? '#94a3b8' : '#334155');
+        for (let gt = 0; gt < 8; gt++) {
+          const ga = (gt * Math.PI) / 4;
+          const gx = Math.cos(ga) * 19;
+          const gy = Math.sin(ga) * 13.5;
+          ctx.fillRect(gx - 1.5, gy - 1.5, 3, 3);
+        }
+        ctx.restore();
 
         ctx.strokeStyle = isReady ? '#d97706' : (isLight ? '#cbd5e1' : '#475569');
         ctx.lineWidth = 1.6;
         ctx.beginPath();
-        ctx.ellipse(wallX - 30, by, 18, 12, 0, 0, Math.PI * 2);
+        ctx.ellipse(wallX - 30, by, 18, 12.5, 0, 0, Math.PI * 2);
         ctx.stroke();
 
+        // Glowing runic embrasure chevron on the canal border beam
         ctx.save();
-        ctx.translate(wallX - 16, by);
-        ctx.fillStyle = isReady ? 'rgba(45, 212, 191, 0.7)' : (isLight ? 'rgba(148, 163, 184, 0.4)' : 'rgba(71, 85, 105, 0.3)');
+        ctx.translate(wallX - 15, by);
+        ctx.fillStyle = isReady ? 'rgba(45, 212, 191, 0.85)' : (isLight ? 'rgba(148, 163, 184, 0.4)' : 'rgba(71, 85, 105, 0.3)');
         ctx.beginPath();
-        ctx.moveTo(0, -6);
-        ctx.lineTo(8, 0);
-        ctx.lineTo(0, 6);
-        ctx.lineTo(3, 0);
+        ctx.moveTo(0, -7);
+        ctx.lineTo(9, 0);
+        ctx.lineTo(0, 7);
+        ctx.lineTo(3.5, 0);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
@@ -2331,7 +2834,7 @@ export class Game {
 
         if (isReady) {
           const beamGlow = 0.25 + Math.sin(time * 3.5 + r) * 0.12;
-          const sightGrad = ctx.createLinearGradient(16, 0, 75, 0);
+          const sightGrad = ctx.createLinearGradient(16, 0, 78, 0);
           sightGrad.addColorStop(0, `rgba(45, 212, 191, ${beamGlow * 1.5})`);
           sightGrad.addColorStop(0.5, `rgba(14, 165, 233, ${beamGlow})`);
           sightGrad.addColorStop(1, 'rgba(14, 165, 233, 0)');
@@ -2339,60 +2842,83 @@ export class Game {
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(16, 0);
-          ctx.lineTo(75, 0);
+          ctx.lineTo(78, 0);
           ctx.stroke();
 
-          ctx.fillStyle = isLight ? '#ffffff' : '#1e293b';
+          // Armored Dwarven Breech Housing
+          ctx.fillStyle = isLight ? '#ffffff' : '#11222b';
           ctx.beginPath();
-          ctx.roundRect(-16, -11, 22, 22, 4);
+          ctx.roundRect(-17, -12, 23, 24, 4);
           ctx.fill();
-          ctx.strokeStyle = '#0f766e';
-          ctx.lineWidth = 1.4;
+          ctx.strokeStyle = '#14b8a6';
+          ctx.lineWidth = 1.5;
           ctx.stroke();
 
+          // Flanged Dwarven Gun-Shield Wing Plates
+          ctx.fillStyle = '#78350f';
+          ctx.beginPath();
+          ctx.moveTo(2, -14);
+          ctx.lineTo(10, -11);
+          ctx.lineTo(10, 11);
+          ctx.lineTo(2, 14);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Spinning Dwarven Pressure Turbine Wheel
           ctx.save();
-          ctx.translate(-5, 0);
+          ctx.translate(-6, 0);
           ctx.rotate(time * 5.0 + r * 1.5);
           ctx.strokeStyle = '#d97706';
           ctx.lineWidth = 1.8;
           ctx.beginPath();
-          ctx.arc(0, 0, 7, 0, Math.PI * 2);
+          ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
           ctx.stroke();
           for (let vi = 0; vi < 4; vi++) {
             const va = (vi * Math.PI) / 2;
             ctx.fillStyle = '#2dd4bf';
-            ctx.fillRect(Math.cos(va) * 2, Math.sin(va) * 2, 4, 1.8);
+            ctx.fillRect(Math.cos(va) * 2, Math.sin(va) * 2, 4.2, 1.8);
           }
           ctx.restore();
 
+          // Twin Hydraulic Recoil Cylinders (top & bottom)
           ctx.fillStyle = '#b45309';
-          ctx.fillRect(-12, -15, 16, 4);
-          ctx.fillRect(-12, 11, 16, 4);
+          ctx.fillRect(-13, -16, 17, 4.5);
+          ctx.fillRect(-13, 11.5, 17, 4.5);
           ctx.fillStyle = '#f59e0b';
-          ctx.fillRect(-10, -14.5, 12, 3);
-          ctx.fillRect(-10, 11.5, 12, 3);
+          ctx.fillRect(-11, -15, 13, 2.8);
+          ctx.fillRect(-11, 12.2, 13, 2.8);
 
+          // Main Burnished Bronze Cannon Barrel
           const barrelGrad = ctx.createLinearGradient(0, -9, 0, 9);
           barrelGrad.addColorStop(0, '#d97706');
-          barrelGrad.addColorStop(0.4, '#f59e0b');
-          barrelGrad.addColorStop(1, '#92400e');
+          barrelGrad.addColorStop(0.4, '#fbbf24');
+          barrelGrad.addColorStop(1, '#78350f');
           ctx.fillStyle = barrelGrad;
           ctx.beginPath();
-          ctx.roundRect(0, -8, 22, 16, 2);
+          ctx.roundRect(0, -8.5, 22, 17, 2);
           ctx.fill();
 
+          // Glowing Runic Aquamarine Pressure Bands on Barrel
           ctx.fillStyle = '#0f766e';
-          ctx.fillRect(6, -9, 3, 18);
-          ctx.fillRect(15, -9, 3, 18);
+          ctx.fillRect(6, -9.5, 3.5, 19);
+          ctx.fillRect(14.5, -9.5, 3.5, 19);
+          ctx.fillStyle = '#2dd4bf';
+          ctx.fillRect(7, -8.5, 1.5, 17);
+          ctx.fillRect(15.5, -8.5, 1.5, 17);
 
+          // Heavy Muzzle Collar
           ctx.fillStyle = '#b45309';
           ctx.beginPath();
-          ctx.roundRect(20, -10, 6, 20, 2);
+          ctx.roundRect(20, -10.5, 6, 21, 2);
           ctx.fill();
           ctx.strokeStyle = '#fbbf24';
           ctx.lineWidth = 1.2;
           ctx.stroke();
 
+          // Dwarven Runic Harpoon / Canal Ram Prow
           ctx.fillStyle = '#0f172a';
           ctx.fillRect(18, -3, 20, 6);
           const spearHeadX = 38;
@@ -2400,20 +2926,20 @@ export class Game {
           ctx.shadowColor = '#14b8a6';
           ctx.shadowBlur = 8;
           ctx.beginPath();
-          ctx.moveTo(spearHeadX, -6);
-          ctx.lineTo(spearHeadX + 10, 0);
-          ctx.lineTo(spearHeadX, 6);
+          ctx.moveTo(spearHeadX, -6.5);
+          ctx.lineTo(spearHeadX + 11, 0);
+          ctx.lineTo(spearHeadX, 6.5);
           ctx.lineTo(spearHeadX + 3, 0);
           ctx.closePath();
           ctx.fill();
           ctx.beginPath();
-          ctx.moveTo(spearHeadX - 4, -8);
+          ctx.moveTo(spearHeadX - 4, -8.5);
           ctx.lineTo(spearHeadX + 4, -4);
           ctx.lineTo(spearHeadX - 2, -3);
           ctx.closePath();
           ctx.fill();
           ctx.beginPath();
-          ctx.moveTo(spearHeadX - 4, 8);
+          ctx.moveTo(spearHeadX - 4, 8.5);
           ctx.lineTo(spearHeadX + 4, 4);
           ctx.lineTo(spearHeadX - 2, 3);
           ctx.closePath();
@@ -2429,9 +2955,10 @@ export class Game {
           ctx.ellipse(26, 0, 8, 14, 0, 0, Math.PI * 2);
           ctx.fill();
 
+          // Steam/Water Pressure Gauge Dial
           ctx.fillStyle = '#1c1917';
           ctx.beginPath();
-          ctx.arc(-8, -17, 5, 0, Math.PI * 2);
+          ctx.arc(-8, -18, 5, 0, Math.PI * 2);
           ctx.fill();
           ctx.strokeStyle = '#f59e0b';
           ctx.lineWidth = 1.2;
@@ -2440,8 +2967,8 @@ export class Game {
           ctx.strokeStyle = '#2dd4bf';
           ctx.lineWidth = 1.2;
           ctx.beginPath();
-          ctx.moveTo(-8, -17);
-          ctx.lineTo(-8 + Math.cos(needleAng) * 3.8, -17 + Math.sin(needleAng) * 3.8);
+          ctx.moveTo(-8, -18);
+          ctx.lineTo(-8 + Math.cos(needleAng) * 3.8, -18 + Math.sin(needleAng) * 3.8);
           ctx.stroke();
 
           ctx.fillStyle = '#2dd4bf';
@@ -3060,130 +3587,308 @@ export class Game {
       ctx.restore(); // Exit distant waterwheel alpha
 
       // ── 6b. DWARVEN CANAL OUTER EMBANKMENT & RIVER GATE (Right Bulwark) ──
-      const rWallW = 50;
+      const rWallW = 56;
       const rWallX = w - rWallW;
+
+      // Cast shadow from right embankment onto the canal waters
+      const rCastShadow = ctx.createLinearGradient(rWallX - 24, 0, rWallX, 0);
+      rCastShadow.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      rCastShadow.addColorStop(1, isLight ? 'rgba(15, 23, 42, 0.22)' : 'rgba(2, 6, 8, 0.72)');
+      ctx.fillStyle = rCastShadow;
+      ctx.fillRect(rWallX - 24, 0, 24, h);
 
       // Subterranean Dwarven Basalt Embankment Wall
       const rWallGrad = ctx.createLinearGradient(rWallX, 0, w, 0);
       if (isLight) {
-        rWallGrad.addColorStop(0, '#f1f5f9');
-        rWallGrad.addColorStop(0.5, '#e2e8f0');
-        rWallGrad.addColorStop(1, '#cbd5e1');
+        rWallGrad.addColorStop(0, '#e2e8f0');
+        rWallGrad.addColorStop(0.45, '#cbd5e1');
+        rWallGrad.addColorStop(1, '#94a3b8');
       } else {
-        rWallGrad.addColorStop(0, '#0c171c');
-        rWallGrad.addColorStop(0.5, '#122026');
-        rWallGrad.addColorStop(1, '#081014');
+        rWallGrad.addColorStop(0, '#0b161b');
+        rWallGrad.addColorStop(0.45, '#122229');
+        rWallGrad.addColorStop(1, '#070f13');
       }
       ctx.fillStyle = rWallGrad;
       ctx.fillRect(rWallX, 0, rWallW, h);
 
-      // Stone brick lines along right embankment
-      ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.4)';
-      ctx.lineWidth = 1.2;
-      for (let by = 0; by < h; by += 32) {
-        ctx.beginPath();
-        ctx.moveTo(rWallX, by);
-        ctx.lineTo(w, by);
-        ctx.stroke();
+      // Staggered Basalt Ashlar Masonry Courses & Vertical Head Joints
+      const rCourses = [34, 30, 36, 32, 34, 28, 36];
+      let rCurY = 0;
+      let rCIdx = 0;
+      while (rCurY < h) {
+        const cH = rCourses[rCIdx % rCourses.length];
+        const nextY = Math.min(h, rCurY + cH);
+
+        // Recessed mortar bed joint
+        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(2, 6, 8, 0.75)';
+        ctx.fillRect(rWallX, nextY - 2, rWallW, 2.5);
+
+        // Top stone edge bevel highlight (mineral sheen)
+        ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.45)' : 'rgba(45, 212, 191, 0.09)';
+        ctx.fillRect(rWallX, rCurY, rWallW, 1.5);
+
+        // Staggered vertical stone joints
+        const vJointX = rWallX + 18 + ((rCIdx % 2) * 18);
+        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(2, 6, 8, 0.65)';
+        ctx.fillRect(vJointX, rCurY, 2, cH);
+        ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.35)' : 'rgba(45, 212, 191, 0.06)';
+        ctx.fillRect(vJointX + 2, rCurY, 1, cH);
+
+        rCurY = nextY;
+        rCIdx++;
       }
 
-      // Bronze canal rim border beam facing the river
-      const rBeamG = ctx.createLinearGradient(rWallX, 0, rWallX + 8, 0);
-      rBeamG.addColorStop(0, '#14b8a6');
-      rBeamG.addColorStop(0.5, '#0f766e');
-      rBeamG.addColorStop(1, isLight ? '#0d9488' : '#0a1419');
-      ctx.fillStyle = rBeamG;
-      ctx.fillRect(rWallX, 0, 8, h);
+      // Aquamarine Mineral Seepage along right embankment
+      const rSeepGrad = ctx.createLinearGradient(rWallX, 0, w, 0);
+      rSeepGrad.addColorStop(0, isLight ? 'rgba(20, 184, 166, 0.18)' : 'rgba(20, 184, 166, 0.24)');
+      rSeepGrad.addColorStop(0.6, isLight ? 'rgba(13, 148, 136, 0.06)' : 'rgba(13, 148, 136, 0.09)');
+      rSeepGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = rSeepGrad;
+      ctx.fillRect(rWallX, 0, rWallW, h);
 
-      // Water-ward teal rivets along the right border
-      ctx.fillStyle = '#14b8a6';
+      // Heavy Dwarven Bronze Canal Rim Border Beam facing the battlefield
+      ctx.fillStyle = isLight ? '#0d9488' : '#061014';
+      ctx.fillRect(rWallX, 0, 11, h);
+      const rBeamG = ctx.createLinearGradient(rWallX, 0, rWallX + 10, 0);
+      if (isLight) {
+        rBeamG.addColorStop(0, '#115e59');
+        rBeamG.addColorStop(0.35, '#2dd4bf');
+        rBeamG.addColorStop(0.75, '#0d9488');
+        rBeamG.addColorStop(1, '#0f766e');
+      } else {
+        rBeamG.addColorStop(0, '#040b0e');
+        rBeamG.addColorStop(0.35, '#14b8a6');
+        rBeamG.addColorStop(0.75, '#0f766e');
+        rBeamG.addColorStop(1, '#081419');
+      }
+      ctx.fillStyle = rBeamG;
+      ctx.fillRect(rWallX, 0, 10, h);
+
+      // Fortified Stone Buttress Corbels & Bronze Pier Caps aligned with grid lanes
+      for (let r = 0; r <= this.grid.rows; r++) {
+        const ly = r * this.grid.cellHeight;
+        ctx.fillStyle = isLight ? '#94a3b8' : '#0a181f';
+        ctx.beginPath();
+        ctx.moveTo(rWallX - 4, ly - 5);
+        ctx.lineTo(w, ly - 6);
+        ctx.lineTo(w, ly + 6);
+        ctx.lineTo(rWallX - 4, ly + 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#0f766e';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Burnished bronze nose cap on each right-side lane pier
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(rWallX - 4, ly - 3.5, 14, 7);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(rWallX - 4, ly - 3.5, 14, 7);
+      }
+
+      // Water-ward glowing teal rivets along the right border beam
+      ctx.fillStyle = '#2dd4bf';
       ctx.shadowColor = '#2dd4bf';
       ctx.shadowBlur = 4;
-      for (let ri = 0; ri < Math.floor(h / 32); ri++) {
+      for (let ri = 0; ri < Math.floor(h / 26); ri++) {
         ctx.beginPath();
-        ctx.arc(rWallX + 4, 16 + ri * 32, 2.5, 0, Math.PI * 2);
+        ctx.arc(rWallX + 5, 13 + ri * 26, 2.3, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.shadowBlur = 0;
 
+      // Upper Dwarven Watch-Embrasure Slit & Warm Forge Lookout (above the River Gate)
+      const rEmbW = 28;
+      const rEmbX = rWallX + 18;
+      const rEmbTop = Math.max(24, h * 0.05);
+      const rEmbFloor = Math.max(72, h * 0.16);
+      ctx.fillStyle = isLight ? '#475569' : '#03070a';
+      ctx.beginPath();
+      ctx.moveTo(rEmbX, rEmbTop + rEmbW / 2);
+      ctx.arc(rEmbX + rEmbW / 2, rEmbTop + rEmbW / 2, rEmbW / 2, Math.PI, 0);
+      ctx.lineTo(rEmbX + rEmbW, rEmbFloor);
+      ctx.lineTo(rEmbX, rEmbFloor);
+      ctx.closePath();
+      ctx.fill();
+      const rForgeGlow = ctx.createRadialGradient(rEmbX + rEmbW / 2, rEmbTop + 24, 2, rEmbX + rEmbW / 2, rEmbTop + 24, rEmbW * 0.75);
+      rForgeGlow.addColorStop(0, 'rgba(245, 158, 11, 0.42)');
+      rForgeGlow.addColorStop(0.6, 'rgba(20, 184, 166, 0.15)');
+      rForgeGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = rForgeGlow;
+      ctx.fill();
+      ctx.strokeStyle = '#0f766e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Bronze parapet rail on upper watch slit
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(rEmbX - 3, rEmbFloor - 4, rEmbW + 6, 5);
+      ctx.fillStyle = '#14b8a6';
+      ctx.fillRect(rEmbX - 4, rEmbFloor - 5, rEmbW + 8, 2);
+
       // Breached Outer River Gate Arch (From where attackers advance)
-      const rGateTop = h * 0.22;
-      const rGateH = h * 0.58;
-      const rGateW = 42;
-      const rGateX = rWallX + 6;
+      const rGateTop = h * 0.23;
+      const rGateH = h * 0.56;
+      const rGateW = 40;
+      const rGateX = rWallX + 12;
+      const rGateCenterX = rGateX + rGateW / 2;
+
+      // Heavy Dressed Stone Arch Surround & Bronze Voussoir Ring
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#0a161c';
+      ctx.beginPath();
+      ctx.moveTo(rGateX - 4, rGateTop + 22);
+      ctx.arc(rGateCenterX, rGateTop + 22, rGateW / 2 + 4, Math.PI, 0);
+      ctx.lineTo(rGateX + rGateW + 4, rGateTop + rGateH);
+      ctx.lineTo(rGateX - 4, rGateTop + rGateH);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#0f766e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
       // Canal Culvert Portal Void
-      ctx.fillStyle = isLight ? '#475569' : '#04080a';
+      ctx.fillStyle = isLight ? '#334155' : '#020507';
       ctx.beginPath();
-      ctx.moveTo(rGateX, rGateTop + 24);
-      ctx.arc(rGateX + rGateW / 2, rGateTop + 24, rGateW / 2, Math.PI, 0);
+      ctx.moveTo(rGateX, rGateTop + 22);
+      ctx.arc(rGateCenterX, rGateTop + 22, rGateW / 2, Math.PI, 0);
       ctx.lineTo(rGateX + rGateW, rGateTop + rGateH);
       ctx.lineTo(rGateX, rGateTop + rGateH);
       ctx.closePath();
       ctx.fill();
 
       // Arch Stone Keystone with Glowing Rune ᚦ (Gateway / Threshold)
-      ctx.fillStyle = isLight ? '#cbd5e1' : '#162830';
+      ctx.fillStyle = isLight ? '#e2e8f0' : '#162830';
       ctx.beginPath();
-      ctx.moveTo(rGateX + rGateW / 2 - 8, rGateTop);
-      ctx.lineTo(rGateX + rGateW / 2 + 8, rGateTop);
-      ctx.lineTo(rGateX + rGateW / 2 + 6, rGateTop + 18);
-      ctx.lineTo(rGateX + rGateW / 2 - 6, rGateTop + 18);
+      ctx.moveTo(rGateCenterX - 8, rGateTop - 3);
+      ctx.lineTo(rGateCenterX + 8, rGateTop - 3);
+      ctx.lineTo(rGateCenterX + 6, rGateTop + 17);
+      ctx.lineTo(rGateCenterX - 6, rGateTop + 17);
       ctx.closePath();
       ctx.fill();
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
       ctx.fillStyle = '#2dd4bf';
       ctx.shadowColor = '#14b8a6';
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 7;
       ctx.font = 'bold 11px serif';
       ctx.textAlign = 'center';
-      ctx.fillText('ᚦ', rGateX + rGateW / 2, rGateTop + 13);
+      ctx.fillText('ᚦ', rGateCenterX, rGateTop + 12);
       ctx.shadowBlur = 0;
 
-      // Heavy Iron Portcullis Grate (Raised/breached)
+      // Heavy Iron Portcullis Bars & Riveted Bronze Cross-Girders
       ctx.strokeStyle = isLight ? '#475569' : '#1e293b';
-      ctx.lineWidth = 3.5;
-      for (let bar = 0; bar < 2; bar++) {
-        const bx = rGateX + 14 + bar * 16;
+      ctx.lineWidth = 3.2;
+      const rNumBars = 3;
+      for (let bar = 0; bar < rNumBars; bar++) {
+        const bx = rGateX + 8 + bar * 12;
         ctx.beginPath();
-        ctx.moveTo(bx, rGateTop + 24);
-        ctx.lineTo(bx, rGateTop + rGateH);
+        ctx.moveTo(bx, rGateTop + 20);
+        ctx.lineTo(bx, rGateTop + rGateH - 6);
         ctx.stroke();
       }
       for (let rail = 0; rail < 3; rail++) {
-        const ry = rGateTop + 40 + rail * (rGateH * 0.26);
+        const ry = rGateTop + 42 + rail * (rGateH * 0.25);
+        ctx.fillStyle = isLight ? '#0f766e' : '#0f272e';
+        ctx.fillRect(rGateX + 2, ry - 3.5, rGateW - 4, 7);
+        ctx.strokeStyle = '#14b8a6';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(rGateX + 2, ry - 3.5, rGateW - 4, 7);
+
+        // Glowing bronze-teal rivets at bar intersections
+        ctx.fillStyle = '#2dd4bf';
+        for (let rv = 0; rv < rNumBars; rv++) {
+          const rvx = rGateX + 8 + rv * 12;
+          ctx.beginPath();
+          ctx.arc(rvx, ry, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Pulsing Carved Dwarven Ward Runes along the right gate jamb
+      const rGateRunes = ['ᚦ', 'ᚢ', 'ᚱ', 'ᛋ'];
+      const rRuneGlow = 0.5 + Math.sin(time * 2.0 + 1.1) * 0.25;
+      ctx.fillStyle = `rgba(45, 212, 191, ${rRuneGlow})`;
+      ctx.shadowColor = '#14b8a6';
+      ctx.shadowBlur = 6;
+      ctx.font = 'bold 10px serif';
+      ctx.textAlign = 'center';
+      for (let ri = 0; ri < rGateRunes.length; ri++) {
+        ctx.fillText(rGateRunes[ri], rWallX + 5.5, rGateTop + 48 + ri * 38);
+      }
+      ctx.shadowBlur = 0;
+
+      // Torrents pouring into the battlefield from the breached gate spillway
+      const rSpillTop = rGateTop + rGateH - 30;
+      const rGateWater = ctx.createLinearGradient(rGateX, rSpillTop, rGateX, rGateTop + rGateH);
+      rGateWater.addColorStop(0, 'rgba(13, 148, 136, 0.35)');
+      rGateWater.addColorStop(0.5, 'rgba(45, 212, 191, 0.65)');
+      rGateWater.addColorStop(1, 'rgba(204, 251, 241, 0.88)');
+      ctx.fillStyle = rGateWater;
+      ctx.fillRect(rGateX + 2, rSpillTop, rGateW - 4, 30);
+
+      // Animated churning water ripple lines & foam at the right gate spillway
+      ctx.strokeStyle = 'rgba(240, 253, 250, 0.85)';
+      ctx.lineWidth = 1.3;
+      for (let wLine = 0; wLine < 3; wLine++) {
+        const wY = rSpillTop + 7 + wLine * 8;
+        const wPhase = -time * 4.5 + wLine * 1.6;
         ctx.beginPath();
-        ctx.moveTo(rGateX + 4, ry);
-        ctx.lineTo(rGateX + rGateW - 4, ry);
+        ctx.moveTo(rGateX + 3, wY);
+        for (let wx = rGateX + 3; wx <= rGateX + rGateW - 3; wx += 5) {
+          ctx.lineTo(wx, wY + Math.sin(wx * 0.22 + wPhase) * 2.0);
+        }
         ctx.stroke();
       }
 
-      // Torrents pouring into the battlefield from the breached gate
-      const rGateWater = ctx.createLinearGradient(rGateX, rGateTop + rGateH - 30, rGateX, rGateTop + rGateH);
-      rGateWater.addColorStop(0, 'rgba(20, 184, 166, 0.35)');
-      rGateWater.addColorStop(0.5, 'rgba(45, 212, 191, 0.55)');
-      rGateWater.addColorStop(1, 'rgba(224, 242, 254, 0.8)');
-      ctx.fillStyle = rGateWater;
-      ctx.fillRect(rGateX, rGateTop + rGateH - 24, rGateW, 24);
+      // Heavy Stone Culvert Base Threshold & Bronze Sill
+      ctx.fillStyle = isLight ? '#94a3b8' : '#081216';
+      ctx.fillRect(rGateX - 4, rGateTop + rGateH - 5, rGateW + 8, 9);
+      ctx.fillStyle = '#14b8a6';
+      ctx.fillRect(rGateX - 4, rGateTop + rGateH - 5, rGateW + 8, 2);
 
-      // Water monitoring wall lantern on the right embankment
-      const rLanternY = h * 0.16;
-      const rLanternX = rWallX + 24;
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(rLanternX - 10, rLanternY - 3, 16, 5);
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.roundRect(rLanternX - 7, rLanternY - 20, 16, 18, 3);
-      ctx.fill();
-      ctx.strokeStyle = '#14b8a6';
-      ctx.lineWidth = 1.4;
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(45, 212, 191, 0.85)';
-      ctx.shadowColor = '#2dd4bf';
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(rLanternX + 1, rLanternY - 11, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      // Twin Animated Water-Ward Wall Lanterns on the Right Embankment (Upper & Lower)
+      const rLanternPositions = [
+        { x: rWallX + 18, y: Math.max(44, h * 0.19) },
+        { x: rWallX + 18, y: Math.min(h - 36, rGateTop + rGateH + 34) }
+      ];
+      for (let li = 0; li < rLanternPositions.length; li++) {
+        const rLt = rLanternPositions[li];
+        const rFlicker = Math.sin(time * 6.4 + li * 2.3 + 1.0) * 0.18 + 0.82;
+
+        // Iron mounting bracket
+        ctx.fillStyle = isLight ? '#475569' : '#1e293b';
+        ctx.fillRect(rLt.x - 4, rLt.y - 3, 14, 5);
+        ctx.fillRect(rLt.x - 1, rLt.y - 12, 4, 12);
+
+        // Lantern housing cage
+        ctx.fillStyle = isLight ? '#cbd5e1' : '#081216';
+        ctx.beginPath();
+        ctx.roundRect(rLt.x - 7, rLt.y - 22, 16, 17, 3);
+        ctx.fill();
+        ctx.strokeStyle = '#14b8a6';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+
+        // Dynamic radial light halo
+        const rHalo = ctx.createRadialGradient(rLt.x + 1, rLt.y - 13, 1, rLt.x + 1, rLt.y - 13, 30 * rFlicker);
+        rHalo.addColorStop(0, `rgba(45, 212, 191, ${0.42 * rFlicker})`);
+        rHalo.addColorStop(0.5, `rgba(13, 148, 136, ${0.15 * rFlicker})`);
+        rHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = rHalo;
+        ctx.beginPath();
+        ctx.arc(rLt.x + 1, rLt.y - 13, 30 * rFlicker, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glowing lantern core
+        ctx.fillStyle = `rgba(204, 251, 241, ${0.92 * rFlicker})`;
+        ctx.shadowColor = '#2dd4bf';
+        ctx.shadowBlur = 9 * rFlicker;
+        ctx.beginPath();
+        ctx.arc(rLt.x + 1, rLt.y - 13, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
 
       // ── 7. COOL SUBTERRANEAN RIVER MIST & FOG BANKS ──
       for (let f = 0; f < 3; f++) {

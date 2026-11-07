@@ -1694,14 +1694,22 @@ body[data-active-theme="light"],
         overflow-y: auto !important;
         overflow-x: hidden !important;
 
+        &::-webkit-scrollbar {
+          width: 11px;
+        }
         &::-webkit-scrollbar-track {
           background: rgba(2, 132, 199, 0.08) !important;
+          border-radius: 6px;
         }
         &::-webkit-scrollbar-thumb {
-          background: rgba(2, 132, 199, 0.35) !important;
-          border-radius: 3px;
+          background: rgba(2, 132, 199, 0.42) !important;
+          border-radius: 6px;
+          border: 1px solid rgba(2, 132, 199, 0.3) !important;
           &:hover {
-            background: rgba(2, 132, 199, 0.6) !important;
+            background: rgba(2, 132, 199, 0.68) !important;
+          }
+          &:active {
+            background: #0284c7 !important;
           }
         }
       }
@@ -1907,6 +1915,29 @@ body[data-active-theme="light"],
       /* Category Filter Tabs */
       .category-tabs {
         border-bottom: 1px solid rgba(2, 132, 199, 0.2) !important;
+        scrollbar-color: rgba(2, 132, 199, 0.55) rgba(2, 132, 199, 0.1);
+
+        &::-webkit-scrollbar {
+          height: 12px;
+        }
+        &::-webkit-scrollbar-track {
+          background: rgba(2, 132, 199, 0.08) !important;
+          border: 1px solid rgba(2, 132, 199, 0.18) !important;
+          border-radius: 6px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background: linear-gradient(90deg, rgba(2, 132, 199, 0.55) 0%, rgba(14, 165, 233, 0.7) 100%) !important;
+          border-radius: 6px;
+          border: 1px solid rgba(2, 132, 199, 0.4) !important;
+
+          &:hover {
+            background: linear-gradient(90deg, rgba(2, 132, 199, 0.8) 0%, rgba(14, 165, 233, 0.9) 100%) !important;
+          }
+
+          &:active {
+            background: #0284c7 !important;
+          }
+        }
 
         .cat-tab {
           background: #ffffff !important;
@@ -4428,16 +4459,35 @@ body[data-active-theme="light"].theme-muspelheim {
         gap: 6px;
         flex-wrap: nowrap;
         overflow-x: auto;
-        padding: 2px 0 6px 0;
+        overflow-y: hidden;
+        padding: 2px 2px 10px 2px;
         border-bottom: 1px solid var(--modal-section-divider);
-        scrollbar-width: thin;
+        scrollbar-width: auto;
+        scrollbar-color: var(--frost-ice-primary) rgba(0, 0, 0, 0.38);
 
         &::-webkit-scrollbar {
-          height: 4px;
+          height: 12px;
+        }
+        &::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.38);
+          border: 1px solid rgba(56, 189, 248, 0.16);
+          border-radius: 6px;
         }
         &::-webkit-scrollbar-thumb {
-          background: var(--frost-ice-border);
-          border-radius: 2px;
+          background: linear-gradient(90deg, var(--frost-ice-secondary) 0%, var(--frost-ice-primary) 100%);
+          border-radius: 6px;
+          border: 1px solid rgba(186, 230, 253, 0.45);
+          cursor: grab;
+
+          &:hover {
+            background: linear-gradient(90deg, var(--frost-ice-primary) 0%, #7dd3fc 100%);
+            border-color: #bae6fd;
+          }
+
+          &:active {
+            background: #7dd3fc;
+            cursor: grabbing;
+          }
         }
 
         .cat-tab {
@@ -4527,21 +4577,33 @@ body[data-active-theme="light"].theme-muspelheim {
         min-height: 0;
         overflow-y: auto;
         overflow-x: hidden;
-        padding-right: 6px;
+        padding-right: 8px;
         display: flex;
         flex-direction: column;
         gap: 12px;
 
         &::-webkit-scrollbar {
-          width: 6px;
+          width: 11px;
         }
         &::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.35);
-          border-radius: 3px;
+          background: rgba(0, 0, 0, 0.38);
+          border: 1px solid rgba(56, 189, 248, 0.14);
+          border-radius: 6px;
         }
         &::-webkit-scrollbar-thumb {
-          background: var(--frost-ice-border);
-          border-radius: 3px;
+          background: linear-gradient(180deg, var(--frost-ice-secondary) 0%, var(--frost-ice-primary) 100%);
+          border-radius: 6px;
+          border: 1px solid rgba(186, 230, 253, 0.4);
+          cursor: grab;
+
+          &:hover {
+            background: linear-gradient(180deg, var(--frost-ice-primary) 0%, #7dd3fc 100%);
+          }
+
+          &:active {
+            background: #7dd3fc;
+            cursor: grabbing;
+          }
         }
 
         .roster-section {
@@ -6595,15 +6657,19 @@ body[data-active-theme="light"].theme-muspelheim {
 
         /* Custom Sleek Scrollbar */
         &::-webkit-scrollbar {
-          width: 4px;
+          width: 8px;
         }
         &::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.3);
-          border-radius: 2px;
+          background: rgba(0, 0, 0, 0.32);
+          border-radius: 4px;
         }
         &::-webkit-scrollbar-thumb {
           background: var(--frost-ice-border);
-          border-radius: 2px;
+          border-radius: 4px;
+
+          &:hover {
+            background: var(--frost-ice-primary);
+          }
         }
       }
 
