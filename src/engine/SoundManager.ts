@@ -301,6 +301,36 @@ export class SoundManager {
     });
   }
 
+  // Norse Watchman Horn Call (Scout & Standard Wave Arrival)
+  public playScoutHorn() {
+    const ctx = this.initCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(196, now);
+    osc.frequency.exponentialRampToValueAtTime(293.66, now + 0.16);
+    osc.frequency.setValueAtTime(293.66, now + 0.35);
+    osc.frequency.exponentialRampToValueAtTime(246.94, now + 0.58);
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 780;
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.getDestination(ctx));
+    this.autoCleanup(osc, [filter, gain]);
+    osc.start(now);
+    osc.stop(now + 0.58);
+  }
+
   // Ancient Gjallarhorn / Horde Wave Warning
   public playWave() {
     const ctx = this.initCtx();

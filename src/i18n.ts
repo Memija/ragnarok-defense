@@ -367,7 +367,13 @@ export const translations: Record<string, Record<string, string>> = {
     action_build: '✦ Build {name} ✦',
     plant: 'Plant',
     build: 'Build',
-    occupied: 'Occupied'
+    occupied: 'Occupied',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Wave {current} / {total}',
+    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Wave {current} / {total}',
+    wave_scout_call: '⚔️ Enemy Scout Approaching! ⚔️',
+    wave_standard_call: '⚔️ Enemy Wave Advancing ({count}) ⚔️',
+    wave_major_call: '⚔️ A Large Wave of Enemies Approaches! ⚔️',
+    wave_final_call: '⚔️ Final Wave — Huge Horde Approaching! ⚔️'
   },
   de: {
     foreignUnitsTitle: 'Heimatwelt verteidigen',
@@ -735,7 +741,13 @@ export const translations: Record<string, Record<string, string>> = {
     action_build: '✦ {name} bauen ✦',
     plant: 'Pflanzen',
     build: 'Bauen',
-    occupied: 'Besetzt'
+    occupied: 'Besetzt',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Welle {current} / {total}',
+    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Welle {current} / {total}',
+    wave_scout_call: '⚔️ Feindlicher Späher nähert sich! ⚔️',
+    wave_standard_call: '⚔️ Feindliche Welle rückt vor ({count}) ⚔️',
+    wave_major_call: '⚔️ Eine große Feindeswelle nähert sich! ⚔️',
+    wave_final_call: '⚔️ Letzte Welle — Gewaltige Horde im Anmarsch! ⚔️'
   },
   id: {
     foreignUnitsTitle: 'Mempertahankan Dunia Asal',
@@ -1103,7 +1115,13 @@ export const translations: Record<string, Record<string, string>> = {
     action_build: '✦ Bangun {name} ✦',
     plant: 'Tanam',
     build: 'Bangun',
-    occupied: 'Terisi'
+    occupied: 'Terisi',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Gelombang {current} / {total}',
+    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Gelombang {current} / {total}',
+    wave_scout_call: '⚔️ Pengintai Musuh Mendekat! ⚔️',
+    wave_standard_call: '⚔️ Gelombang Musuh Maju ({count}) ⚔️',
+    wave_major_call: '⚔️ Gelombang Besar Musuh Mendekat! ⚔️',
+    wave_final_call: '⚔️ Gelombang Terakhir — Pasukan Besar Mendekat! ⚔️'
   },
   bs: {
     foreignUnitsTitle: 'Odbrana domovine',
@@ -1471,7 +1489,13 @@ export const translations: Record<string, Record<string, string>> = {
     action_build: '✦ Izgradi {name} ✦',
     plant: 'Posadi',
     build: 'Izgradi',
-    occupied: 'Zauzeto'
+    occupied: 'Zauzeto',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Val {current} / {total}',
+    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Val {current} / {total}',
+    wave_scout_call: '⚔️ Neprijateljski izviđač dolazi! ⚔️',
+    wave_standard_call: '⚔️ Neprijateljski val napreduje ({count}) ⚔️',
+    wave_major_call: '⚔️ Veliki val neprijatelja se približava! ⚔️',
+    wave_final_call: '⚔️ Posljednji val — Ogromna horda dolazi! ⚔️'
   },
   pl: {
     foreignUnitsTitle: 'Obrona ojczystego świata',
@@ -1839,7 +1863,13 @@ export const translations: Record<string, Record<string, string>> = {
     action_build: '✦ Zbuduj {name} ✦',
     plant: 'Zasadź',
     build: 'Zbuduj',
-    occupied: 'Zajęte'
+    occupied: 'Zajęte',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Fala {current} / {total}',
+    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Fala {current} / {total}',
+    wave_scout_call: '⚔️ Nadchodzi zwiadowca wroga! ⚔️',
+    wave_standard_call: '⚔️ Fala wrogów naciera ({count}) ⚔️',
+    wave_major_call: '⚔️ Nadciąga duża fala wrogów! ⚔️',
+    wave_final_call: '⚔️ Ostatnia fala — Nadciąga ogromna horda! ⚔️'
   },
   'sr-Cyrl': {
     foreignUnitsTitle: 'Одбрана матичног света',
@@ -2207,7 +2237,13 @@ export const translations: Record<string, Record<string, string>> = {
     action_build: '✦ Изгради {name} ✦',
     plant: 'Посади',
     build: 'Изгради',
-    occupied: 'Заузето'
+    occupied: 'Заузето',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Талас {current} / {total}',
+    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Талас {current} / {total}',
+    wave_scout_call: '⚔️ Непријатељски извиђач долази! ⚔️',
+    wave_standard_call: '⚔️ Непријатељски талас напредује ({count}) ⚔️',
+    wave_major_call: '⚔️ Велики талас непријатеља се приближава! ⚔️',
+    wave_final_call: '⚔️ Последњи талас — Огромна хорда долази! ⚔️'
   }
 };
 

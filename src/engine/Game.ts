@@ -49,6 +49,28 @@ export interface FloatingText {
   isCritical?: boolean;
 }
 
+type WaveKind = 'scout' | 'standard' | 'major' | 'final';
+type EnemyUnitKind = 'basic' | 'small_troll' | 'conehead' | 'buckethead' | 'troll';
+
+interface WaveSpec {
+  waveNumber: number;
+  count: number;
+  kind: WaveKind;
+}
+
+interface QueuedWaveSpawn {
+  row: number;
+  unitKind: EnemyUnitKind;
+  delayMs: number;
+}
+
+interface IncomingLaneWarning {
+  row: number;
+  timer: number;
+  maxTimer: number;
+  isHeavy: boolean;
+}
+
 export class Game {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -112,15 +134,30 @@ export class Game {
   mouseX: number = -1000;
   mouseY: number = -1000;
 
-  // Wave warning alert
+  // Wave call & warning banner state
   waveBannerTimer: number = 0;
+  waveBannerMaxTimer: number = 3.2;
+  waveBannerHeader: string = '';
   waveBannerText: string = '';
+  waveBannerKind: WaveKind = 'standard';
+  activeBannerWaveSpec: WaveSpec | null = null;
   waveAnnounced: boolean = false;
+
+  // Multi-wave progression director
+  wavePlan: WaveSpec[] = [];
+  totalWaves: number = 6;
+  currentWave: number = 0;
+  pendingWaveSpawns: QueuedWaveSpawn[] = [];
+  nextSpawnTimer: number = 0;
+  interWaveTimer: number = 0;
+  currentSpawnWarned: boolean = false;
+  lastSpawnRow: number = -1;
+  laneWarnings: IncomingLaneWarning[] = [];
 
   // Game state & statistics
   gameState: 'playing' | 'victory' | 'defeat' = 'playing';
   zombiesSpawned: number = 0;
-  zombiesTotal: number = 12;
+  zombiesTotal: number = 24;
   zombiesKilled: number = 0;
   victoryTimer: number = 0;
   defeatTimer: number = 0;
@@ -128,9 +165,7 @@ export class Game {
   // Cinematic Bifrost entrance transition
   realmEntranceTimer: number = 2.8;
 
-  spawnGraceTimer: number = 14000;
-  zombieSpawnTimer: number = 0;
-  zombieSpawnInterval: number = 5000;
+  spawnGraceTimer: number = 22000;
   ambientCurrencyTimer: number = 4500;
   ambientCurrencyInterval: number = 8500;
   
@@ -168,9 +203,7 @@ export class Game {
     const cssH = canvas.clientHeight || (canvas.height / (window.devicePixelRatio || 1));
     this.grid = new Grid(cssW, cssH, realm, city);
 
-    this.zombiesTotal = 10 + this.level * 5;
-    this.spawnGraceTimer = this.getInitialSpawnGraceMs();
-    this.zombieSpawnInterval = this.computeSpawnIntervalMs();
+    this.initWaveDirector();
     this.ambientCurrencyTimer = 4500;
 
     for (let r = 0; r < this.grid.rows; r++) {
@@ -361,11 +394,54 @@ export class Game {
     this.shakeMagnitude = magnitude;
   }
 
-  triggerWaveBanner(text: string = '⚔️ Incoming Horde of Invaders ⚔️') {
+  triggerWaveBanner(text: string = '⚔️ Incoming Horde of Invaders ⚔️', kind: WaveKind = 'major') {
+    this.activeBannerWaveSpec = null;
+    this.waveBannerKind = kind;
+    this.waveBannerHeader = 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   ᚹ ᚨ ᚱ ᚾ ᛁ ᚾ ᚷ';
     this.waveBannerText = text;
+    this.waveBannerMaxTimer = 3.5;
     this.waveBannerTimer = 3.5;
-    this.triggerScreenShake(800, 8);
-    SoundManager.getInstance().playWave();
+    if (kind === 'major' || kind === 'final') {
+      this.triggerScreenShake(800, 8);
+      SoundManager.getInstance().playWave();
+    } else {
+      SoundManager.getInstance().playScoutHorn();
+    }
+  }
+
+  private refreshWaveBannerStrings(spec: WaveSpec) {
+    const isMajorOrFinal = spec.kind === 'major' || spec.kind === 'final';
+    const headerTemplate = isMajorOrFinal ? t('wave_warning_header') : t('wave_header');
+    this.waveBannerHeader = headerTemplate
+      .replace('{current}', spec.waveNumber.toString())
+      .replace('{total}', this.totalWaves.toString());
+
+    if (spec.kind === 'scout') {
+      this.waveBannerText = t('wave_scout_call');
+    } else if (spec.kind === 'major') {
+      this.waveBannerText = t('wave_major_call');
+    } else if (spec.kind === 'final') {
+      this.waveBannerText = t('wave_final_call');
+    } else {
+      this.waveBannerText = t('wave_standard_call').replace('{count}', spec.count.toString());
+    }
+  }
+
+  private announceWave(spec: WaveSpec) {
+    this.activeBannerWaveSpec = spec;
+    this.waveBannerKind = spec.kind;
+    this.refreshWaveBannerStrings(spec);
+    const isMajorOrFinal = spec.kind === 'major' || spec.kind === 'final';
+    this.waveBannerMaxTimer = isMajorOrFinal ? 3.8 : 3.1;
+    this.waveBannerTimer = this.waveBannerMaxTimer;
+
+    if (isMajorOrFinal) {
+      this.waveAnnounced = true;
+      this.triggerScreenShake(spec.kind === 'final' ? 850 : 600, spec.kind === 'final' ? 8 : 6);
+      SoundManager.getInstance().playWave();
+    } else {
+      SoundManager.getInstance().playScoutHorn();
+    }
   }
 
   handleKeyDown = (e: KeyboardEvent) => {
@@ -589,6 +665,9 @@ export class Game {
     this.renderSidebar();
     this.updateRealmHeader();
     this.updateUI();
+    if (this.waveBannerTimer > 0 && this.activeBannerWaveSpec) {
+      this.refreshWaveBannerStrings(this.activeBannerWaveSpec);
+    }
   };
 
   updateRealmHeader() {
@@ -651,31 +730,312 @@ export class Game {
   }
 
   private getInitialSpawnGraceMs(): number {
-    return Math.max(8500, 14000 - (this.level - 1) * 700);
+    return Math.max(17000, 22000 - (this.level - 1) * 700);
   }
 
-  private computeSpawnIntervalMs(): number {
-    const baseInterval = Math.max(2400, 6200 - (this.level - 1) * 380);
-    const progress = this.zombiesSpawned / Math.max(1, this.zombiesTotal);
-    if (this.zombiesSpawned < 3 || progress < 0.25) {
-      return baseInterval * 1.75;
+  private buildWavePlan(): WaveSpec[] {
+    const clampedLevel = Math.max(1, Math.min(10, this.level));
+    const totalWaves = 5 + clampedLevel;
+    const oneStepWaves = Math.min(7, 4 + Math.floor(clampedLevel / 2));
+    const plan: WaveSpec[] = [];
+
+    let prevCount = 0;
+    for (let w = 1; w <= totalWaves; w++) {
+      let count: number;
+      if (w <= oneStepWaves) {
+        count = w;
+      } else if (w < totalWaves - 1) {
+        count = prevCount + 2;
+      } else if (w === totalWaves - 1) {
+        count = prevCount + (clampedLevel >= 4 ? 3 : 2);
+      } else {
+        count = prevCount + (clampedLevel >= 6 ? 4 : clampedLevel >= 2 ? 3 : 2);
+      }
+
+      let kind: WaveKind = 'standard';
+      if (w === 1) {
+        kind = 'scout';
+      } else if (w === totalWaves) {
+        kind = 'final';
+      } else if (w === totalWaves - 1) {
+        kind = 'major';
+      }
+
+      plan.push({ waveNumber: w, count, kind });
+      prevCount = count;
     }
-    if (progress < 0.55) {
-      return baseInterval * 1.3;
+
+    return plan;
+  }
+
+  private initWaveDirector(): void {
+    this.wavePlan = this.buildWavePlan();
+    this.totalWaves = this.wavePlan.length;
+    this.currentWave = 0;
+    this.pendingWaveSpawns = [];
+    this.nextSpawnTimer = 0;
+    this.interWaveTimer = 0;
+    this.currentSpawnWarned = false;
+    this.lastSpawnRow = -1;
+    this.laneWarnings = [];
+    this.waveBannerTimer = 0;
+    this.activeBannerWaveSpec = null;
+    this.waveAnnounced = false;
+    this.zombiesSpawned = 0;
+    this.zombiesTotal = this.wavePlan.reduce((sum, spec) => sum + spec.count, 0);
+    this.spawnGraceTimer = this.getInitialSpawnGraceMs();
+  }
+
+  private computeIntraWaveGapMs(spec: WaveSpec): number {
+    if (spec.kind === 'final') {
+      return 1250 + Math.random() * 700;
     }
-    return baseInterval * 0.9;
+    if (spec.kind === 'major') {
+      return 1650 + Math.random() * 750;
+    }
+    if (spec.waveNumber === 2) {
+      return 6800 + Math.random() * 800;
+    }
+    if (spec.waveNumber === 3) {
+      return 5200 + Math.random() * 900;
+    }
+    if (spec.waveNumber === 4) {
+      return 4200 + Math.random() * 800;
+    }
+    const progress = (spec.waveNumber - 1) / Math.max(1, this.totalWaves - 1);
+    const base = Math.max(2600, 4100 - progress * 1200 - (this.level - 1) * 90);
+    return base + Math.random() * 700;
+  }
+
+  private computeInterWaveDelayMs(completedWave: number): number {
+    const nextSpec = this.wavePlan[completedWave];
+    if (!nextSpec) return 0;
+    if (nextSpec.kind === 'major' || nextSpec.kind === 'final') {
+      return 24000;
+    }
+    if (completedWave === 1) return 21000;
+    if (completedWave === 2) return 19500;
+    if (completedWave === 3) return 18000;
+    return Math.max(14500, 17500 - (this.level - 1) * 350);
+  }
+
+  private computePostClearDelayMs(completedWave: number): number {
+    const nextSpec = this.wavePlan[completedWave];
+    if (!nextSpec) return 0;
+    if (nextSpec.kind === 'major' || nextSpec.kind === 'final') {
+      return 7200;
+    }
+    if (completedWave <= 2) return 6500;
+    return 5200;
+  }
+
+  private isHeavyEnemyKind(kind: EnemyUnitKind): boolean {
+    return kind === 'buckethead' || kind === 'troll';
+  }
+
+  private pickSpawnRowsForWave(count: number): number[] {
+    const numRows = Math.max(1, this.grid ? this.grid.rows : 5);
+    const chosen: number[] = [];
+    let prevRow = this.lastSpawnRow;
+
+    while (chosen.length < count) {
+      const bag: number[] = [];
+      for (let r = 0; r < numRows; r++) {
+        bag.push(r);
+      }
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = bag[i];
+        bag[i] = bag[j];
+        bag[j] = tmp;
+      }
+      if (numRows > 1 && bag[0] === prevRow) {
+        const swapIdx = 1 + Math.floor(Math.random() * (numRows - 1));
+        const tmp = bag[0];
+        bag[0] = bag[swapIdx];
+        bag[swapIdx] = tmp;
+      }
+      for (let i = 0; i < bag.length && chosen.length < count; i++) {
+        chosen.push(bag[i]);
+        prevRow = bag[i];
+      }
+    }
+
+    if (chosen.length > 0) {
+      this.lastSpawnRow = chosen[chosen.length - 1];
+    }
+    return chosen;
+  }
+
+  private pickEnemyUnitForWave(spec: WaveSpec, spawnIndex: number): EnemyUnitKind {
+    const { waveNumber, count, kind } = spec;
+    const waveProgress = (waveNumber - 1) / Math.max(1, this.totalWaves - 1);
+    const rand = Math.random();
+
+    // Thematic frost roster in Jotunheim, escalating gradually across waves
+    if (this.realm === 'jotunheim') {
+      if (waveNumber <= 2) {
+        return 'small_troll';
+      }
+      if (waveNumber === 3) {
+        return (spawnIndex === count - 1 && rand > 0.45) ? 'conehead' : 'small_troll';
+      }
+      if (kind === 'standard') {
+        if (waveProgress >= 0.55 && spawnIndex === count - 1 && rand > 0.5) {
+          return 'troll';
+        }
+        return rand > 0.58 ? 'conehead' : 'small_troll';
+      }
+      if (spawnIndex === Math.floor(count / 2)) {
+        return 'troll';
+      }
+      if (rand > 0.68) return 'troll';
+      if (rand > 0.34) return 'conehead';
+      return 'small_troll';
+    }
+
+    // Waves 1-2: strictly basic scouts while the player builds economy
+    if (waveNumber <= 2) {
+      return 'basic';
+    }
+
+    // Wave 3: basic scouts, with a chance for one agile small troll at the end
+    if (waveNumber === 3) {
+      if (spawnIndex === count - 1 && rand > 0.5) {
+        return 'small_troll';
+      }
+      return 'basic';
+    }
+
+    // Wave 4: gentle blend of small trolls (and first light armor on Level 2+)
+    if (waveNumber === 4) {
+      if (this.level >= 2 && spawnIndex === count - 1 && rand > 0.35) {
+        return 'conehead';
+      }
+      if (spawnIndex === count - 2 || rand > 0.72) {
+        return 'small_troll';
+      }
+      return 'basic';
+    }
+
+    // Mid-game standard waves (Wave 5+ prior to Major/Final waves)
+    if (kind === 'standard') {
+      if (this.level >= 4 && waveProgress >= 0.65 && spawnIndex === count - 1 && rand > 0.45) {
+        return 'troll';
+      }
+      if (this.level >= 3 && waveProgress >= 0.52 && spawnIndex >= Math.floor(count / 2) && rand > 0.78) {
+        return 'buckethead';
+      }
+      if (this.level >= 2 && rand > 0.64) {
+        return 'conehead';
+      }
+      if (rand > 0.42) {
+        return 'small_troll';
+      }
+      return 'basic';
+    }
+
+    // Late-battle Major & Final waves
+    if (this.level === 1) {
+      if (spawnIndex === 2 || (kind === 'final' && spawnIndex === count - 2)) {
+        return 'conehead';
+      }
+      return rand > 0.65 ? 'small_troll' : 'basic';
+    }
+
+    if (this.level === 2) {
+      if (spawnIndex === Math.floor(count / 2)) {
+        return kind === 'final' ? 'troll' : 'conehead';
+      }
+      if (kind === 'final' && rand > 0.86) return 'troll';
+      if (rand > 0.58) return 'conehead';
+      if (rand > 0.32) return 'small_troll';
+      return 'basic';
+    }
+
+    const trollThreshold = Math.max(0.76, 0.86 - (this.level - 3) * 0.025);
+    const bucketThreshold = Math.max(0.54, 0.66 - (this.level - 3) * 0.025);
+    if (spawnIndex === Math.floor(count / 2)) {
+      return kind === 'final' ? 'troll' : 'buckethead';
+    }
+    if (rand > trollThreshold) return 'troll';
+    if (rand > bucketThreshold) return 'buckethead';
+    if (rand > 0.36) return 'conehead';
+    if (rand > 0.18) return 'small_troll';
+    return 'basic';
+  }
+
+  private addIncomingLaneWarning(row: number, durationMs: number, isHeavy: boolean): void {
+    const existing = this.laneWarnings.find(w => w.row === row);
+    if (existing) {
+      existing.timer = Math.max(existing.timer, durationMs);
+      existing.maxTimer = Math.max(existing.maxTimer, durationMs);
+      existing.isHeavy = existing.isHeavy || isHeavy;
+      return;
+    }
+    this.laneWarnings.push({
+      row,
+      timer: durationMs,
+      maxTimer: durationMs,
+      isHeavy
+    });
+  }
+
+  private startNextWave(): void {
+    if (this.currentWave >= this.wavePlan.length) return;
+    const spec = this.wavePlan[this.currentWave];
+    this.currentWave = spec.waveNumber;
+    this.announceWave(spec);
+
+    const rows = this.pickSpawnRowsForWave(spec.count);
+    const leadInMs = (spec.kind === 'major' || spec.kind === 'final') ? 2600 : 2000;
+    this.pendingWaveSpawns = [];
+
+    for (let i = 0; i < spec.count; i++) {
+      const unitKind = this.pickEnemyUnitForWave(spec, i);
+      const delayMs = i === 0 ? leadInMs : this.computeIntraWaveGapMs(spec);
+      this.pendingWaveSpawns.push({
+        row: rows[i],
+        unitKind,
+        delayMs
+      });
+    }
+
+    if (this.pendingWaveSpawns.length > 0) {
+      this.nextSpawnTimer = this.pendingWaveSpawns[0].delayMs;
+      this.currentSpawnWarned = false;
+    }
+  }
+
+  private spawnQueuedEnemy(spawn: QueuedWaveSpawn): void {
+    this.zombiesSpawned++;
+    const spawnY = (spawn.row + 0.5) * this.grid.cellHeight - 45;
+    const spawnX = this.width + 10;
+
+    switch (spawn.unitKind) {
+      case 'troll':
+        this.attackers.push(new Troll(spawnX, spawnY - 10, spawn.row));
+        break;
+      case 'buckethead':
+        this.attackers.push(new BucketheadZombie(spawnX, spawnY, spawn.row));
+        break;
+      case 'conehead':
+        this.attackers.push(new ConeheadZombie(spawnX, spawnY, spawn.row));
+        break;
+      case 'small_troll':
+        this.attackers.push(new SmallTroll(spawnX, spawnY + 5, spawn.row));
+        break;
+      case 'basic':
+      default:
+        this.attackers.push(new BasicZombie(spawnX, spawnY, spawn.row));
+        break;
+    }
   }
 
   restartBattle() {
     this.gameState = 'playing';
-    this.zombiesSpawned = 0;
     this.zombiesKilled = 0;
-    this.zombiesTotal = 10 + this.level * 5;
-    this.spawnGraceTimer = this.getInitialSpawnGraceMs();
-    this.zombieSpawnInterval = this.computeSpawnIntervalMs();
     this.ambientCurrencyTimer = 4500;
-    this.zombieSpawnTimer = 0;
-    this.waveAnnounced = false;
     this.defenders = [];
     this.attackers = [];
     this.projectiles = [];
@@ -689,6 +1049,7 @@ export class Game {
       document.body.className = this.city ? `theme-${this.realm} location-${this.city}` : `theme-${this.realm}`;
     }
     this.grid = new Grid(this.width, this.height, this.realm, this.city);
+    this.initWaveDirector();
     this.cachedBgGradient = null;
     this.cachedCastleCanvas = null;
     this.initWeather();
@@ -1021,6 +1382,14 @@ export class Game {
       }
     }
 
+    // Update incoming lane call warnings
+    for (let i = this.laneWarnings.length - 1; i >= 0; i--) {
+      this.laneWarnings[i].timer -= deltaTime;
+      if (this.laneWarnings[i].timer <= 0) {
+        this.laneWarnings.splice(i, 1);
+      }
+    }
+
     if (this.gameState === 'playing') {
       if (this.realmEntranceTimer <= 0) {
         if (!getInfiniteResourcesForLevel(this.level)) {
@@ -1038,70 +1407,56 @@ export class Game {
           }
         }
 
-        this.zombieSpawnInterval = this.computeSpawnIntervalMs();
+        // Multi-wave progression director: grace period -> wave call -> paced spawns -> breather
         if (this.spawnGraceTimer > 0) {
           this.spawnGraceTimer -= deltaTime;
           if (this.spawnGraceTimer <= 0) {
             this.spawnGraceTimer = 0;
-            this.zombieSpawnTimer = this.zombieSpawnInterval;
+            this.startNextWave();
           }
-        } else {
-          this.zombieSpawnTimer += deltaTime;
-        }
-      }
+        } else if (this.pendingWaveSpawns.length > 0) {
+          const nextSpawn = this.pendingWaveSpawns[0];
+          this.nextSpawnTimer -= deltaTime;
 
-      // Wave announcement trigger
-      if (!this.waveAnnounced && this.zombiesSpawned >= Math.floor(this.zombiesTotal / 2)) {
-        this.waveAnnounced = true;
-        this.triggerWaveBanner('⚔️ A huge wave of monsters is approaching! ⚔️');
-      }
-
-      // Spawning attackers
-      if (this.spawnGraceTimer <= 0 && this.zombieSpawnTimer >= this.zombieSpawnInterval && this.zombiesSpawned < this.zombiesTotal) {
-        this.zombieSpawnTimer = 0;
-        this.zombiesSpawned++;
-        const randomRow = Math.floor(Math.random() * this.grid.rows);
-        const rand = Math.random();
-        
-        const spawnY = (randomRow + 0.5) * this.grid.cellHeight - 45;
-        const spawnX = this.width + 10;
-
-        // Thematic enemy spawns in Jotunheim (more frost trolls & giants)
-        if (this.realm === 'jotunheim') {
-          if (this.zombiesSpawned <= 2) {
-            this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
-          } else if (rand > 0.6) {
-            this.attackers.push(new Troll(spawnX, spawnY - 10, randomRow));
-          } else if (rand > 0.25) {
-            this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
-          } else {
-            this.attackers.push(new ConeheadZombie(spawnX, spawnY, randomRow));
+          if (!this.currentSpawnWarned && this.nextSpawnTimer <= 1800) {
+            this.currentSpawnWarned = true;
+            this.addIncomingLaneWarning(
+              nextSpawn.row,
+              Math.max(900, this.nextSpawnTimer + 350),
+              this.isHeavyEnemyKind(nextSpawn.unitKind)
+            );
           }
-        } else {
-          if (this.zombiesSpawned <= 3) {
-            this.attackers.push(new BasicZombie(spawnX, spawnY, randomRow));
-          } else if (this.level >= 2) {
-            if (this.zombiesSpawned > 5 && rand > 0.8) {
-              this.attackers.push(new Troll(spawnX, spawnY - 10, randomRow));
-            } else if (this.level >= 3 && this.zombiesSpawned > 4 && rand > 0.65) {
-              this.attackers.push(new BucketheadZombie(spawnX, spawnY, randomRow));
-            } else if (rand > 0.48) {
-              this.attackers.push(new ConeheadZombie(spawnX, spawnY, randomRow));
-            } else if (rand > 0.28) {
-              this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
-            } else {
-              this.attackers.push(new BasicZombie(spawnX, spawnY, randomRow));
+
+          if (this.nextSpawnTimer <= 0) {
+            const ready = this.pendingWaveSpawns.shift()!;
+            this.spawnQueuedEnemy(ready);
+
+            if (this.pendingWaveSpawns.length > 0) {
+              this.nextSpawnTimer = this.pendingWaveSpawns[0].delayMs;
+              this.currentSpawnWarned = false;
+            } else if (this.currentWave < this.totalWaves) {
+              this.interWaveTimer = this.computeInterWaveDelayMs(this.currentWave);
             }
-          } else if (rand > 0.65) {
-            this.attackers.push(new SmallTroll(spawnX, spawnY + 5, randomRow));
-          } else {
-            this.attackers.push(new BasicZombie(spawnX, spawnY, randomRow));
+          }
+        } else if (this.currentWave < this.totalWaves) {
+          if (this.attackers.length === 0) {
+            this.interWaveTimer = Math.min(this.interWaveTimer, this.computePostClearDelayMs(this.currentWave));
+          }
+          this.interWaveTimer -= deltaTime;
+          if (this.interWaveTimer <= 0) {
+            this.interWaveTimer = 0;
+            this.startNextWave();
           }
         }
       }
 
       // Victory Condition check
-      if (this.zombiesSpawned >= this.zombiesTotal && this.attackers.length === 0) {
+      if (
+        this.currentWave >= this.totalWaves &&
+        this.pendingWaveSpawns.length === 0 &&
+        this.zombiesSpawned >= this.zombiesTotal &&
+        this.attackers.length === 0
+      ) {
         this.gameState = 'victory';
         SoundManager.getInstance().playVictory();
       }
@@ -4720,47 +5075,138 @@ export class Game {
     ctx.restore();
   }
 
+  drawIncomingLaneWarnings() {
+    if (this.gameState !== 'playing' || this.laneWarnings.length === 0 || !this.grid) return;
+    const ctx = this.ctx;
+    const w = this.width;
+    const now = performance.now();
+    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
+
+    ctx.save();
+    for (let i = 0; i < this.laneWarnings.length; i++) {
+      const warning = this.laneWarnings[i];
+      if (warning.row < 0 || warning.row >= this.grid.rows) continue;
+
+      const rowTop = warning.row * this.grid.cellHeight;
+      const rowH = this.grid.cellHeight;
+      const cy = rowTop + rowH * 0.5;
+      const elapsed = Math.max(0, warning.maxTimer - warning.timer);
+      const fadeIn = Math.min(1, elapsed / 220);
+      const fadeOut = Math.min(1, warning.timer / 320);
+      const alpha = Math.max(0, Math.min(1, fadeIn * fadeOut));
+      const pulse = 0.7 + 0.3 * Math.sin(now * 0.011 + warning.row);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      // Subtle incoming lane edge wash
+      const bandW = 78;
+      const bandGrad = ctx.createLinearGradient(w - bandW, cy, w, cy);
+      bandGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      if (warning.isHeavy) {
+        bandGrad.addColorStop(1, isLight ? `rgba(220, 38, 38, ${0.22 * pulse})` : `rgba(239, 68, 68, ${0.3 * pulse})`);
+      } else {
+        bandGrad.addColorStop(1, isLight ? `rgba(217, 119, 6, ${0.2 * pulse})` : `rgba(245, 158, 11, ${0.26 * pulse})`);
+      }
+      ctx.fillStyle = bandGrad;
+      ctx.fillRect(w - bandW, rowTop + 4, bandW, Math.max(12, rowH - 8));
+
+      // Norse watchman lane-call badge
+      const bx = w - 26 + Math.sin(now * 0.012) * 2.5;
+      const borderColor = warning.isHeavy
+        ? (isLight ? '#dc2626' : '#ff5252')
+        : (isLight ? '#d97706' : '#fbbf24');
+
+      ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(15, 23, 36, 0.92)';
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = borderColor;
+      ctx.shadowBlur = 12 * pulse;
+
+      ctx.beginPath();
+      ctx.roundRect(bx - 20, cy - 14, 40, 28, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = borderColor;
+      ctx.font = 'bold 13px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(warning.isHeavy ? '« ⚠' : '« ⚔', bx, cy + 0.5);
+
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
   drawWaveBanner() {
     if (this.waveBannerTimer <= 0) return;
     const ctx = this.ctx;
     const w = this.width;
     const cx = this.grid ? (this.grid.startX + (this.width - this.grid.startX) / 2) : (w / 2);
-    const cy = 120;
-    const alpha = Math.min(1, this.waveBannerTimer * 1.5);
+    const isMajorOrFinal = this.waveBannerKind === 'major' || this.waveBannerKind === 'final';
+    const maxTimer = Math.max(0.6, this.waveBannerMaxTimer);
+    const elapsed = Math.max(0, maxTimer - this.waveBannerTimer);
+    const fadeIn = Math.min(1, elapsed / 0.25);
+    const fadeOut = Math.min(1, this.waveBannerTimer / 0.55);
+    const alpha = Math.max(0, Math.min(1, fadeIn * fadeOut));
+    const cy = 56 - (1 - fadeIn) * 10;
+    const availableW = this.grid ? Math.max(300, w - this.grid.startX - 36) : Math.max(300, w - 36);
+    const boxW = Math.min(540, availableW);
+    const boxH = 64;
     const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     ctx.save();
     ctx.globalAlpha = alpha;
 
-    // Glowing alert tablet
-    ctx.fillStyle = isLight ? 'rgba(255, 241, 242, 0.96)' : 'rgba(25, 10, 10, 0.92)';
-    ctx.strokeStyle = isLight ? '#dc2626' : '#ff3d00';
-    ctx.lineWidth = 3;
-    ctx.shadowColor = isLight ? 'rgba(220, 38, 38, 0.35)' : '#ff1744';
-    ctx.shadowBlur = 30;
+    // Alert / Wave Call Tablet
+    if (isMajorOrFinal) {
+      ctx.fillStyle = isLight ? 'rgba(255, 241, 242, 0.96)' : 'rgba(25, 10, 10, 0.92)';
+      ctx.strokeStyle = isLight ? '#dc2626' : '#ff3d00';
+      ctx.shadowColor = isLight ? 'rgba(220, 38, 38, 0.35)' : '#ff1744';
+      ctx.shadowBlur = 28;
+    } else {
+      ctx.fillStyle = isLight ? 'rgba(255, 251, 235, 0.96)' : 'rgba(14, 22, 34, 0.92)';
+      ctx.strokeStyle = isLight ? '#d97706' : '#f59e0b';
+      ctx.shadowColor = isLight ? 'rgba(217, 119, 6, 0.28)' : 'rgba(245, 158, 11, 0.45)';
+      ctx.shadowBlur = 20;
+    }
+    ctx.lineWidth = isMajorOrFinal ? 3 : 2.2;
 
     ctx.beginPath();
-    ctx.roundRect(cx - 280, cy - 35, 560, 70, 12);
+    ctx.roundRect(cx - boxW / 2, cy - boxH / 2, boxW, boxH, 12);
     ctx.fill();
     ctx.stroke();
 
-    // Runic warning header
-    ctx.fillStyle = isLight ? '#b91c1c' : '#ff5252';
-    ctx.font = 'bold 11px serif';
+    // Runic wave counter header
+    const headerText = this.waveBannerHeader || 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   ᚹ ᚨ ᚱ ᚾ ᛁ ᚾ ᚷ';
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = isMajorOrFinal
+      ? (isLight ? '#b91c1c' : '#ff6b6b')
+      : (isLight ? '#b45309' : '#fbbf24');
+    ctx.font = 'bold 11.5px "Outfit", serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   ᚹ ᚨ ᚱ ᚾ ᛁ ᚾ ᚷ', cx, cy - 16);
+    ctx.fillText(headerText, cx, cy - 14);
 
-    // Main Alert Text
-    ctx.fillStyle = isLight ? '#7f1d1d' : '#ffffff';
-    ctx.font = 'bold 18px "Outfit", sans-serif';
+    // Main Wave Callout Text (auto-fitted to tablet width)
+    ctx.fillStyle = isMajorOrFinal
+      ? (isLight ? '#7f1d1d' : '#ffffff')
+      : (isLight ? '#0f172a' : '#f8fafc');
+    let fontSize = isMajorOrFinal ? 17.5 : 16.5;
+    ctx.font = `bold ${fontSize}px "Outfit", sans-serif`;
+    while (fontSize > 11.5 && ctx.measureText(this.waveBannerText).width > boxW - 36) {
+      fontSize -= 0.5;
+      ctx.font = `bold ${fontSize}px "Outfit", sans-serif`;
+    }
     if (!isLight) {
-      ctx.shadowColor = '#ff5722';
-      ctx.shadowBlur = 12;
+      ctx.shadowColor = isMajorOrFinal ? '#ff5722' : 'rgba(245, 158, 11, 0.55)';
+      ctx.shadowBlur = 10;
     } else {
       ctx.shadowBlur = 0;
     }
-    ctx.fillText(this.waveBannerText, cx, cy + 12);
+    ctx.fillText(this.waveBannerText, cx, cy + 11);
 
     ctx.restore();
   }
@@ -4975,7 +5421,8 @@ export class Game {
     // Draw cinematic Bifrost entrance sequence
     this.drawRealmEntranceIntro();
 
-    // Draw wave alert banner if active
+    // Draw incoming enemy lane call markers & wave alert banner
+    this.drawIncomingLaneWarnings();
     this.drawWaveBanner();
 
     // Draw victory / defeat overlays
