@@ -1,10 +1,14 @@
 export abstract class Entity {
+  private static scratchCanvas: HTMLCanvasElement | null = null;
+  private static scratchCtx: CanvasRenderingContext2D | null = null;
+
   x: number;
   y: number;
   width: number;
   height: number;
   health: number;
   maxHealth: number;
+  trailHealth: number;
   markedForDeletion: boolean = false;
   
   animTimer: number = 0;
@@ -24,12 +28,17 @@ export abstract class Entity {
     this.height = height;
     this.health = health;
     this.maxHealth = health;
+    this.trailHealth = health;
+  }
+
+  getHeadClearance(): number {
+    return 10;
   }
 
   takeDamage(amount: number) {
     this.health -= amount;
-    this.flashTimer = 100;
-    this.lastDamageTimer = 2500;
+    this.flashTimer = 115;
+    this.lastDamageTimer = 2600;
     if (this.health <= 0) {
       this.markedForDeletion = true;
     }
@@ -38,15 +47,37 @@ export abstract class Entity {
   update(deltaTime: number, _game?: any): void {
     this.animTimer += deltaTime;
     if (this.flashTimer > 0) {
-      this.flashTimer -= deltaTime;
+      this.flashTimer = Math.max(0, this.flashTimer - deltaTime);
     }
     if (this.lastDamageTimer > 0) {
-      this.lastDamageTimer -= deltaTime;
+      this.lastDamageTimer = Math.max(0, this.lastDamageTimer - deltaTime);
     }
+    if (this.trailHealth > this.health) {
+      const catchup = Math.max(
+        this.maxHealth * 0.0014 * deltaTime,
+        (this.trailHealth - this.health) * Math.min(1, deltaTime / 140)
+      );
+      this.trailHealth = Math.max(this.health, this.trailHealth - catchup);
+    } else {
+      this.trailHealth = this.health;
+    }
+
     if (Math.abs(this.recoilX) > 0.1) {
-      this.recoilX -= this.recoilX * (deltaTime / 50);
+      this.recoilX -= this.recoilX * Math.min(1, deltaTime / 55);
     } else {
       this.recoilX = 0;
+    }
+
+    const springRate = Math.min(1, deltaTime / 85);
+    if (Math.abs(this.scaleX - 1) > 0.002) {
+      this.scaleX += (1 - this.scaleX) * springRate;
+    } else {
+      this.scaleX = 1;
+    }
+    if (Math.abs(this.scaleY - 1) > 0.002) {
+      this.scaleY += (1 - this.scaleY) * springRate;
+    } else {
+      this.scaleY = 1;
     }
   }
 
@@ -57,8 +88,9 @@ export abstract class Entity {
     const barW = Math.min(48, Math.max(32, this.width * 0.8));
     const barH = 5;
     const bx = this.x + (this.width - barW) / 2;
-    const by = this.y - 10;
+    const by = this.y - this.getHeadClearance();
     const pct = Math.max(0, Math.min(1, this.health / this.maxHealth));
+    const trailPct = Math.max(pct, Math.min(1, this.trailHealth / this.maxHealth));
     const alpha = Math.min(1, this.lastDamageTimer / 500);
 
     ctx.globalAlpha = alpha;
@@ -71,6 +103,14 @@ export abstract class Entity {
     ctx.roundRect(bx - 1, by - 1, barW + 2, barH + 2, 3);
     ctx.fill();
     ctx.stroke();
+
+    // Damage trail bar
+    if (trailPct > pct + 0.005) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, barW * trailPct, barH, 2);
+      ctx.fill();
+    }
 
     // HP Fill gradient
     const hpGrad = ctx.createLinearGradient(bx, by, bx + barW, by);
@@ -93,30 +133,85 @@ export abstract class Entity {
     ctx.restore();
   }
 
-  drawWithTransform(ctx: CanvasRenderingContext2D, drawFn: () => void) {
+  private static getScratchBuffer(reqW: number, reqH: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
+    if (typeof document === 'undefined') return null;
+    if (!Entity.scratchCanvas) {
+      Entity.scratchCanvas = document.createElement('canvas');
+      Entity.scratchCanvas.width = Math.max(360, reqW);
+      Entity.scratchCanvas.height = Math.max(360, reqH);
+      Entity.scratchCtx = Entity.scratchCanvas.getContext('2d');
+    } else {
+      if (Entity.scratchCanvas.width < reqW) {
+        Entity.scratchCanvas.width = reqW + 64;
+      }
+      if (Entity.scratchCanvas.height < reqH) {
+        Entity.scratchCanvas.height = reqH + 64;
+      }
+    }
+    if (!Entity.scratchCtx) return null;
+    return { canvas: Entity.scratchCanvas, ctx: Entity.scratchCtx };
+  }
+
+  drawWithTransform(ctx: CanvasRenderingContext2D, drawFn: (targetCtx: CanvasRenderingContext2D) => void) {
     ctx.save();
 
-    ctx.translate(this.x + this.width / 2 + this.offsetX + this.recoilX, this.y + this.height / 2 + this.offsetY);
+    const pivotX = this.x + this.width / 2;
+    const pivotY = this.y + this.height / 2;
+    ctx.translate(pivotX + this.offsetX + this.recoilX, pivotY + this.offsetY);
     ctx.rotate(this.rotation);
     ctx.scale(this.scaleX, this.scaleY);
-    ctx.translate(-(this.x + this.width / 2), -(this.y + this.height / 2));
-    
-    drawFn();
+    ctx.translate(-pivotX, -pivotY);
 
-    if ((this as any).isSlowed) {
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.38)';
-      ctx.fillRect(this.x, this.y, this.width, this.height);
-      ctx.globalCompositeOperation = 'source-over';
+    const isSlowed = Boolean((this as any).isSlowed);
+    const needsSilhouetteOverlay = isSlowed || this.flashTimer > 0;
+
+    if (needsSilhouetteOverlay && drawFn.length >= 1) {
+      const pad = 76;
+      const boxW = this.width + pad * 2;
+      const boxH = this.height + pad * 2;
+      const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+      const pxW = Math.ceil(boxW * dpr);
+      const pxH = Math.ceil(boxH * dpr);
+      const scratch = Entity.getScratchBuffer(pxW, pxH);
+
+      if (scratch) {
+        const sctx = scratch.ctx;
+        sctx.setTransform(1, 0, 0, 1, 0, 0);
+        sctx.clearRect(0, 0, pxW, pxH);
+        sctx.scale(dpr, dpr);
+
+        sctx.save();
+        sctx.translate(pad - this.x, pad - this.y);
+        drawFn(sctx);
+        sctx.restore();
+
+        sctx.globalCompositeOperation = 'source-atop';
+        if (isSlowed) {
+          const frostGrad = sctx.createLinearGradient(0, 0, 0, boxH);
+          frostGrad.addColorStop(0, 'rgba(186, 230, 253, 0.5)');
+          frostGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.42)');
+          frostGrad.addColorStop(1, 'rgba(14, 116, 144, 0.46)');
+          sctx.fillStyle = frostGrad;
+          sctx.fillRect(0, 0, boxW, boxH);
+        }
+        if (this.flashTimer > 0) {
+          const flashAlpha = Math.min(1, this.flashTimer / 115) * 0.78;
+          sctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+          sctx.fillRect(0, 0, boxW, boxH);
+        }
+        sctx.globalCompositeOperation = 'source-over';
+
+        ctx.drawImage(scratch.canvas, 0, 0, pxW, pxH, this.x - pad, this.y - pad, boxW, boxH);
+      } else {
+        drawFn(ctx);
+      }
+    } else {
+      if (this.flashTimer > 0) {
+        ctx.filter = 'brightness(1.65) saturate(0.7)';
+      }
+      drawFn(ctx);
     }
 
-    if (this.flashTimer > 0) {
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.fillRect(this.x, this.y, this.width, this.height);
-      ctx.globalCompositeOperation = 'source-over';
-    }
-    
     ctx.restore();
 
     // Draw health bar on top
@@ -125,4 +220,3 @@ export abstract class Entity {
 
   abstract draw(ctx: CanvasRenderingContext2D): void;
 }
-

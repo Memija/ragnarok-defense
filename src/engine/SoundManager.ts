@@ -6,6 +6,9 @@ export class SoundManager {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
+  private lastHitSoundTime: number = 0;
+  private lastMeleeSoundTime: number = 0;
+  private lastDeathSoundTime: number = 0;
   public isMuted: boolean = false;
   public volume: number = 0.8;
 
@@ -228,11 +231,13 @@ export class SoundManager {
     const ctx = this.initCtx();
     if (!ctx) return;
     const now = ctx.currentTime;
+    if (now - this.lastHitSoundTime < 0.035) return;
+    this.lastHitSoundTime = now;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(160, now);
-    osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+    osc.frequency.setValueAtTime(165, now);
+    osc.frequency.exponentialRampToValueAtTime(58, now + 0.08);
     gain.gain.setValueAtTime(0.18, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     osc.connect(gain);
@@ -240,6 +245,132 @@ export class SoundManager {
     this.autoCleanup(osc, [gain]);
     osc.start(now);
     osc.stop(now + 0.08);
+  }
+
+  // Metallic Plate / Helm Clang (Armored Conehead & Buckethead Hit)
+  public playArmorHit(isHeavyIron: boolean = false) {
+    const ctx = this.initCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    if (now - this.lastHitSoundTime < 0.035) return;
+    this.lastHitSoundTime = now;
+
+    const baseFreq = isHeavyIron ? 760 : 980;
+    const osc = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc2.type = 'sine';
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.42, now + 0.09);
+    osc2.frequency.setValueAtTime(baseFreq * 1.47, now);
+    osc2.frequency.exponentialRampToValueAtTime(baseFreq * 0.85, now + 0.07);
+
+    gain.gain.setValueAtTime(0.13, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+    osc.connect(gain);
+    osc2.connect(gain);
+    gain.connect(this.getDestination(ctx));
+    this.autoCleanup(osc, [gain]);
+    this.autoCleanup(osc2);
+    osc.start(now);
+    osc2.start(now);
+    osc.stop(now + 0.09);
+    osc2.stop(now + 0.075);
+  }
+
+  // Shattering Forged Helm Break (Armor Broken Milestone)
+  public playArmorBreak() {
+    const ctx = this.initCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    [920, 610, 380].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = idx === 0 ? 'sawtooth' : 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.02);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.35, now + idx * 0.02 + 0.16);
+      gain.gain.setValueAtTime(0.15, now + idx * 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.02 + 0.16);
+      osc.connect(gain);
+      gain.connect(this.getDestination(ctx));
+      this.autoCleanup(osc, [gain]);
+      osc.start(now + idx * 0.02);
+      osc.stop(now + idx * 0.02 + 0.16);
+    });
+  }
+
+  // Enemy Melee Strike (Blade Slash / Cudgel Crunch / Jötunn Boulder Slam)
+  public playEnemyAttack(style: 'blade' | 'blunt' | 'heavy' = 'blade') {
+    const ctx = this.initCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    if (style !== 'heavy' && now - this.lastMeleeSoundTime < 0.08) return;
+    this.lastMeleeSoundTime = now;
+
+    if (style === 'heavy') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(115, now);
+      osc.frequency.exponentialRampToValueAtTime(32, now + 0.24);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(340, now);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.getDestination(ctx));
+      this.autoCleanup(osc, [filter, gain]);
+      osc.start(now);
+      osc.stop(now + 0.24);
+      return;
+    }
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = style === 'blade' ? 'sawtooth' : 'triangle';
+    const startF = style === 'blade' ? 310 : 190;
+    const endF = style === 'blade' ? 95 : 65;
+    osc.frequency.setValueAtTime(startF, now);
+    osc.frequency.exponentialRampToValueAtTime(endF, now + 0.075);
+    gain.gain.setValueAtTime(0.09, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(style === 'blade' ? 900 : 480, now);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.getDestination(ctx));
+    this.autoCleanup(osc, [filter, gain]);
+    osc.start(now);
+    osc.stop(now + 0.08);
+  }
+
+  // Enemy Collapse / Banishment Sound
+  public playEnemyDeath(isHeavy: boolean = false) {
+    const ctx = this.initCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    if (!isHeavy && now - this.lastDeathSoundTime < 0.06) return;
+    this.lastDeathSoundTime = now;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = isHeavy ? 'sawtooth' : 'sine';
+    osc.frequency.setValueAtTime(isHeavy ? 125 : 220, now);
+    osc.frequency.exponentialRampToValueAtTime(isHeavy ? 36 : 68, now + (isHeavy ? 0.28 : 0.15));
+    gain.gain.setValueAtTime(isHeavy ? 0.2 : 0.11, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + (isHeavy ? 0.28 : 0.15));
+    osc.connect(gain);
+    gain.connect(this.getDestination(ctx));
+    this.autoCleanup(osc, [gain]);
+    osc.start(now);
+    osc.stop(now + (isHeavy ? 0.28 : 0.15));
   }
 
   // Deep Explosive Blast (Cherry Bomb, Potato Mine, Jalapeño)

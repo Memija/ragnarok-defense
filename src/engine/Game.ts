@@ -71,6 +71,31 @@ interface IncomingLaneWarning {
   isHeavy: boolean;
 }
 
+type BattleDebrisKind = 'bronze_cone' | 'iron_bucket' | 'sword' | 'mace' | 'axe' | 'club' | 'crag_stone';
+
+interface BattleDebris {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  vRot: number;
+  groundY: number;
+  bounced: boolean;
+  life: number;
+  maxLife: number;
+  kind: BattleDebrisKind;
+}
+
+interface DyingEnemyVisual {
+  attacker: Attacker;
+  timer: number;
+  duration: number;
+  soulX: number;
+  soulY: number;
+  soulColor: string;
+}
+
 export class Game {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -97,6 +122,8 @@ export class Game {
   
   defenders: Defender[] = [];
   attackers: Attacker[] = [];
+  dyingEnemies: DyingEnemyVisual[] = [];
+  battleDebris: BattleDebris[] = [];
   projectiles: Projectile[] = [];
   valkyries: Valkyrie[] = [];
   valkyrieAvailable: boolean[] = [];
@@ -1038,6 +1065,8 @@ export class Game {
     this.ambientCurrencyTimer = 4500;
     this.defenders = [];
     this.attackers = [];
+    this.dyingEnemies = [];
+    this.battleDebris = [];
     this.projectiles = [];
     this.valkyries = [];
     this.particles.clear();
@@ -1191,6 +1220,51 @@ export class Game {
     return false;
   }
 
+  private spawnBattleDebris(
+    x: number,
+    y: number,
+    groundY: number,
+    kind: BattleDebrisKind,
+    vx?: number,
+    vy?: number
+  ) {
+    if (this.battleDebris.length > 36) {
+      this.battleDebris.shift();
+    }
+    this.battleDebris.push({
+      x,
+      y,
+      vx: vx !== undefined ? vx : 1.8 + Math.random() * 2.6,
+      vy: vy !== undefined ? vy : -(4.2 + Math.random() * 2.4),
+      rot: (Math.random() - 0.5) * 0.4,
+      vRot: (Math.random() > 0.3 ? 1 : -1) * (0.14 + Math.random() * 0.14),
+      groundY,
+      bounced: false,
+      life: 0,
+      maxLife: 1050 + Math.random() * 250,
+      kind
+    });
+  }
+
+  private handleEnemyArmorBreak(zombie: Attacker) {
+    if (!zombie.justBrokeArmor) return;
+    zombie.justBrokeArmor = false;
+    const zcx = zombie.x + zombie.width * 0.5;
+    const headY = zombie.y + 18;
+    const groundY = zombie.y + zombie.height - 6;
+
+    SoundManager.getInstance().playArmorBreak();
+    if (zombie.armorStyle === 'iron_bucket') {
+      this.spawnBattleDebris(zcx, headY, groundY, 'iron_bucket', 2.4 + Math.random() * 2.2, -5.2);
+      this.particles.emit(zcx, headY, '#cbd5e1', 12, 5, 3, 380);
+      this.particles.emit(zcx, headY, '#fbbf24', 6, 4, 2, 260);
+    } else if (zombie.armorStyle === 'bronze_cone') {
+      this.spawnBattleDebris(zcx, headY - 8, groundY, 'bronze_cone', 2.6 + Math.random() * 2.4, -5.6);
+      this.particles.emit(zcx, headY - 6, '#f59e0b', 12, 5, 3, 380);
+      this.particles.emit(zcx, headY - 6, '#fef08a', 6, 4, 2, 260);
+    }
+  }
+
   checkCollisions(deltaTime: number) {
     this.updateAttackerRowBuckets();
 
@@ -1206,8 +1280,18 @@ export class Game {
 
         if (proj.x < zombie.x + zombie.width &&
             proj.x + proj.width > zombie.x) {
+          const hitArmored = zombie.hasArmor();
           zombie.takeDamage(proj.damage);
-          SoundManager.getInstance().playHit();
+
+          if (hitArmored) {
+            SoundManager.getInstance().playArmorHit(zombie.armorStyle === 'iron_bucket');
+            const sparkColor = zombie.armorStyle === 'iron_bucket' ? '#e2e8f0' : '#fbbf24';
+            this.particles.emit(proj.x + proj.width, proj.y + proj.height * 0.5, sparkColor, 5, 4, 2, 220);
+          } else {
+            SoundManager.getInstance().playHit();
+          }
+
+          this.handleEnemyArmorBreak(zombie);
           
           let damageColor = '#ffffff';
           if (proj instanceof SnowProjectile) {
@@ -1222,11 +1306,13 @@ export class Game {
             zombie.stunTimer = 4000;
             damageColor = '#ffeb3b';
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#ffeb3b', 8, 4, 3, 300);
+          } else if (zombie.enemyKind === 'troll' || zombie.enemyKind === 'small_troll') {
+            this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#94a3b8', 5, 3.2, 2.2, 220);
           } else {
-            this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#4caf50', 5, 3, 2, 200);
+            this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#38bdf8', 5, 3, 2, 200);
           }
           
-          this.addFloatingText(zombie.x + zombie.width / 2, zombie.y, `-${proj.damage}`, damageColor);
+          this.addFloatingText(zombie.x + zombie.width / 2, zombie.y - 4, `-${proj.damage}`, damageColor);
           proj.markedForDeletion = true;
           break; 
         }
@@ -1291,6 +1377,7 @@ export class Game {
                   for (let zi = 0; zi < rowAttackers.length; zi++) {
                     const z = rowAttackers[zi];
                     if (Math.abs(z.x - defender.x) < 80) {
+                      z.overkilled = true;
                       z.markedForDeletion = true;
                     }
                   }
@@ -1301,6 +1388,7 @@ export class Game {
 
             if (defender instanceof Chomper) {
               if (!defender.isDigesting && zombie.x - defender.x < defender.range && zombie.x - defender.x > -20) {
+                zombie.swallowed = true;
                 zombie.markedForDeletion = true;
                 defender.isDigesting = true;
                 defender.digestTimer = 0;
@@ -1316,8 +1404,23 @@ export class Game {
               zombie.attackTimer += effectiveDt;
               if (zombie.attackTimer >= zombie.attackRate) {
                 zombie.attackTimer -= zombie.attackRate;
+                zombie.onMeleeStrike();
                 defender.takeDamage(zombie.damage);
-                this.particles.emit(defender.x + defender.width * 0.5, defender.y + defender.height * 0.5, '#ef4444', 4, 2.5, 2, 220);
+                SoundManager.getInstance().playEnemyAttack(zombie.attackStyle);
+
+                const hitX = defender.x + defender.width * 0.65;
+                const hitY = defender.y + defender.height * 0.48;
+                if (zombie.attackStyle === 'heavy') {
+                  if (this.shakeTimer <= 0) {
+                    this.triggerScreenShake(130, 3);
+                  }
+                  this.particles.emit(hitX, defender.y + defender.height - 6, '#94a3b8', 8, 4, 3, 320);
+                  this.particles.emit(hitX, hitY, '#fbbf24', 6, 3.5, 2.4, 240);
+                } else {
+                  const sparkCol = zombie.attackStyle === 'blade' ? '#e0f2fe' : '#fde047';
+                  this.particles.emit(hitX, hitY, sparkCol, 5, 3, 2, 200);
+                  this.particles.emit(hitX, hitY, '#ef4444', 3, 2.2, 2, 220);
+                }
               }
             }
             break; 
@@ -1472,6 +1575,56 @@ export class Game {
     const numValk = this.valkyries.length;
     for (let i = 0; i < numValk; i++) this.valkyries[i].update(deltaTime, this);
     this.particles.update(deltaTime);
+
+    // Update tumbling helmets, weapons, & crag-stone battle debris
+    const debrisTimeScale = deltaTime / 16;
+    for (let i = this.battleDebris.length - 1; i >= 0; i--) {
+      const db = this.battleDebris[i];
+      db.life += deltaTime;
+      db.x += db.vx * debrisTimeScale;
+      db.vy += 0.28 * debrisTimeScale;
+      db.y += db.vy * debrisTimeScale;
+      db.rot += db.vRot * debrisTimeScale;
+      if (db.y >= db.groundY) {
+        db.y = db.groundY;
+        if (!db.bounced) {
+          db.bounced = true;
+          db.vy = -Math.abs(db.vy) * 0.42;
+          db.vx *= 0.62;
+          db.vRot *= 0.55;
+        } else {
+          db.vy = 0;
+          db.vx *= 0.85;
+          db.vRot *= 0.8;
+        }
+      }
+      if (db.life >= db.maxLife) {
+        this.battleDebris.splice(i, 1);
+      }
+    }
+
+    // Update non-blocking defeated enemy topple & soul-banishment sequences
+    for (let i = this.dyingEnemies.length - 1; i >= 0; i--) {
+      const de = this.dyingEnemies[i];
+      de.timer += deltaTime;
+      const p = Math.min(1, de.timer / de.duration);
+      const ease = 1 - Math.pow(1 - p, 2.4);
+      const att = de.attacker;
+      if (att.overkilled) {
+        att.scaleX = 1 + ease * 0.22;
+        att.scaleY = 1 - ease * 0.28;
+        att.offsetY = ease * 10;
+      } else {
+        att.rotation = ease * 1.38;
+        att.offsetX = ease * 16;
+        att.offsetY = ease * 22;
+        att.recoilX = 0;
+      }
+      de.soulY -= (deltaTime / 16) * 0.95;
+      if (de.timer >= de.duration) {
+        this.dyingEnemies.splice(i, 1);
+      }
+    }
     
     this.checkCollisions(deltaTime);
 
@@ -1497,7 +1650,69 @@ export class Game {
       this.attackers = this.attackers.filter(a => {
         if (a.markedForDeletion) {
           this.zombiesKilled++;
-          this.particles.emit(a.x + a.width/2, a.y + a.height/2, '#9e9e9e', 20, 6, 5, 500); 
+          if (!a.swallowed) {
+            const acx = a.x + a.width * 0.5;
+            const acy = a.y + a.height * 0.5;
+            const groundY = a.y + a.height - 5;
+            const isHeavy = a.enemyKind === 'troll' || a.enemyKind === 'buckethead';
+            SoundManager.getInstance().playEnemyDeath(isHeavy);
+
+            if (a.enemyKind === 'troll') {
+              if (this.shakeTimer <= 0) {
+                this.triggerScreenShake(180, 4);
+              }
+              this.particles.emit(acx, acy, '#64748b', 18, 5.5, 4.5, 520);
+              this.particles.emit(acx, acy, '#65a30d', 8, 4, 3, 420);
+              this.particles.emit(acx, acy, '#fbbf24', 10, 4.5, 2.5, 460, -0.02);
+              this.spawnBattleDebris(acx - 8, acy, groundY, 'crag_stone', -2.2, -4.5);
+              this.spawnBattleDebris(acx + 10, acy - 6, groundY, 'crag_stone', 2.8, -5.0);
+            } else if (a.enemyKind === 'small_troll') {
+              this.particles.emit(acx, acy, '#475569', 12, 4.5, 3.5, 420);
+              this.particles.emit(acx, acy, '#a3e635', 6, 3.5, 2.5, 360);
+              this.spawnBattleDebris(acx - 6, acy, groundY, 'club', -1.8, -4.2);
+            } else {
+              const soulCol = a.enemyKind === 'buckethead'
+                ? '#f87171'
+                : a.enemyKind === 'conehead'
+                ? '#fbbf24'
+                : '#38bdf8';
+              this.particles.emit(acx, acy, '#64748b', 12, 4.8, 3.2, 420);
+              this.particles.emit(acx, acy - 8, soulCol, 10, 3.2, 2.5, 500, -0.03);
+              const weaponKind: BattleDebrisKind = a.enemyKind === 'buckethead'
+                ? 'axe'
+                : a.enemyKind === 'conehead'
+                ? 'mace'
+                : 'sword';
+              this.spawnBattleDebris(acx - 8, acy, groundY, weaponKind, -1.6 + Math.random() * 1.4, -4.4);
+            }
+
+            if (a.overkilled) {
+              this.particles.emit(acx, acy, '#1e293b', 14, 6, 4, 480);
+            }
+
+            // Prepare entity for visual death sequence (suppress health bar & hit flash)
+            a.flashTimer = 0;
+            a.lastDamageTimer = 0;
+            a.isStunned = false;
+            if (this.dyingEnemies.length >= 18) {
+              this.dyingEnemies.shift();
+            }
+            const wispColor = a.enemyKind === 'buckethead'
+              ? '#f87171'
+              : a.enemyKind === 'conehead' || a.enemyKind === 'troll'
+              ? '#fbbf24'
+              : a.enemyKind === 'small_troll'
+              ? '#bef264'
+              : '#38bdf8';
+            this.dyingEnemies.push({
+              attacker: a,
+              timer: 0,
+              duration: a.overkilled ? 320 : 480,
+              soulX: acx,
+              soulY: a.y + 16,
+              soulColor: wispColor
+            });
+          }
           return false;
         }
         return true;
