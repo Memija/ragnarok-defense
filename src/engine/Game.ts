@@ -23,6 +23,10 @@ import { Einherjar } from '../units/Einherjar';
 import { Butter } from '../units/Butter';
 import { Troll } from '../units/Troll';
 import { SmallTroll } from '../units/SmallTroll';
+import { FenrirRaider } from '../units/FenrirRaider';
+import { BerserkerDraugr } from '../units/BerserkerDraugr';
+import { ShieldwallDraugr } from '../units/ShieldwallDraugr';
+import { FlameDrake } from '../units/FlameDrake';
 import { SoundManager } from './SoundManager';
 import { getSavedLoadout, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDefenderAllowedInRealm } from './DefenderRegistry';
 import { DEFENDER_ICONS } from './DefenderIcons';
@@ -50,7 +54,16 @@ export interface FloatingText {
 }
 
 type WaveKind = 'scout' | 'standard' | 'major' | 'final';
-type EnemyUnitKind = 'basic' | 'small_troll' | 'conehead' | 'buckethead' | 'troll';
+type EnemyUnitKind =
+  | 'basic'
+  | 'small_troll'
+  | 'fenrir_wolf'
+  | 'conehead'
+  | 'berserker'
+  | 'shieldbearer'
+  | 'flame_drake'
+  | 'buckethead'
+  | 'troll';
 
 interface WaveSpec {
   waveNumber: number;
@@ -71,7 +84,16 @@ interface IncomingLaneWarning {
   isHeavy: boolean;
 }
 
-type BattleDebrisKind = 'bronze_cone' | 'iron_bucket' | 'sword' | 'mace' | 'axe' | 'club' | 'crag_stone';
+type BattleDebrisKind =
+  | 'bronze_cone'
+  | 'iron_bucket'
+  | 'tower_shield'
+  | 'sword'
+  | 'mace'
+  | 'axe'
+  | 'spear'
+  | 'club'
+  | 'crag_stone';
 
 interface BattleDebris {
   x: number;
@@ -857,7 +879,12 @@ export class Game {
   }
 
   private isHeavyEnemyKind(kind: EnemyUnitKind): boolean {
-    return kind === 'buckethead' || kind === 'troll';
+    return (
+      kind === 'buckethead' ||
+      kind === 'troll' ||
+      kind === 'shieldbearer' ||
+      kind === 'flame_drake'
+    );
   }
 
   private pickSpawnRowsForWave(count: number): number[] {
@@ -899,26 +926,71 @@ export class Game {
     const waveProgress = (waveNumber - 1) / Math.max(1, this.totalWaves - 1);
     const rand = Math.random();
 
-    // Thematic frost roster in Jotunheim, escalating gradually across waves
-    if (this.realm === 'jotunheim') {
+    // Thematic frost roster in Jotunheim & Niflheim, escalating gradually across waves
+    if (this.realm === 'jotunheim' || this.realm === 'niflheim') {
       if (waveNumber <= 2) {
         return 'small_troll';
       }
       if (waveNumber === 3) {
-        return (spawnIndex === count - 1 && rand > 0.45) ? 'conehead' : 'small_troll';
+        if (spawnIndex === count - 1) {
+          return rand > 0.5 ? 'fenrir_wolf' : 'conehead';
+        }
+        return 'small_troll';
       }
       if (kind === 'standard') {
-        if (waveProgress >= 0.55 && spawnIndex === count - 1 && rand > 0.5) {
+        if (waveProgress >= 0.58 && spawnIndex === count - 1 && rand > 0.48) {
           return 'troll';
         }
-        return rand > 0.58 ? 'conehead' : 'small_troll';
+        if (waveProgress >= 0.42) {
+          if (rand > 0.78) return 'shieldbearer';
+          if (rand > 0.60) return 'berserker';
+          if (rand > 0.40) return 'fenrir_wolf';
+          if (rand > 0.22) return 'conehead';
+          return 'small_troll';
+        }
+        if (rand > 0.66) return 'fenrir_wolf';
+        if (rand > 0.36) return 'conehead';
+        return 'small_troll';
       }
       if (spawnIndex === Math.floor(count / 2)) {
         return 'troll';
       }
-      if (rand > 0.68) return 'troll';
-      if (rand > 0.34) return 'conehead';
+      if (rand > 0.72) return 'troll';
+      if (rand > 0.52) return 'shieldbearer';
+      if (rand > 0.35) return 'berserker';
+      if (rand > 0.18) return 'fenrir_wolf';
       return 'small_troll';
+    }
+
+    // Thematic fire roster in Muspelheim, introducing Flame Drakes & Berserkers after early setup
+    if (this.realm === 'muspelheim') {
+      if (waveNumber <= 2) {
+        return 'basic';
+      }
+      if (waveNumber === 3) {
+        return (spawnIndex === count - 1 && rand > 0.45) ? 'fenrir_wolf' : 'basic';
+      }
+      if (waveNumber === 4) {
+        if (spawnIndex === count - 1) return rand > 0.45 ? 'berserker' : 'conehead';
+        return rand > 0.65 ? 'fenrir_wolf' : 'basic';
+      }
+      if (kind === 'standard') {
+        if (waveProgress >= 0.50 && spawnIndex >= Math.floor(count / 2) && rand > 0.60) {
+          return 'flame_drake';
+        }
+        if (rand > 0.68) return 'berserker';
+        if (rand > 0.50) return 'shieldbearer';
+        if (rand > 0.30) return 'fenrir_wolf';
+        return 'basic';
+      }
+      if (spawnIndex === Math.floor(count / 2)) {
+        return 'flame_drake';
+      }
+      if (rand > 0.84) return 'troll';
+      if (rand > 0.56) return 'flame_drake';
+      if (rand > 0.36) return 'berserker';
+      if (rand > 0.20) return 'shieldbearer';
+      return 'fenrir_wolf';
     }
 
     // Waves 1-2: strictly basic scouts while the player builds economy
@@ -926,21 +998,24 @@ export class Game {
       return 'basic';
     }
 
-    // Wave 3: basic scouts, with a chance for one agile small troll at the end
+    // Wave 3: basic scouts, with a chance for one agile small troll or dire-wolf at the tail
     if (waveNumber === 3) {
-      if (spawnIndex === count - 1 && rand > 0.5) {
-        return 'small_troll';
+      if (spawnIndex === count - 1) {
+        if (this.level >= 2 && rand > 0.62) return 'fenrir_wolf';
+        if (rand > 0.45) return 'small_troll';
       }
       return 'basic';
     }
 
-    // Wave 4: gentle blend of small trolls (and first light armor on Level 2+)
+    // Wave 4: gentle blend of scouts, dire-wolves, and first light armor / shieldbearer on higher levels
     if (waveNumber === 4) {
-      if (this.level >= 2 && spawnIndex === count - 1 && rand > 0.35) {
-        return 'conehead';
+      if (spawnIndex === count - 1) {
+        if (this.level >= 3 && rand > 0.55) return 'shieldbearer';
+        if (this.level >= 2 && rand > 0.35) return 'conehead';
+        if (rand > 0.45) return 'fenrir_wolf';
       }
-      if (spawnIndex === count - 2 || rand > 0.72) {
-        return 'small_troll';
+      if (spawnIndex === count - 2 || rand > 0.70) {
+        return rand > 0.5 ? 'fenrir_wolf' : 'small_troll';
       }
       return 'basic';
     }
@@ -948,15 +1023,27 @@ export class Game {
     // Mid-game standard waves (Wave 5+ prior to Major/Final waves)
     if (kind === 'standard') {
       if (this.level >= 4 && waveProgress >= 0.65 && spawnIndex === count - 1 && rand > 0.45) {
-        return 'troll';
+        return this.level >= 6 && rand > 0.45 ? 'flame_drake' : 'troll';
       }
-      if (this.level >= 3 && waveProgress >= 0.52 && spawnIndex >= Math.floor(count / 2) && rand > 0.78) {
+      if (this.level >= 4 && waveProgress >= 0.56 && spawnIndex >= Math.floor(count / 2) && rand > 0.76) {
+        return 'flame_drake';
+      }
+      if (this.level >= 3 && waveProgress >= 0.52 && spawnIndex >= Math.floor(count / 2) && rand > 0.74) {
         return 'buckethead';
       }
-      if (this.level >= 2 && rand > 0.64) {
+      if (this.level >= 2 && waveProgress >= 0.45 && rand > 0.78) {
+        return 'shieldbearer';
+      }
+      if (this.level >= 2 && waveProgress >= 0.42 && rand > 0.64) {
+        return 'berserker';
+      }
+      if (this.level >= 2 && rand > 0.54) {
         return 'conehead';
       }
-      if (rand > 0.42) {
+      if (rand > 0.38) {
+        return 'fenrir_wolf';
+      }
+      if (rand > 0.22) {
         return 'small_troll';
       }
       return 'basic';
@@ -967,29 +1054,54 @@ export class Game {
       if (spawnIndex === 2 || (kind === 'final' && spawnIndex === count - 2)) {
         return 'conehead';
       }
-      return rand > 0.65 ? 'small_troll' : 'basic';
+      if (spawnIndex === count - 1) {
+        return 'fenrir_wolf';
+      }
+      if (rand > 0.68) return 'fenrir_wolf';
+      return rand > 0.40 ? 'small_troll' : 'basic';
     }
 
     if (this.level === 2) {
       if (spawnIndex === Math.floor(count / 2)) {
-        return kind === 'final' ? 'troll' : 'conehead';
+        return kind === 'final' ? 'troll' : 'shieldbearer';
       }
       if (kind === 'final' && rand > 0.86) return 'troll';
-      if (rand > 0.58) return 'conehead';
-      if (rand > 0.32) return 'small_troll';
+      if (rand > 0.72) return 'shieldbearer';
+      if (rand > 0.54) return 'berserker';
+      if (rand > 0.38) return 'conehead';
+      if (rand > 0.22) return 'fenrir_wolf';
       return 'basic';
     }
 
-    const trollThreshold = Math.max(0.76, 0.86 - (this.level - 3) * 0.025);
-    const bucketThreshold = Math.max(0.54, 0.66 - (this.level - 3) * 0.025);
-    if (spawnIndex === Math.floor(count / 2)) {
-      return kind === 'final' ? 'troll' : 'buckethead';
+    if (this.level === 3) {
+      if (spawnIndex === Math.floor(count / 2)) {
+        return kind === 'final' ? 'troll' : 'buckethead';
+      }
+      if (rand > 0.84) return 'troll';
+      if (rand > 0.68) return 'buckethead';
+      if (rand > 0.52) return 'shieldbearer';
+      if (rand > 0.36) return 'berserker';
+      if (rand > 0.20) return 'fenrir_wolf';
+      return rand > 0.10 ? 'conehead' : 'small_troll';
     }
-    if (rand > trollThreshold) return 'troll';
-    if (rand > bucketThreshold) return 'buckethead';
-    if (rand > 0.36) return 'conehead';
-    if (rand > 0.18) return 'small_troll';
-    return 'basic';
+
+    // Levels 4-7 (culminating in Sindri's Forge & Nidavellir with Elite Flame Drakes)
+    if (spawnIndex === Math.floor(count / 2)) {
+      if (this.level >= 6) {
+        return kind === 'final' ? 'flame_drake' : 'shieldbearer';
+      }
+      return kind === 'final' ? 'troll' : 'flame_drake';
+    }
+    const trollCut = Math.max(0.80, 0.88 - (this.level - 4) * 0.02);
+    const drakeCut = this.level >= 6 ? 0.58 : 0.66;
+    const bucketCut = this.level >= 6 ? 0.44 : 0.50;
+    if (rand > trollCut) return 'troll';
+    if (rand > drakeCut) return 'flame_drake';
+    if (rand > bucketCut) return 'buckethead';
+    if (rand > 0.31) return 'shieldbearer';
+    if (rand > 0.18) return 'berserker';
+    if (rand > 0.08) return 'fenrir_wolf';
+    return 'conehead';
   }
 
   private addIncomingLaneWarning(row: number, durationMs: number, isHeavy: boolean): void {
@@ -1043,11 +1155,23 @@ export class Game {
       case 'troll':
         this.attackers.push(new Troll(spawnX, spawnY - 10, spawn.row));
         break;
+      case 'flame_drake':
+        this.attackers.push(new FlameDrake(spawnX, spawnY, spawn.row));
+        break;
       case 'buckethead':
         this.attackers.push(new BucketheadZombie(spawnX, spawnY, spawn.row));
         break;
+      case 'shieldbearer':
+        this.attackers.push(new ShieldwallDraugr(spawnX, spawnY, spawn.row));
+        break;
+      case 'berserker':
+        this.attackers.push(new BerserkerDraugr(spawnX, spawnY, spawn.row));
+        break;
       case 'conehead':
         this.attackers.push(new ConeheadZombie(spawnX, spawnY, spawn.row));
+        break;
+      case 'fenrir_wolf':
+        this.attackers.push(new FenrirRaider(spawnX, spawnY, spawn.row));
         break;
       case 'small_troll':
         this.attackers.push(new SmallTroll(spawnX, spawnY + 5, spawn.row));
@@ -1262,6 +1386,11 @@ export class Game {
       this.spawnBattleDebris(zcx, headY - 8, groundY, 'bronze_cone', 2.6 + Math.random() * 2.4, -5.6);
       this.particles.emit(zcx, headY - 6, '#f59e0b', 12, 5, 3, 380);
       this.particles.emit(zcx, headY - 6, '#fef08a', 6, 4, 2, 260);
+    } else if (zombie.armorStyle === 'tower_shield') {
+      zombie.mass = 1.1;
+      this.spawnBattleDebris(zcx - 10, zombie.y + 42, groundY, 'tower_shield', 2.2 + Math.random() * 2.0, -4.8);
+      this.particles.emit(zcx - 10, zombie.y + 42, '#0f766e', 12, 5, 3, 380);
+      this.particles.emit(zcx - 10, zombie.y + 42, '#38bdf8', 8, 4.5, 2.5, 300);
     }
   }
 
@@ -1281,38 +1410,67 @@ export class Game {
         if (proj.x < zombie.x + zombie.width &&
             proj.x + proj.width > zombie.x) {
           const hitArmored = zombie.hasArmor();
-          zombie.takeDamage(proj.damage);
+          const isFire = proj instanceof FirePea;
+          const isButter = proj instanceof Butter;
+          const finalDamage = zombie.modifyProjectileDamage(proj.damage, isFire, isButter);
+          zombie.takeDamage(finalDamage);
 
           if (hitArmored) {
-            SoundManager.getInstance().playArmorHit(zombie.armorStyle === 'iron_bucket');
-            const sparkColor = zombie.armorStyle === 'iron_bucket' ? '#e2e8f0' : '#fbbf24';
+            const isHeavyMetal = zombie.armorStyle === 'iron_bucket' || zombie.armorStyle === 'tower_shield';
+            SoundManager.getInstance().playArmorHit(isHeavyMetal);
+            const sparkColor = zombie.armorStyle === 'tower_shield'
+              ? (isFire ? '#fb923c' : '#38bdf8')
+              : zombie.armorStyle === 'iron_bucket'
+              ? '#e2e8f0'
+              : '#fbbf24';
             this.particles.emit(proj.x + proj.width, proj.y + proj.height * 0.5, sparkColor, 5, 4, 2, 220);
           } else {
             SoundManager.getInstance().playHit();
           }
 
           this.handleEnemyArmorBreak(zombie);
-          
+
+          if (zombie.justEnraged) {
+            zombie.justEnraged = false;
+            SoundManager.getInstance().playBerserkRoar();
+            this.particles.emit(zombie.x + zombie.width * 0.5, zombie.y + 34, '#ef4444', 14, 4.8, 3, 360, -0.02);
+            this.particles.emit(zombie.x + zombie.width * 0.5, zombie.y + 34, '#fb923c', 8, 3.8, 2.4, 300, -0.03);
+            this.addFloatingText(zombie.x + zombie.width / 2, zombie.y - 16, 'RAGE! 🔥', '#fb923c', true);
+          }
+
           let damageColor = '#ffffff';
           if (proj instanceof SnowProjectile) {
-            zombie.slowTimer = 5000;
+            const chillMs = Math.round(5000 * (1 - zombie.frostResistance));
+            if (chillMs > 0) {
+              zombie.slowTimer = Math.max(zombie.slowTimer, chillMs);
+            }
             damageColor = '#81d4fa';
-            this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#81d4fa', 6, 3, 2, 200);
-          } else if (proj instanceof FirePea) {
+            this.particles.emit(
+              proj.x + proj.width,
+              proj.y + proj.height / 2,
+              zombie.frostResistance > 0 ? '#e2e8f0' : '#81d4fa',
+              6,
+              3,
+              2,
+              200
+            );
+          } else if (isFire) {
             zombie.slowTimer = 0;
             damageColor = '#ff9800';
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#ff9800', 8, 4, 3, 300);
-          } else if (proj instanceof Butter) {
+          } else if (isButter) {
             zombie.stunTimer = 4000;
             damageColor = '#ffeb3b';
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#ffeb3b', 8, 4, 3, 300);
           } else if (zombie.enemyKind === 'troll' || zombie.enemyKind === 'small_troll') {
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#94a3b8', 5, 3.2, 2.2, 220);
+          } else if (zombie.enemyKind === 'flame_drake') {
+            this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#fb923c', 5, 3.2, 2.2, 220);
           } else {
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#38bdf8', 5, 3, 2, 200);
           }
           
-          this.addFloatingText(zombie.x + zombie.width / 2, zombie.y - 4, `-${proj.damage}`, damageColor);
+          this.addFloatingText(zombie.x + zombie.width / 2, zombie.y - 4, `-${finalDamage}`, damageColor);
           proj.markedForDeletion = true;
           break; 
         }
@@ -1359,78 +1517,106 @@ export class Game {
 
       const rowDefs = this.defendersByRow[zombie.row];
       if (rowDefs) {
+        let targetDefender: Defender | null = null;
+
         for (let di = 0; di < rowDefs.length; di++) {
           const defender = rowDefs[di];
           if (defender.markedForDeletion) continue;
-          if (zombie.x < defender.x + defender.width &&
-              zombie.x + zombie.width > defender.x) {
-            
-            if (defender instanceof PotatoMine) {
-              if (defender.isArmed) {
-                defender.markedForDeletion = true;
-                this.particles.emitExplosion(defender.x + defender.width / 2, defender.y + defender.height / 2);
-                this.triggerScreenShake(400, 10);
-                SoundManager.getInstance().playExplosion();
-                this.addFloatingText(defender.x + defender.width / 2, defender.y - 10, '-1800 💥', '#ff5722', true);
-                const rowAttackers = this.attackersByRow[defender.row];
-                if (rowAttackers) {
-                  for (let zi = 0; zi < rowAttackers.length; zi++) {
-                    const z = rowAttackers[zi];
-                    if (Math.abs(z.x - defender.x) < 80) {
-                      z.overkilled = true;
-                      z.markedForDeletion = true;
-                    }
-                  }
-                }
-                continue;
-              }
-            }
 
-            if (defender instanceof Chomper) {
-              if (!defender.isDigesting && zombie.x - defender.x < defender.range && zombie.x - defender.x > -20) {
-                zombie.swallowed = true;
-                zombie.markedForDeletion = true;
-                defender.isDigesting = true;
-                defender.digestTimer = 0;
-                this.addFloatingText(defender.x + defender.width, defender.y - 10, 'Crunch! 🦷', '#ab47bc', true);
-                this.particles.emit(defender.x + defender.width, defender.y + defender.height / 2, '#ab47bc', 20, 5, 4, 300);
-                continue;
-              }
-            }
+          // Winged Flame Drakes glide directly over buried Potato Mines
+          if (zombie.isFlying && defender instanceof PotatoMine) continue;
 
-            isEating = true;
-            if (!zombie.isStunned) {
-              const effectiveDt = zombie.isSlowed ? deltaTime * 0.5 : deltaTime;
-              zombie.attackTimer += effectiveDt;
-              if (zombie.attackTimer >= zombie.attackRate) {
-                zombie.attackTimer -= zombie.attackRate;
-                zombie.onMeleeStrike();
-                defender.takeDamage(zombie.damage);
-                SoundManager.getInstance().playEnemyAttack(zombie.attackStyle);
+          const directContact =
+            zombie.x < defender.x + defender.width &&
+            zombie.x + zombie.width > defender.x;
+          const reachContact =
+            zombie.attackReach > 0 &&
+            zombie.x - zombie.attackReach < defender.x + defender.width &&
+            zombie.x + zombie.width > defender.x;
 
-                const hitX = defender.x + defender.width * 0.65;
-                const hitY = defender.y + defender.height * 0.48;
-                if (zombie.attackStyle === 'heavy') {
-                  if (this.shakeTimer <= 0) {
-                    this.triggerScreenShake(130, 3);
-                  }
-                  this.particles.emit(hitX, defender.y + defender.height - 6, '#94a3b8', 8, 4, 3, 320);
-                  this.particles.emit(hitX, hitY, '#fbbf24', 6, 3.5, 2.4, 240);
-                } else {
-                  const sparkCol = zombie.attackStyle === 'blade' ? '#e0f2fe' : '#fde047';
-                  this.particles.emit(hitX, hitY, sparkCol, 5, 3, 2, 200);
-                  this.particles.emit(hitX, hitY, '#ef4444', 3, 2.2, 2, 220);
+          if (!directContact && !reachContact) continue;
+
+          if (directContact && !zombie.isFlying && defender instanceof PotatoMine && defender.isArmed) {
+            defender.markedForDeletion = true;
+            this.particles.emitExplosion(defender.x + defender.width / 2, defender.y + defender.height / 2);
+            this.triggerScreenShake(400, 10);
+            SoundManager.getInstance().playExplosion();
+            this.addFloatingText(defender.x + defender.width / 2, defender.y - 10, '-1800 💥', '#ff5722', true);
+            const rowAttackers = this.attackersByRow[defender.row];
+            if (rowAttackers) {
+              for (let zi = 0; zi < rowAttackers.length; zi++) {
+                const z = rowAttackers[zi];
+                if (!z.isFlying && Math.abs(z.x - defender.x) < 80) {
+                  z.overkilled = true;
+                  z.markedForDeletion = true;
                 }
               }
             }
-            break; 
+            continue;
+          }
+
+          if (
+            directContact &&
+            !zombie.isFlying &&
+            defender instanceof Chomper &&
+            !defender.isDigesting &&
+            zombie.x - defender.x < defender.range &&
+            zombie.x - defender.x > -20
+          ) {
+            zombie.swallowed = true;
+            zombie.markedForDeletion = true;
+            defender.isDigesting = true;
+            defender.digestTimer = 0;
+            this.addFloatingText(defender.x + defender.width, defender.y - 10, 'Crunch! 🦷', '#ab47bc', true);
+            this.particles.emit(defender.x + defender.width, defender.y + defender.height / 2, '#ab47bc', 20, 5, 4, 300);
+            targetDefender = null;
+            break;
+          }
+
+          if (!targetDefender || defender.x > targetDefender.x) {
+            targetDefender = defender;
+          }
+        }
+
+        if (!zombie.markedForDeletion && targetDefender) {
+          isEating = true;
+          const atkRate = zombie.getEffectiveAttackRate();
+          if (!zombie.isStunned) {
+            const effectiveDt = zombie.isSlowed ? deltaTime * 0.5 : deltaTime;
+            zombie.attackTimer += effectiveDt;
+            if (zombie.attackTimer >= atkRate) {
+              zombie.attackTimer -= atkRate;
+              zombie.onMeleeStrike();
+              targetDefender.takeDamage(zombie.damage);
+              SoundManager.getInstance().playEnemyAttack(zombie.attackStyle);
+
+              const hitX = targetDefender.x + targetDefender.width * 0.65;
+              const hitY = targetDefender.y + targetDefender.height * 0.48;
+              if (zombie.attackStyle === 'heavy') {
+                if (this.shakeTimer <= 0) {
+                  this.triggerScreenShake(130, 3);
+                }
+                this.particles.emit(hitX, targetDefender.y + targetDefender.height - 6, '#94a3b8', 8, 4, 3, 320);
+                this.particles.emit(hitX, hitY, '#fbbf24', 6, 3.5, 2.4, 240);
+              } else if (zombie.attackStyle === 'fire_breath') {
+                this.particles.emit(hitX, hitY, '#fb923c', 9, 4.2, 3, 280, -0.03);
+                this.particles.emit(hitX, hitY, '#fef08a', 5, 3, 2, 210, -0.02);
+              } else if (zombie.attackStyle === 'bite') {
+                this.particles.emit(hitX, hitY, '#5eead4', 6, 3.6, 2.2, 200);
+                this.particles.emit(hitX, hitY, '#ef4444', 4, 2.6, 2, 220);
+              } else {
+                const sparkCol = zombie.attackStyle === 'blade' ? '#e0f2fe' : '#fde047';
+                this.particles.emit(hitX, hitY, sparkCol, 5, 3, 2, 200);
+                this.particles.emit(hitX, hitY, '#ef4444', 3, 2.2, 2, 220);
+              }
+            }
           }
         }
       }
       if (!zombie.markedForDeletion) {
         zombie.isEating = isEating;
         if (!isEating) {
-          zombie.attackTimer = Math.min(zombie.attackTimer, zombie.attackRate * 0.4);
+          zombie.attackTimer = Math.min(zombie.attackTimer, zombie.getEffectiveAttackRate() * 0.4);
         }
       }
     }
@@ -1654,7 +1840,11 @@ export class Game {
             const acx = a.x + a.width * 0.5;
             const acy = a.y + a.height * 0.5;
             const groundY = a.y + a.height - 5;
-            const isHeavy = a.enemyKind === 'troll' || a.enemyKind === 'buckethead';
+            const isHeavy =
+              a.enemyKind === 'troll' ||
+              a.enemyKind === 'buckethead' ||
+              a.enemyKind === 'shieldbearer' ||
+              a.enemyKind === 'flame_drake';
             SoundManager.getInstance().playEnemyDeath(isHeavy);
 
             if (a.enemyKind === 'troll') {
@@ -1666,6 +1856,19 @@ export class Game {
               this.particles.emit(acx, acy, '#fbbf24', 10, 4.5, 2.5, 460, -0.02);
               this.spawnBattleDebris(acx - 8, acy, groundY, 'crag_stone', -2.2, -4.5);
               this.spawnBattleDebris(acx + 10, acy - 6, groundY, 'crag_stone', 2.8, -5.0);
+            } else if (a.enemyKind === 'flame_drake') {
+              this.particles.emit(acx, acy, '#292524', 14, 5.2, 4.0, 460);
+              this.particles.emit(acx, acy, '#fb923c', 12, 4.8, 3.2, 420, -0.03);
+              this.particles.emit(acx, acy - 6, '#fef08a', 8, 3.5, 2.4, 380, -0.04);
+              this.spawnBattleDebris(acx - 6, acy, groundY + 8, 'crag_stone', -1.8, -4.0);
+            } else if (a.enemyKind === 'fenrir_wolf') {
+              this.particles.emit(acx, acy, '#334155', 12, 4.8, 3.2, 380);
+              this.particles.emit(acx, acy - 4, '#5eead4', 10, 3.8, 2.4, 440, -0.03);
+            } else if (a.enemyKind === 'berserker') {
+              this.particles.emit(acx, acy, '#78350f', 12, 4.8, 3.4, 420);
+              this.particles.emit(acx, acy - 8, '#ef4444', 12, 3.8, 2.6, 480, -0.03);
+              this.spawnBattleDebris(acx - 10, acy, groundY, 'axe', -2.4, -4.6);
+              this.spawnBattleDebris(acx + 6, acy - 4, groundY, 'axe', 2.1, -4.8);
             } else if (a.enemyKind === 'small_troll') {
               this.particles.emit(acx, acy, '#475569', 12, 4.5, 3.5, 420);
               this.particles.emit(acx, acy, '#a3e635', 6, 3.5, 2.5, 360);
@@ -1682,6 +1885,8 @@ export class Game {
                 ? 'axe'
                 : a.enemyKind === 'conehead'
                 ? 'mace'
+                : a.enemyKind === 'shieldbearer'
+                ? 'spear'
                 : 'sword';
               this.spawnBattleDebris(acx - 8, acy, groundY, weaponKind, -1.6 + Math.random() * 1.4, -4.4);
             }
@@ -1697,8 +1902,12 @@ export class Game {
             if (this.dyingEnemies.length >= 18) {
               this.dyingEnemies.shift();
             }
-            const wispColor = a.enemyKind === 'buckethead'
+            const wispColor = a.enemyKind === 'buckethead' || a.enemyKind === 'berserker'
               ? '#f87171'
+              : a.enemyKind === 'flame_drake'
+              ? '#fb923c'
+              : a.enemyKind === 'fenrir_wolf'
+              ? '#5eead4'
               : a.enemyKind === 'conehead' || a.enemyKind === 'troll'
               ? '#fbbf24'
               : a.enemyKind === 'small_troll'
@@ -5264,6 +5473,161 @@ export class Game {
     }
   }
 
+  drawDyingEnemies() {
+    if (this.dyingEnemies.length === 0) return;
+    const ctx = this.ctx;
+    for (let i = 0; i < this.dyingEnemies.length; i++) {
+      const de = this.dyingEnemies[i];
+      const p = Math.min(1, de.timer / de.duration);
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - p * 0.94);
+      de.attacker.draw(ctx);
+      ctx.restore();
+
+      // Rising Norse soul-wisp banishment mote
+      const wispAlpha = Math.max(0, (1 - p) * 0.85);
+      if (wispAlpha > 0.02) {
+        ctx.save();
+        ctx.globalAlpha = wispAlpha;
+        ctx.fillStyle = de.soulColor;
+        ctx.shadowColor = de.soulColor;
+        ctx.shadowBlur = 10;
+        const driftX = de.soulX + Math.sin(de.timer * 0.018) * 5;
+        ctx.beginPath();
+        ctx.arc(driftX, de.soulY, 3.6 * (1 - p * 0.4), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  drawBattleDebris() {
+    if (this.battleDebris.length === 0) return;
+    const ctx = this.ctx;
+    for (let i = 0; i < this.battleDebris.length; i++) {
+      const db = this.battleDebris[i];
+      const alpha = Math.max(0, 1 - Math.max(0, (db.life - db.maxLife * 0.65) / (db.maxLife * 0.35)));
+      if (alpha <= 0.01) continue;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(db.x, db.y);
+      ctx.rotate(db.rot);
+      ctx.strokeStyle = '#090d16';
+      ctx.lineWidth = 1.2;
+
+      switch (db.kind) {
+        case 'tower_shield': {
+          ctx.fillStyle = '#0f766e';
+          ctx.beginPath();
+          ctx.roundRect(-7, -14, 14, 28, 4);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#d97706';
+          ctx.beginPath();
+          ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'iron_bucket': {
+          ctx.fillStyle = '#94a3b8';
+          ctx.beginPath();
+          ctx.roundRect(-8, -7, 16, 14, 2);
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'bronze_cone': {
+          ctx.fillStyle = '#d97706';
+          ctx.beginPath();
+          ctx.moveTo(0, -10);
+          ctx.lineTo(8, 7);
+          ctx.lineTo(-8, 7);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'spear': {
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 2.6;
+          ctx.beginPath();
+          ctx.moveTo(-14, 0);
+          ctx.lineTo(10, 0);
+          ctx.stroke();
+          ctx.fillStyle = '#e2e8f0';
+          ctx.beginPath();
+          ctx.moveTo(-14, -3);
+          ctx.lineTo(-22, 0);
+          ctx.lineTo(-14, 3);
+          ctx.closePath();
+          ctx.fill();
+          break;
+        }
+        case 'axe': {
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 2.6;
+          ctx.beginPath();
+          ctx.moveTo(-8, 6);
+          ctx.lineTo(6, -6);
+          ctx.stroke();
+          ctx.fillStyle = '#cbd5e1';
+          ctx.beginPath();
+          ctx.arc(5, -5, 5.5, 0.3, 2.5);
+          ctx.lineTo(4, -5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'mace': {
+          ctx.strokeStyle = '#57534e';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(-8, 5);
+          ctx.lineTo(5, -5);
+          ctx.stroke();
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(6, -6, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'club': {
+          ctx.fillStyle = '#78350f';
+          ctx.beginPath();
+          ctx.roundRect(-10, -3.5, 20, 7, 3);
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'crag_stone': {
+          ctx.fillStyle = '#475569';
+          ctx.beginPath();
+          ctx.moveTo(-6, -4);
+          ctx.lineTo(2, -6);
+          ctx.lineTo(7, 1);
+          ctx.lineTo(1, 6);
+          ctx.lineTo(-6, 3);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'sword':
+        default: {
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(-11, -1.8, 16, 3.6);
+          ctx.fillStyle = '#d97706';
+          ctx.fillRect(4, -4.5, 2.5, 9);
+          break;
+        }
+      }
+      ctx.restore();
+    }
+  }
+
   drawFloatingTexts() {
     if (this.floatingTexts.length === 0) return;
     const ctx = this.ctx;
@@ -5622,7 +5986,9 @@ export class Game {
     
     for (let i = 0; i < this.valkyries.length; i++) this.valkyries[i].draw(ctx);
     for (let i = 0; i < this.defenders.length; i++) this.defenders[i].draw(ctx);
+    this.drawDyingEnemies();
     for (let i = 0; i < this.attackers.length; i++) this.attackers[i].draw(ctx);
+    this.drawBattleDebris();
     this.drawStatusAilments();
     for (let i = 0; i < this.projectiles.length; i++) this.projectiles[i].draw(ctx);
     this.particles.draw(ctx);

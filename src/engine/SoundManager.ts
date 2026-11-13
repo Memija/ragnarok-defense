@@ -302,12 +302,12 @@ export class SoundManager {
     });
   }
 
-  // Enemy Melee Strike (Blade Slash / Cudgel Crunch / Jötunn Boulder Slam)
-  public playEnemyAttack(style: 'blade' | 'blunt' | 'heavy' = 'blade') {
+  // Enemy Melee / Breath Strike (Blade Slash / Cudgel Crunch / Jötunn Slam / Wolf Bite / Dragonfire)
+  public playEnemyAttack(style: 'blade' | 'blunt' | 'heavy' | 'bite' | 'fire_breath' = 'blade') {
     const ctx = this.initCtx();
     if (!ctx) return;
     const now = ctx.currentTime;
-    if (style !== 'heavy' && now - this.lastMeleeSoundTime < 0.08) return;
+    if (style !== 'heavy' && style !== 'fire_breath' && now - this.lastMeleeSoundTime < 0.08) return;
     this.lastMeleeSoundTime = now;
 
     if (style === 'heavy') {
@@ -330,6 +330,46 @@ export class SoundManager {
       return;
     }
 
+    if (style === 'fire_breath') {
+      const noise = ctx.createBufferSource();
+      noise.buffer = this.getNoiseBuffer(ctx);
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(520, now);
+      filter.frequency.exponentialRampToValueAtTime(220, now + 0.22);
+      filter.Q.value = 1.4;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.getDestination(ctx));
+      this.autoCleanup(noise, [filter, gain]);
+      noise.start(now);
+      noise.stop(now + 0.22);
+      return;
+    }
+
+    if (style === 'bite') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(420, now);
+      osc.frequency.exponentialRampToValueAtTime(85, now + 0.06);
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1100, now);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.getDestination(ctx));
+      this.autoCleanup(osc, [filter, gain]);
+      osc.start(now);
+      osc.stop(now + 0.065);
+      return;
+    }
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = style === 'blade' ? 'sawtooth' : 'triangle';
@@ -349,6 +389,35 @@ export class SoundManager {
     this.autoCleanup(osc, [filter, gain]);
     osc.start(now);
     osc.stop(now + 0.08);
+  }
+
+  // Ulfhednar Berserker Blood-Rage Roar
+  public playBerserkRoar() {
+    const ctx = this.initCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(145, now);
+    osc.frequency.linearRampToValueAtTime(215, now + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(92, now + 0.34);
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(620, now);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.getDestination(ctx));
+    this.autoCleanup(osc, [filter, gain]);
+    osc.start(now);
+    osc.stop(now + 0.35);
   }
 
   // Enemy Collapse / Banishment Sound

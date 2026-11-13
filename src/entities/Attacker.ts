@@ -1,8 +1,17 @@
 import { Entity } from './Entity';
 
-export type EnemyVisualKind = 'basic' | 'conehead' | 'buckethead' | 'small_troll' | 'troll';
-export type EnemyAttackStyle = 'blade' | 'blunt' | 'heavy';
-export type EnemyArmorStyle = 'none' | 'bronze_cone' | 'iron_bucket';
+export type EnemyVisualKind =
+  | 'basic'
+  | 'conehead'
+  | 'buckethead'
+  | 'small_troll'
+  | 'troll'
+  | 'fenrir_wolf'
+  | 'berserker'
+  | 'shieldbearer'
+  | 'flame_drake';
+export type EnemyAttackStyle = 'blade' | 'blunt' | 'heavy' | 'bite' | 'fire_breath';
+export type EnemyArmorStyle = 'none' | 'bronze_cone' | 'iron_bucket' | 'tower_shield';
 
 export interface MeleePose {
   /** Positive = raised overhead/back (clockwise), Negative = cleaved forward-downward (counter-clockwise) */
@@ -33,6 +42,12 @@ export abstract class Attacker extends Entity {
   armorThreshold: number = 0;
   armorBroken: boolean = false;
   justBrokeArmor: boolean = false;
+
+  attackReach: number = 0;
+  isFlying: boolean = false;
+  enraged: boolean = false;
+  justEnraged: boolean = false;
+  frostResistance: number = 0;
 
   mass: number = 1.0;
   animOffset: number;
@@ -74,6 +89,18 @@ export abstract class Attacker extends Entity {
 
   override getHeadClearance(): number {
     return 14;
+  }
+
+  getEffectiveSpeed(): number {
+    return this.speed;
+  }
+
+  getEffectiveAttackRate(): number {
+    return this.attackRate;
+  }
+
+  modifyProjectileDamage(amount: number, _isFire: boolean, _isStunning: boolean): number {
+    return amount;
   }
 
   override takeDamage(amount: number) {
@@ -124,7 +151,7 @@ export abstract class Attacker extends Entity {
     }
 
     const slashAlpha = this.strikeFlashTimer > 0 ? this.strikeFlashTimer / 220 : 0;
-    const p = Math.max(0, Math.min(1, this.attackTimer / Math.max(1, this.attackRate)));
+    const p = Math.max(0, Math.min(1, this.attackTimer / Math.max(1, this.getEffectiveAttackRate())));
 
     // 0.00 -> 0.22: Recovering from previous downward smash
     if (p < 0.22 && this.strikeFlashTimer > 0) {
@@ -162,6 +189,10 @@ export abstract class Attacker extends Entity {
   }
 
   protected getStrideCadenceMultiplier(stridePhase: number): number {
+    if (this.enemyKind === 'fenrir_wolf') {
+      // Bounding quadruped dire-wolf lope (mean = 1.0)
+      return 1 + 0.26 * Math.cos(stridePhase * 2);
+    }
     if (this.enemyKind === 'small_troll') {
       // Agile bounding scuttle (mean = 1.0)
       return 1 + 0.22 * Math.cos(stridePhase * 2);
@@ -170,7 +201,11 @@ export abstract class Attacker extends Entity {
       // Heavy ponderous giant stomp (mean = 1.0)
       return 1 + 0.28 * Math.sin(stridePhase * 2);
     }
-    // Undead Draugr shambling lurch (mean = 1.0)
+    if (this.enemyKind === 'flame_drake') {
+      // Aerial wingbeat glide surge (mean = 1.0)
+      return 1 + 0.14 * Math.sin(stridePhase);
+    }
+    // Undead Draugr / Berserker / Shieldbearer stride (mean = 1.0)
     return 1 + 0.18 * Math.sin(stridePhase * 2);
   }
 
@@ -211,27 +246,50 @@ export abstract class Attacker extends Entity {
     super.update(effectiveDeltaTime, game);
 
     const animT = this.getAnimTime();
-    const stridePeriod = this.enemyKind === 'troll' ? 210 : this.enemyKind === 'small_troll' ? 115 : 150;
+    const stridePeriod =
+      this.enemyKind === 'troll'
+        ? 210
+        : this.enemyKind === 'fenrir_wolf'
+        ? 92
+        : this.enemyKind === 'berserker'
+        ? (this.enraged ? 96 : 128)
+        : this.enemyKind === 'small_troll'
+        ? 115
+        : this.enemyKind === 'flame_drake'
+        ? 140
+        : 150;
     const stridePhase = animT / stridePeriod;
     const pose = this.getMeleePose();
     this.rotation = this.hitTilt + pose.bodyLean;
 
     if (!this.isEating && !this.isStunned) {
       const cadence = this.getStrideCadenceMultiplier(stridePhase);
-      this.x -= this.speed * cadence * (effectiveDeltaTime / 1000);
+      this.x -= this.getEffectiveSpeed() * cadence * (effectiveDeltaTime / 1000);
 
-      // Rhythmic footfall dust / frost puffs synced to actual foot plants
+      // Rhythmic footfall dust / frost puffs (or aerial drake embers)
       const stepSin = Math.sin(stridePhase);
       const stepSign = stepSin >= 0 ? 1 : -1;
       if (this.lastStepSign !== 0 && stepSign !== this.lastStepSign && game) {
-        const footX = this.x + this.width * 0.5 + (stepSign > 0 ? -6 : 6);
-        const footY = this.y + this.height - 3;
-        if (this.enemyKind === 'troll') {
-          game.particles.emit(footX, footY, '#64748b', 5, 2.4, 2.8, 320, 0.04);
-          game.particles.emit(footX, footY, '#78716c', 3, 1.8, 2.2, 260, 0.02);
-        } else if (Math.random() < 0.55) {
-          const dustColor = this.isSlowed ? '#7dd3fc' : '#57534e';
-          game.particles.emit(footX, footY, dustColor, 2, 1.5, 2, 240, 0.02);
+        if (this.isFlying) {
+          if (Math.random() < 0.65) {
+            const emberX = this.x + this.width * 0.55;
+            const emberY = this.y + this.height * 0.55;
+            game.particles.emit(emberX, emberY, '#fb923c', 2, 1.4, 2.0, 260, -0.02);
+          }
+        } else {
+          const footX = this.x + this.width * 0.5 + (stepSign > 0 ? -6 : 6);
+          const footY = this.y + this.height - 3;
+          if (this.enemyKind === 'troll') {
+            game.particles.emit(footX, footY, '#64748b', 5, 2.4, 2.8, 320, 0.04);
+            game.particles.emit(footX, footY, '#78716c', 3, 1.8, 2.2, 260, 0.02);
+          } else if (this.enemyKind === 'fenrir_wolf') {
+            game.particles.emit(footX, footY, '#7dd3fc', 3, 1.8, 2.0, 220, 0.01);
+          } else if (this.enemyKind === 'berserker' && this.enraged) {
+            game.particles.emit(footX, footY, '#f97316', 3, 2.0, 2.2, 250, -0.01);
+          } else if (Math.random() < 0.55) {
+            const dustColor = this.isSlowed ? '#7dd3fc' : '#57534e';
+            game.particles.emit(footX, footY, dustColor, 2, 1.5, 2, 240, 0.02);
+          }
         }
       }
       this.lastStepSign = stepSign;
@@ -256,7 +314,11 @@ export abstract class Attacker extends Entity {
     // Dark Forged Iron Frame
     ctx.fillStyle = 'rgba(9, 13, 22, 0.9)';
     ctx.strokeStyle = armored
-      ? (this.armorStyle === 'iron_bucket' ? 'rgba(203, 213, 225, 0.8)' : 'rgba(245, 158, 11, 0.8)')
+      ? (this.armorStyle === 'iron_bucket'
+        ? 'rgba(203, 213, 225, 0.8)'
+        : this.armorStyle === 'tower_shield'
+        ? 'rgba(56, 189, 248, 0.85)'
+        : 'rgba(245, 158, 11, 0.8)')
       : 'rgba(239, 68, 68, 0.65)';
     ctx.lineWidth = 1.1;
     ctx.beginPath();
@@ -293,6 +355,10 @@ export abstract class Attacker extends Entity {
           armGrad.addColorStop(0, '#64748b');
           armGrad.addColorStop(0.5, '#cbd5e1');
           armGrad.addColorStop(1, '#f8fafc');
+        } else if (this.armorStyle === 'tower_shield') {
+          armGrad.addColorStop(0, '#0284c7');
+          armGrad.addColorStop(0.5, '#38bdf8');
+          armGrad.addColorStop(1, '#bae6fd');
         } else {
           armGrad.addColorStop(0, '#b45309');
           armGrad.addColorStop(0.5, '#f59e0b');
