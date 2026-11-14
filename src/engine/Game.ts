@@ -75,6 +75,7 @@ interface QueuedWaveSpawn {
   row: number;
   unitKind: EnemyUnitKind;
   delayMs: number;
+  warned?: boolean;
 }
 
 interface IncomingLaneWarning {
@@ -199,14 +200,14 @@ export class Game {
   pendingWaveSpawns: QueuedWaveSpawn[] = [];
   nextSpawnTimer: number = 0;
   interWaveTimer: number = 0;
-  currentSpawnWarned: boolean = false;
+  interWaveDuration: number = 0;
   lastSpawnRow: number = -1;
   laneWarnings: IncomingLaneWarning[] = [];
 
   // Game state & statistics
   gameState: 'playing' | 'victory' | 'defeat' = 'playing';
   zombiesSpawned: number = 0;
-  zombiesTotal: number = 24;
+  zombiesTotal: number = 76;
   zombiesKilled: number = 0;
   victoryTimer: number = 0;
   defeatTimer: number = 0;
@@ -214,7 +215,7 @@ export class Game {
   // Cinematic Bifrost entrance transition
   realmEntranceTimer: number = 2.8;
 
-  spawnGraceTimer: number = 22000;
+  spawnGraceTimer: number = 32000;
   ambientCurrencyTimer: number = 4500;
   ambientCurrencyInterval: number = 8500;
   
@@ -779,39 +780,41 @@ export class Game {
   }
 
   private getInitialSpawnGraceMs(): number {
-    return Math.max(17000, 22000 - (this.level - 1) * 700);
+    return Math.max(25000, 32000 - (this.level - 1) * 750);
   }
 
   private buildWavePlan(): WaveSpec[] {
     const clampedLevel = Math.max(1, Math.min(10, this.level));
-    const totalWaves = 5 + clampedLevel;
-    const oneStepWaves = Math.min(7, 4 + Math.floor(clampedLevel / 2));
+    const totalWaves = Math.min(10, 6 + Math.floor(clampedLevel / 2));
+    const midMajorWave = totalWaves >= 8 ? Math.ceil(totalWaves / 2) : -1;
+    const stepGrowth = 3 + Math.floor(clampedLevel / 4);
     const plan: WaveSpec[] = [];
 
-    let prevCount = 0;
+    let baseline = 3 + Math.ceil(clampedLevel * 0.8);
     for (let w = 1; w <= totalWaves; w++) {
-      let count: number;
-      if (w <= oneStepWaves) {
-        count = w;
-      } else if (w < totalWaves - 1) {
-        count = prevCount + 2;
-      } else if (w === totalWaves - 1) {
-        count = prevCount + (clampedLevel >= 4 ? 3 : 2);
-      } else {
-        count = prevCount + (clampedLevel >= 6 ? 4 : clampedLevel >= 2 ? 3 : 2);
+      if (w === 2) {
+        baseline += Math.max(2, stepGrowth - 1);
+      } else if (w > 2) {
+        baseline += stepGrowth;
       }
 
       let kind: WaveKind = 'standard';
-      if (w === 1) {
-        kind = 'scout';
-      } else if (w === totalWaves) {
+      let count = baseline;
+
+      if (w === totalWaves) {
         kind = 'final';
+        count = Math.round(baseline * 1.30) + 2;
       } else if (w === totalWaves - 1) {
         kind = 'major';
+        count = Math.round(baseline * 1.15) + 2;
+      } else if (w === midMajorWave) {
+        kind = 'major';
+        count = Math.round(baseline * 1.20) + 2;
+      } else if (count === 1) {
+        kind = 'scout';
       }
 
       plan.push({ waveNumber: w, count, kind });
-      prevCount = count;
     }
 
     return plan;
@@ -824,7 +827,7 @@ export class Game {
     this.pendingWaveSpawns = [];
     this.nextSpawnTimer = 0;
     this.interWaveTimer = 0;
-    this.currentSpawnWarned = false;
+    this.interWaveDuration = 0;
     this.lastSpawnRow = -1;
     this.laneWarnings = [];
     this.waveBannerTimer = 0;
@@ -835,47 +838,75 @@ export class Game {
     this.spawnGraceTimer = this.getInitialSpawnGraceMs();
   }
 
-  private computeIntraWaveGapMs(spec: WaveSpec): number {
+  private computeSalvoSize(spec: WaveSpec): number {
     if (spec.kind === 'final') {
-      return 1250 + Math.random() * 700;
+      return 3 + Math.floor(Math.random() * 3); // 3-5 enemies across lanes
     }
     if (spec.kind === 'major') {
-      return 1650 + Math.random() * 750;
+      return 3 + Math.floor(Math.random() * 2); // 3-4 enemies across lanes
+    }
+    if (spec.waveNumber === 1) {
+      return spec.count >= 8 && Math.random() > 0.5 ? 3 : 2;
+    }
+    return 2 + (spec.count >= 12 && Math.random() > 0.4 ? 1 : 0);
+  }
+
+  private computeIntraSalvoGapMs(spec: WaveSpec): number {
+    if (spec.kind === 'final') {
+      return 320 + Math.random() * 360;
+    }
+    if (spec.kind === 'major') {
+      return 360 + Math.random() * 400;
+    }
+    return 440 + Math.random() * 460;
+  }
+
+  private computeInterSalvoGapMs(spec: WaveSpec): number {
+    if (spec.kind === 'final') {
+      return 2100 + Math.random() * 650;
+    }
+    if (spec.kind === 'major') {
+      return 2500 + Math.random() * 750;
+    }
+    if (spec.waveNumber === 1) {
+      return 4400 + Math.random() * 900;
     }
     if (spec.waveNumber === 2) {
-      return 6800 + Math.random() * 800;
-    }
-    if (spec.waveNumber === 3) {
-      return 5200 + Math.random() * 900;
-    }
-    if (spec.waveNumber === 4) {
-      return 4200 + Math.random() * 800;
+      return 3900 + Math.random() * 850;
     }
     const progress = (spec.waveNumber - 1) / Math.max(1, this.totalWaves - 1);
-    const base = Math.max(2600, 4100 - progress * 1200 - (this.level - 1) * 90);
-    return base + Math.random() * 700;
+    const base = Math.max(2800, 3600 - progress * 600);
+    return base + Math.random() * 750;
   }
 
   private computeInterWaveDelayMs(completedWave: number): number {
     const nextSpec = this.wavePlan[completedWave];
     if (!nextSpec) return 0;
     if (nextSpec.kind === 'major' || nextSpec.kind === 'final') {
-      return 24000;
+      return 48000;
     }
-    if (completedWave === 1) return 21000;
-    if (completedWave === 2) return 19500;
-    if (completedWave === 3) return 18000;
-    return Math.max(14500, 17500 - (this.level - 1) * 350);
+    if (completedWave === 1) return 42000;
+    if (completedWave === 2) return 40000;
+    return Math.max(35000, 39000 - (this.level - 1) * 400);
+  }
+
+  private computeStragglerDelayMs(completedWave: number): number {
+    const nextSpec = this.wavePlan[completedWave];
+    if (!nextSpec) return 0;
+    if (nextSpec.kind === 'major' || nextSpec.kind === 'final') {
+      return 26000;
+    }
+    return 22000;
   }
 
   private computePostClearDelayMs(completedWave: number): number {
     const nextSpec = this.wavePlan[completedWave];
     if (!nextSpec) return 0;
     if (nextSpec.kind === 'major' || nextSpec.kind === 'final') {
-      return 7200;
+      return 16500;
     }
-    if (completedWave <= 2) return 6500;
-    return 5200;
+    if (completedWave <= 2) return 14500;
+    return 12500;
   }
 
   private isHeavyEnemyKind(kind: EnemyUnitKind): boolean {
@@ -924,6 +955,8 @@ export class Game {
   private pickEnemyUnitForWave(spec: WaveSpec, spawnIndex: number): EnemyUnitKind {
     const { waveNumber, count, kind } = spec;
     const waveProgress = (waveNumber - 1) / Math.max(1, this.totalWaves - 1);
+    const isLateClimax = kind === 'final' || (kind === 'major' && waveProgress >= 0.72);
+    const spawnRatio = count > 1 ? spawnIndex / (count - 1) : 1;
     const rand = Math.random();
 
     // Thematic frost roster in Jotunheim & Niflheim, escalating gradually across waves
@@ -932,16 +965,19 @@ export class Game {
         return 'small_troll';
       }
       if (waveNumber === 3) {
-        if (spawnIndex === count - 1) {
-          return rand > 0.5 ? 'fenrir_wolf' : 'conehead';
+        if (spawnRatio >= 0.70 && rand > 0.35) {
+          return rand > 0.65 ? 'fenrir_wolf' : 'conehead';
         }
         return 'small_troll';
       }
-      if (kind === 'standard') {
-        if (waveProgress >= 0.58 && spawnIndex === count - 1 && rand > 0.48) {
+      if (!isLateClimax) {
+        if (kind === 'major' && spawnIndex === Math.floor(count / 2)) {
+          return this.level >= 3 ? 'troll' : 'shieldbearer';
+        }
+        if (waveProgress >= 0.58 && spawnRatio >= 0.75 && rand > 0.55) {
           return 'troll';
         }
-        if (waveProgress >= 0.42) {
+        if (waveProgress >= 0.42 || kind === 'major') {
           if (rand > 0.78) return 'shieldbearer';
           if (rand > 0.60) return 'berserker';
           if (rand > 0.40) return 'fenrir_wolf';
@@ -968,14 +1004,17 @@ export class Game {
         return 'basic';
       }
       if (waveNumber === 3) {
-        return (spawnIndex === count - 1 && rand > 0.45) ? 'fenrir_wolf' : 'basic';
+        return (spawnRatio >= 0.70 && rand > 0.40) ? 'fenrir_wolf' : 'basic';
       }
-      if (waveNumber === 4) {
-        if (spawnIndex === count - 1) return rand > 0.45 ? 'berserker' : 'conehead';
+      if (waveNumber === 4 && kind !== 'major') {
+        if (spawnRatio >= 0.75) return rand > 0.45 ? 'berserker' : 'conehead';
         return rand > 0.65 ? 'fenrir_wolf' : 'basic';
       }
-      if (kind === 'standard') {
-        if (waveProgress >= 0.50 && spawnIndex >= Math.floor(count / 2) && rand > 0.60) {
+      if (!isLateClimax) {
+        if (kind === 'major' && spawnIndex === Math.floor(count / 2)) {
+          return 'flame_drake';
+        }
+        if ((waveProgress >= 0.50 || kind === 'major') && spawnRatio >= 0.50 && rand > 0.60) {
           return 'flame_drake';
         }
         if (rand > 0.68) return 'berserker';
@@ -993,57 +1032,62 @@ export class Game {
       return 'fenrir_wolf';
     }
 
-    // Waves 1-2: strictly basic scouts while the player builds economy
+    // Waves 1-2: strictly basic raiders while the player establishes economy
     if (waveNumber <= 2) {
       return 'basic';
     }
 
-    // Wave 3: basic scouts, with a chance for one agile small troll or dire-wolf at the tail
+    // Wave 3: basic raiders with agile small trolls or dire-wolves joining in the rear ranks
     if (waveNumber === 3) {
-      if (spawnIndex === count - 1) {
+      if (spawnRatio >= 0.68) {
         if (this.level >= 2 && rand > 0.62) return 'fenrir_wolf';
-        if (rand > 0.45) return 'small_troll';
+        if (rand > 0.42) return 'small_troll';
       }
       return 'basic';
     }
 
-    // Wave 4: gentle blend of scouts, dire-wolves, and first light armor / shieldbearer on higher levels
-    if (waveNumber === 4) {
-      if (spawnIndex === count - 1) {
+    // Wave 4 (when not a mid-battle Major Wave): blend of scouts, dire-wolves, and light armor
+    if (waveNumber === 4 && kind !== 'major') {
+      if (spawnRatio >= 0.78) {
         if (this.level >= 3 && rand > 0.55) return 'shieldbearer';
         if (this.level >= 2 && rand > 0.35) return 'conehead';
         if (rand > 0.45) return 'fenrir_wolf';
       }
-      if (spawnIndex === count - 2 || rand > 0.70) {
+      if (spawnRatio >= 0.52 && rand > 0.55) {
         return rand > 0.5 ? 'fenrir_wolf' : 'small_troll';
       }
       return 'basic';
     }
 
-    // Mid-game standard waves (Wave 5+ prior to Major/Final waves)
-    if (kind === 'standard') {
-      if (this.level >= 4 && waveProgress >= 0.65 && spawnIndex === count - 1 && rand > 0.45) {
-        return this.level >= 6 && rand > 0.45 ? 'flame_drake' : 'troll';
-      }
-      if (this.level >= 4 && waveProgress >= 0.56 && spawnIndex >= Math.floor(count / 2) && rand > 0.76) {
-        return 'flame_drake';
-      }
-      if (this.level >= 3 && waveProgress >= 0.52 && spawnIndex >= Math.floor(count / 2) && rand > 0.74) {
-        return 'buckethead';
-      }
-      if (this.level >= 2 && waveProgress >= 0.45 && rand > 0.78) {
-        return 'shieldbearer';
-      }
-      if (this.level >= 2 && waveProgress >= 0.42 && rand > 0.64) {
-        return 'berserker';
-      }
-      if (this.level >= 2 && rand > 0.54) {
+    // Mid-game standard waves & Mid-Battle Major Waves (prior to Late Climax)
+    if (!isLateClimax) {
+      if (kind === 'major' && spawnIndex === Math.floor(count / 2)) {
+        if (this.level >= 5) return 'buckethead';
+        if (this.level >= 3) return 'shieldbearer';
         return 'conehead';
       }
-      if (rand > 0.38) {
+      if (this.level >= 4 && waveProgress >= 0.65 && spawnRatio >= 0.82 && rand > 0.45) {
+        return this.level >= 6 && rand > 0.45 ? 'flame_drake' : 'troll';
+      }
+      if (this.level >= 4 && waveProgress >= 0.56 && spawnRatio >= 0.50 && rand > 0.76) {
+        return 'flame_drake';
+      }
+      if (this.level >= 3 && (waveProgress >= 0.50 || kind === 'major') && spawnRatio >= 0.50 && rand > 0.74) {
+        return 'buckethead';
+      }
+      if (this.level >= 2 && (waveProgress >= 0.42 || kind === 'major') && rand > 0.78) {
+        return 'shieldbearer';
+      }
+      if (this.level >= 2 && (waveProgress >= 0.38 || kind === 'major') && rand > 0.64) {
+        return 'berserker';
+      }
+      if (this.level >= 2 && rand > 0.52) {
+        return 'conehead';
+      }
+      if (rand > 0.36) {
         return 'fenrir_wolf';
       }
-      if (rand > 0.22) {
+      if (rand > 0.20) {
         return 'small_troll';
       }
       return 'basic';
@@ -1051,14 +1095,16 @@ export class Game {
 
     // Late-battle Major & Final waves
     if (this.level === 1) {
-      if (spawnIndex === 2 || (kind === 'final' && spawnIndex === count - 2)) {
+      if (
+        spawnIndex === 2 ||
+        spawnIndex === Math.floor(count / 2) ||
+        (kind === 'final' && spawnIndex === count - 3)
+      ) {
         return 'conehead';
       }
-      if (spawnIndex === count - 1) {
-        return 'fenrir_wolf';
-      }
-      if (rand > 0.68) return 'fenrir_wolf';
-      return rand > 0.40 ? 'small_troll' : 'basic';
+      if (rand > 0.82) return 'conehead';
+      if (rand > 0.60) return 'fenrir_wolf';
+      return rand > 0.35 ? 'small_troll' : 'basic';
     }
 
     if (this.level === 2) {
@@ -1085,7 +1131,7 @@ export class Game {
       return rand > 0.10 ? 'conehead' : 'small_troll';
     }
 
-    // Levels 4-7 (culminating in Sindri's Forge & Nidavellir with Elite Flame Drakes)
+    // Levels 4+ (culminating in Sindri's Forge & Nidavellir with Elite Flame Drakes)
     if (spawnIndex === Math.floor(count / 2)) {
       if (this.level >= 6) {
         return kind === 'final' ? 'flame_drake' : 'shieldbearer';
@@ -1127,29 +1173,42 @@ export class Game {
     this.announceWave(spec);
 
     const rows = this.pickSpawnRowsForWave(spec.count);
-    const leadInMs = (spec.kind === 'major' || spec.kind === 'final') ? 2600 : 2000;
+    const leadInMs = (spec.kind === 'major' || spec.kind === 'final') ? 3000 : 2400;
     this.pendingWaveSpawns = [];
 
+    let remainingInSalvo = this.computeSalvoSize(spec);
     for (let i = 0; i < spec.count; i++) {
       const unitKind = this.pickEnemyUnitForWave(spec, i);
-      const delayMs = i === 0 ? leadInMs : this.computeIntraWaveGapMs(spec);
+      let delayMs: number;
+      if (i === 0) {
+        delayMs = leadInMs;
+        remainingInSalvo--;
+      } else if (remainingInSalvo > 0) {
+        delayMs = this.computeIntraSalvoGapMs(spec);
+        remainingInSalvo--;
+      } else {
+        delayMs = this.computeInterSalvoGapMs(spec);
+        remainingInSalvo = this.computeSalvoSize(spec) - 1;
+      }
+
       this.pendingWaveSpawns.push({
         row: rows[i],
         unitKind,
-        delayMs
+        delayMs,
+        warned: false
       });
     }
 
     if (this.pendingWaveSpawns.length > 0) {
       this.nextSpawnTimer = this.pendingWaveSpawns[0].delayMs;
-      this.currentSpawnWarned = false;
     }
   }
 
   private spawnQueuedEnemy(spawn: QueuedWaveSpawn): void {
     this.zombiesSpawned++;
-    const spawnY = (spawn.row + 0.5) * this.grid.cellHeight - 45;
-    const spawnX = this.width + 10;
+    const laneJitterY = (Math.random() - 0.5) * 8;
+    const spawnY = (spawn.row + 0.5) * this.grid.cellHeight - 45 + laneJitterY;
+    const spawnX = this.width + 10 + Math.random() * 18;
 
     switch (spawn.unitKind) {
       case 'troll':
@@ -1696,7 +1755,7 @@ export class Game {
           }
         }
 
-        // Multi-wave progression director: grace period -> wave call -> paced spawns -> breather
+        // Multi-wave progression director: grace period -> wave call -> salvo spawns -> breather
         if (this.spawnGraceTimer > 0) {
           this.spawnGraceTimer -= deltaTime;
           if (this.spawnGraceTimer <= 0) {
@@ -1704,32 +1763,52 @@ export class Game {
             this.startNextWave();
           }
         } else if (this.pendingWaveSpawns.length > 0) {
-          const nextSpawn = this.pendingWaveSpawns[0];
           this.nextSpawnTimer -= deltaTime;
 
-          if (!this.currentSpawnWarned && this.nextSpawnTimer <= 1800) {
-            this.currentSpawnWarned = true;
-            this.addIncomingLaneWarning(
-              nextSpawn.row,
-              Math.max(900, this.nextSpawnTimer + 350),
-              this.isHeavyEnemyKind(nextSpawn.unitKind)
-            );
+          let timeUntilSpawn = this.nextSpawnTimer;
+          for (let i = 0; i < this.pendingWaveSpawns.length; i++) {
+            if (i > 0) {
+              timeUntilSpawn += this.pendingWaveSpawns[i].delayMs;
+            }
+            if (timeUntilSpawn > 1900) break;
+            const upcoming = this.pendingWaveSpawns[i];
+            if (!upcoming.warned) {
+              upcoming.warned = true;
+              this.addIncomingLaneWarning(
+                upcoming.row,
+                Math.max(950, timeUntilSpawn + 350),
+                this.isHeavyEnemyKind(upcoming.unitKind)
+              );
+            }
           }
 
-          if (this.nextSpawnTimer <= 0) {
+          while (this.pendingWaveSpawns.length > 0 && this.nextSpawnTimer <= 0) {
             const ready = this.pendingWaveSpawns.shift()!;
             this.spawnQueuedEnemy(ready);
 
             if (this.pendingWaveSpawns.length > 0) {
-              this.nextSpawnTimer = this.pendingWaveSpawns[0].delayMs;
-              this.currentSpawnWarned = false;
+              this.nextSpawnTimer += this.pendingWaveSpawns[0].delayMs;
             } else if (this.currentWave < this.totalWaves) {
-              this.interWaveTimer = this.computeInterWaveDelayMs(this.currentWave);
+              this.interWaveDuration = this.computeInterWaveDelayMs(this.currentWave);
+              this.interWaveTimer = this.interWaveDuration;
             }
           }
         } else if (this.currentWave < this.totalWaves) {
           if (this.attackers.length === 0) {
-            this.interWaveTimer = Math.min(this.interWaveTimer, this.computePostClearDelayMs(this.currentWave));
+            this.interWaveTimer = Math.min(
+              this.interWaveTimer,
+              this.computePostClearDelayMs(this.currentWave)
+            );
+          } else {
+            const completedSpec = this.wavePlan[this.currentWave - 1];
+            const stragglerCap = completedSpec ? Math.max(1, Math.floor(completedSpec.count * 0.15)) : 1;
+            const elapsedInterWave = this.interWaveDuration - this.interWaveTimer;
+            if (elapsedInterWave >= 16000 && this.attackers.length <= stragglerCap) {
+              this.interWaveTimer = Math.min(
+                this.interWaveTimer,
+                this.computeStragglerDelayMs(this.currentWave)
+              );
+            }
           }
           this.interWaveTimer -= deltaTime;
           if (this.interWaveTimer <= 0) {
