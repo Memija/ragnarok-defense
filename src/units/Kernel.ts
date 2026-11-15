@@ -20,8 +20,8 @@ export class Kernel extends Projectile {
     boulderGrad.addColorStop(0.5, '#44403c');
     boulderGrad.addColorStop(1, '#1c1917');
     ctx.fillStyle = boulderGrad;
-    ctx.strokeStyle = '#292524';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.3;
 
     ctx.beginPath();
     ctx.arc(0, 0, 7, 0, Math.PI * 2);

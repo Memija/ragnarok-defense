@@ -697,41 +697,62 @@ export const DEFENDER_ICONS: Record<string, string> = {
   <circle cx="24" cy="0.8" r="0.6" fill="#fef08a"/>
 </svg>`,
 
-  // ⚙️ Dwarven Catapult / Kernel-pult (Tower)
+  // ⚙️ Dwarven Catapult / Kernel-pult (Siege)
   kernelpult: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="unit-svg-icon svg-kernelpult">
   <defs>
-    <linearGradient id="cat-wood" x1="8" y1="18" x2="40" y2="44" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#78350f"/>
-      <stop offset="50%" stop-color="#451a03"/>
-      <stop offset="100%" stop-color="#270e02"/>
+    <linearGradient id="cat-wood" x1="8" y1="14" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="50%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
     </linearGradient>
     <linearGradient id="cat-brass" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#fef08a"/>
-      <stop offset="50%" stop-color="#d97706"/>
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="55%" stop-color="#d97706"/>
       <stop offset="100%" stop-color="#78350f"/>
     </linearGradient>
-    <linearGradient id="cat-stone" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#e2e8f0"/>
-      <stop offset="50%" stop-color="#64748b"/>
-      <stop offset="100%" stop-color="#1e293b"/>
+    <linearGradient id="cat-iron" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="55%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <filter id="cat-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="1.5" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
+    <radialGradient id="cat-stone" cx="38%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="55%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </radialGradient>
   </defs>
-  <line x1="8" y1="40" x2="40" y2="40" stroke="url(#cat-wood)" stroke-width="4.5" stroke-linecap="round"/>
-  <circle cx="13" cy="40" r="4.5" fill="url(#cat-brass)" stroke="#451a03" stroke-width="1.2"/>
-  <circle cx="13" cy="40" r="1.8" fill="#1e293b"/>
-  <circle cx="35" cy="40" r="4.5" fill="url(#cat-brass)" stroke="#451a03" stroke-width="1.2"/>
-  <circle cx="35" cy="40" r="1.8" fill="#1e293b"/>
-  <polygon points="26,18 20,38 32,38" fill="none" stroke="url(#cat-wood)" stroke-width="3" stroke-linejoin="round"/>
-  <circle cx="26" cy="28" r="4" fill="url(#cat-brass)" stroke="#78350f" stroke-width="0.9"/>
-  <line x1="10" y1="16" x2="33" y2="33" stroke="url(#cat-wood)" stroke-width="3" stroke-linecap="round"/>
-  <line x1="16" y1="20" x2="26" y2="28" stroke="#fde047" stroke-width="1" stroke-dasharray="2 1.5"/>
-  <path d="M8 12 Q10 20 16 16 Z" fill="url(#cat-brass)" stroke="#78350f" stroke-width="1"/>
-  <circle cx="12" cy="11" r="5" fill="url(#cat-stone)" stroke="#0f172a" stroke-width="0.9"/>
-  <path d="M10 11 L12 9 L14 11 M12 11 L12 14" stroke="#f59e0b" stroke-width="1.2" stroke-linecap="round" filter="url(#cat-glow)"/>
+  <!-- Heavy Iron-Bound Siege Chassis Base -->
+  <rect x="5" y="36.5" width="38" height="5.5" rx="2" fill="url(#cat-iron)" stroke="#0f172a" stroke-width="1.3"/>
+  <rect x="7" y="37.8" width="34" height="2.6" rx="1" fill="url(#cat-wood)"/>
+  <circle cx="9" cy="39.2" r="0.9" fill="#fbbf24"/>
+  <circle cx="24" cy="39.2" r="0.9" fill="#fbbf24"/>
+  <circle cx="39" cy="39.2" r="0.9" fill="#fbbf24"/>
+  <!-- Solid Reinforced Timber A-Frame Struts -->
+  <polygon points="16,37 23.5,18 27,18 20.5,37" fill="url(#cat-wood)" stroke="#1c0a00" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="36,37 28.5,18 25,18 31.5,37" fill="url(#cat-wood)" stroke="#1c0a00" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Torsion Cable -->
+  <line x1="15" y1="18.5" x2="24" y2="28" stroke="#451a03" stroke-width="2" stroke-linecap="round"/>
+  <line x1="15" y1="18.5" x2="24" y2="28" stroke="#f59e0b" stroke-width="0.9" stroke-dasharray="2 1.5" stroke-linecap="round"/>
+  <!-- Articulated Siege Throwing Arm & Iron Counterweight -->
+  <polygon points="10,13.5 39,29.5 37,33 8.5,16.8" fill="url(#cat-wood)" stroke="#1c0a00" stroke-width="1.2" stroke-linejoin="round"/>
+  <rect x="33.5" y="28.5" width="7.5" height="6" rx="1.2" fill="url(#cat-iron)" stroke="#0f172a" stroke-width="1.2"/>
+  <circle cx="37.2" cy="31.5" r="1" fill="#fbbf24"/>
+  <!-- Throwing Cup & Glowing Runic Boulder -->
+  <path d="M5.5 13 C6 18.5 13.5 19.5 16.5 15.5 L6.5 11.5 Z" fill="url(#cat-iron)" stroke="#0f172a" stroke-width="1.2" stroke-linejoin="round"/>
+  <circle cx="11.5" cy="9.5" r="5.2" fill="url(#cat-stone)" stroke="#0f172a" stroke-width="1.2"/>
+  <path d="M9.2 9.5 L11.5 7.2 L13.8 9.5 M11.5 7.5 L11.5 12.2" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="11.5" cy="9.5" r="1" fill="#fef08a"/>
+  <!-- Brass Winding Cogwheel & Pivot Trunnion -->
+  <circle cx="26" cy="19.5" r="4.2" fill="url(#cat-brass)" stroke="#451a03" stroke-width="1.2"/>
+  <circle cx="26" cy="19.5" r="1.6" fill="#0f172a"/>
+  <!-- Front Dwarven Armor Mantlet -->
+  <rect x="19" y="26.5" width="14" height="8.5" rx="1.5" fill="url(#cat-iron)" stroke="#0f172a" stroke-width="1.2"/>
+  <path d="M23.5 29.5 H28.5 M26 29.5 V33" stroke="#fbbf24" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- Heavy Iron-Rimmed Siege Wheels -->
+  <circle cx="13" cy="40.5" r="5" fill="url(#cat-brass)" stroke="#0f172a" stroke-width="1.5"/>
+  <circle cx="13" cy="40.5" r="2" fill="#0f172a"/>
+  <circle cx="35" cy="40.5" r="5" fill="url(#cat-brass)" stroke="#0f172a" stroke-width="1.5"/>
+  <circle cx="35" cy="40.5" r="2" fill="#0f172a"/>
 </svg>`,
 
   // 🔥 Forge Dragonfire / Jalapeno (Tower)
@@ -819,6 +840,41 @@ export const DEFENDER_ICONS: Record<string, string> = {
 
 DEFENDER_ICONS.sunflower_midgard = DEFENDER_ICONS.sunflower;
 
+let svgInstanceCounter = 0;
+
+/**
+ * Ensures every inline SVG instance has globally unique <defs> IDs so hidden modals
+ * (display: none) or repeated cards never shadow gradients or filters in visible UI.
+ */
+export function scopeSvgIds(svg: string): string {
+  if (!svg || !svg.includes('<svg') || !svg.includes('id="')) {
+    return svg;
+  }
+  const uid = ++svgInstanceCounter;
+  const idMap = new Map<string, string>();
+  svg.replace(/\bid="([^"]+)"/g, (_match, rawId: string) => {
+    const baseId = rawId.replace(/-u\d+$/, '');
+    idMap.set(rawId, `${baseId}-u${uid}`);
+    return _match;
+  });
+  if (idMap.size === 0) return svg;
+
+  let scoped = svg.replace(/\bid="([^"]+)"/g, (_m, rawId: string) => {
+    const mapped = idMap.get(rawId);
+    return mapped ? `id="${mapped}"` : _m;
+  });
+  scoped = scoped.replace(/url\(#([^)]+)\)/g, (_m, rawId: string) => {
+    const mapped = idMap.get(rawId);
+    return mapped ? `url(#${mapped})` : _m;
+  });
+  scoped = scoped.replace(/\b(xlink:href|href)="#([^"]+)"/g, (_m, attr: string, rawId: string) => {
+    const mapped = idMap.get(rawId);
+    return mapped ? `${attr}="#${mapped}"` : _m;
+  });
+  return scoped;
+}
+
 export function getDefenderIcon(id: string): string {
-  return DEFENDER_ICONS[id] || '⚔️';
+  const icon = DEFENDER_ICONS[id];
+  return icon ? scopeSvgIds(icon) : '⚔️';
 }

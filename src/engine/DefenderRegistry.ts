@@ -1,5 +1,5 @@
 import { t } from '../i18n';
-import { DEFENDER_ICONS } from './DefenderIcons';
+import { DEFENDER_ICONS, scopeSvgIds } from './DefenderIcons';
 import { getSlotLimitForLevel, getForeignUnitsMode, isForeignWorldAllowedInLimited } from './GameConfig';
 
 export type DefenderCategory = 'plants' | 'towers' | 'siege' | 'ordnance';
@@ -916,6 +916,7 @@ export function getLocalizedDefender(def: DefenderInfo, realm?: string): Defende
 
   return {
     ...def,
+    icon: scopeSvgIds(def.icon),
     world: targetWorld as WorldId,
     isCurrencyProducer: isSunflower,
     name,

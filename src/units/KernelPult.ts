@@ -52,13 +52,14 @@ export class KernelPult extends Defender {
       ctx.fill();
 
       // --- 1. Fortified Dwarven Stone Foundation Platform ---
+      const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
       const baseGrad = ctx.createLinearGradient(cx - 24, cy + 22, cx + 24, cy + 36);
       baseGrad.addColorStop(0, '#292524');
       baseGrad.addColorStop(0.5, '#44403c');
       baseGrad.addColorStop(1, '#1c1917');
       ctx.fillStyle = baseGrad;
-      ctx.strokeStyle = '#57534e';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = isLight ? '#0f172a' : '#57534e';
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
       ctx.roundRect(cx - 24, cy + 22, 48, 14, 3);
       ctx.fill();
@@ -175,10 +176,23 @@ export class KernelPult extends Defender {
 
       // Loaded payload in cup (Gleaming runic magma boulder)
       if (!isRecoil) {
-        ctx.fillStyle = '#f59e0b';
+        ctx.fillStyle = '#334155';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.arc(0, -31, 4.5, 0, Math.PI * 2);
+        ctx.arc(0, -31, 4.8, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(-2, -31.5);
+        ctx.lineTo(0, -33.5);
+        ctx.lineTo(2, -31.5);
+        ctx.moveTo(0, -33.2);
+        ctx.lineTo(0, -28.8);
+        ctx.stroke();
       }
       ctx.restore();
 

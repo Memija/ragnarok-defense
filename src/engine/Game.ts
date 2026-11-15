@@ -32,7 +32,7 @@ import { JotunnFrostbreaker } from '../units/JotunnFrostbreaker';
 import { MagmaJuggernaut } from '../units/MagmaJuggernaut';
 import { SoundManager } from './SoundManager';
 import { getSavedLoadout, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDefenderAllowedInRealm } from './DefenderRegistry';
-import { DEFENDER_ICONS } from './DefenderIcons';
+import { DEFENDER_ICONS, scopeSvgIds } from './DefenderIcons';
 import { MapMenu } from './MapMenu';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
 import { getStartingCurrencyForLevel, getDefaultStartingCurrency, getInfiniteResourcesForLevel } from './GameConfig';
@@ -604,7 +604,7 @@ export class Game {
     shovelCard.innerHTML = `
       <span class="hotkey-badge">D</span>
       <div class="card-art">
-        <span class="icon">${DEFENDER_ICONS.shovel}</span>
+        <span class="icon">${scopeSvgIds(DEFENDER_ICONS.shovel)}</span>
       </div>
       <div class="cost shovel-cost" data-i18n="remove">${t('remove')}</div>
     `;
