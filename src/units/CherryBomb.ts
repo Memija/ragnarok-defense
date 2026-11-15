@@ -1,5 +1,6 @@
 import { Defender } from '../entities/Defender';
 import { Game } from '../engine/Game';
+import { SoundManager } from '../engine/SoundManager';
 
 export class CherryBomb extends Defender {
   fuseTimer: number = 0;
@@ -32,6 +33,11 @@ export class CherryBomb extends Defender {
       const explosionRadius = 150;
       const centerX = this.x + this.width / 2;
       const centerY = this.y + this.height / 2;
+      const blastDamage = game.computeOrdnanceDamage(1000);
+      const isDampened = blastDamage < 650;
+      game.registerOrdnanceCast(1.15);
+      game.triggerScreenShake(350, 10);
+      SoundManager.getInstance().playExplosion();
       game.particles.emitExplosion(centerX, centerY);
 
       game.attackers.forEach(a => {
@@ -39,7 +45,18 @@ export class CherryBomb extends Defender {
         const ay = a.y + a.height / 2;
         const dist = Math.hypot(ax - centerX, ay - centerY);
         if (dist <= explosionRadius) {
-          a.takeDamage(1000);
+          if (blastDamage >= a.health) {
+            a.overkilled = true;
+          }
+          a.takeDamage(blastDamage);
+          game.handleEnemyArmorBreak(a);
+          game.addFloatingText(
+            ax,
+            a.y,
+            isDampened ? `-${blastDamage} ❄️` : `-${blastDamage} 💥`,
+            isDampened ? '#7dd3fc' : '#ff5722',
+            true
+          );
         }
       });
     }

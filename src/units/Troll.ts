@@ -6,6 +6,7 @@ export class Troll extends Attacker {
     this.attackRate = 1550;
     this.enemyKind = 'troll';
     this.attackStyle = 'heavy';
+    this.stunResistance = 0.25;
     this.mass = 3.2;
   }
 

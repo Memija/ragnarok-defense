@@ -9,9 +9,18 @@ export type EnemyVisualKind =
   | 'fenrir_wolf'
   | 'berserker'
   | 'shieldbearer'
-  | 'flame_drake';
+  | 'flame_drake'
+  | 'frost_giant'
+  | 'draugr_jarl'
+  | 'magma_juggernaut';
 export type EnemyAttackStyle = 'blade' | 'blunt' | 'heavy' | 'bite' | 'fire_breath';
-export type EnemyArmorStyle = 'none' | 'bronze_cone' | 'iron_bucket' | 'tower_shield';
+export type EnemyArmorStyle =
+  | 'none'
+  | 'bronze_cone'
+  | 'iron_bucket'
+  | 'tower_shield'
+  | 'frost_helm'
+  | 'runic_plate';
 
 export interface MeleePose {
   /** Positive = raised overhead/back (clockwise), Negative = cleaved forward-downward (counter-clockwise) */
@@ -48,6 +57,9 @@ export abstract class Attacker extends Entity {
   enraged: boolean = false;
   justEnraged: boolean = false;
   frostResistance: number = 0;
+  stunResistance: number = 0;
+  stunImmunityTimer: number = 0;
+  winterTier: number = 0;
 
   mass: number = 1.0;
   animOffset: number;
@@ -99,8 +111,19 @@ export abstract class Attacker extends Entity {
     return this.attackRate;
   }
 
-  modifyProjectileDamage(amount: number, _isFire: boolean, _isStunning: boolean): number {
+  modifyProjectileDamage(amount: number, _isFire: boolean, _isStunning: boolean, _isIce?: boolean): number {
     return amount;
+  }
+
+  applyStun(baseDurationMs: number): boolean {
+    if (this.isStunned || this.stunImmunityTimer > 0 || this.stunResistance >= 0.96) {
+      return false;
+    }
+    const dur = Math.round(baseDurationMs * (1 - this.stunResistance));
+    if (dur <= 140) return false;
+    this.stunTimer = dur;
+    this.isStunned = true;
+    return true;
   }
 
   override takeDamage(amount: number) {
@@ -197,9 +220,17 @@ export abstract class Attacker extends Entity {
       // Agile bounding scuttle (mean = 1.0)
       return 1 + 0.22 * Math.cos(stridePhase * 2);
     }
-    if (this.enemyKind === 'troll') {
-      // Heavy ponderous giant stomp (mean = 1.0)
-      return 1 + 0.28 * Math.sin(stridePhase * 2);
+    if (
+      this.enemyKind === 'troll' ||
+      this.enemyKind === 'frost_giant' ||
+      this.enemyKind === 'magma_juggernaut'
+    ) {
+      // Heavy ponderous giant / siege-juggernaut stomp (mean = 1.0)
+      return 1 + 0.30 * Math.sin(stridePhase * 2);
+    }
+    if (this.enemyKind === 'draugr_jarl') {
+      // Measured warlord march surging into furious cleave strides when enraged (mean = 1.0)
+      return 1 + (this.enraged ? 0.24 : 0.20) * Math.sin(stridePhase * 2);
     }
     if (this.enemyKind === 'flame_drake') {
       // Aerial wingbeat glide surge (mean = 1.0)
@@ -232,11 +263,16 @@ export abstract class Attacker extends Entity {
       }
     }
 
+    if (this.stunImmunityTimer > 0) {
+      this.stunImmunityTimer = Math.max(0, this.stunImmunityTimer - deltaTime);
+    }
+
     if (this.stunTimer > 0) {
       this.stunTimer -= deltaTime;
       if (this.stunTimer <= 0) {
         this.stunTimer = 0;
         this.isStunned = false;
+        this.stunImmunityTimer = 2200 + this.winterTier * 450;
       } else {
         this.isStunned = true;
         effectiveDeltaTime = 0;
@@ -247,8 +283,14 @@ export abstract class Attacker extends Entity {
 
     const animT = this.getAnimTime();
     const stridePeriod =
-      this.enemyKind === 'troll'
+      this.enemyKind === 'magma_juggernaut'
+        ? 235
+        : this.enemyKind === 'frost_giant'
+        ? 220
+        : this.enemyKind === 'troll'
         ? 210
+        : this.enemyKind === 'draugr_jarl'
+        ? (this.enraged ? 120 : 172)
         : this.enemyKind === 'fenrir_wolf'
         ? 92
         : this.enemyKind === 'berserker'
@@ -279,16 +321,29 @@ export abstract class Attacker extends Entity {
         } else {
           const footX = this.x + this.width * 0.5 + (stepSign > 0 ? -6 : 6);
           const footY = this.y + this.height - 3;
-          if (this.enemyKind === 'troll') {
+          if (this.enemyKind === 'magma_juggernaut') {
+            game.particles.emit(footX, footY, '#f97316', 4, 2.5, 2.8, 340, -0.02);
+            game.particles.emit(footX, footY, '#44403c', 4, 2.2, 2.8, 300, 0.04);
+          } else if (this.enemyKind === 'frost_giant') {
+            game.particles.emit(footX, footY, '#bae6fd', 4, 2.4, 2.6, 320, 0.02);
+            game.particles.emit(footX, footY, '#38bdf8', 3, 1.8, 2.2, 260, 0.01);
+          } else if (this.enemyKind === 'troll') {
             game.particles.emit(footX, footY, '#64748b', 5, 2.4, 2.8, 320, 0.04);
             game.particles.emit(footX, footY, '#78716c', 3, 1.8, 2.2, 260, 0.02);
+          } else if (this.enemyKind === 'draugr_jarl') {
+            const jarlStepColor = this.enraged ? '#ef4444' : '#eab308';
+            game.particles.emit(footX, footY, jarlStepColor, 3, 2.0, 2.2, 260, 0.01);
+            game.particles.emit(footX, footY, '#475569', 2, 1.6, 2.0, 240, 0.03);
           } else if (this.enemyKind === 'fenrir_wolf') {
             game.particles.emit(footX, footY, '#7dd3fc', 3, 1.8, 2.0, 220, 0.01);
           } else if (this.enemyKind === 'berserker' && this.enraged) {
             game.particles.emit(footX, footY, '#f97316', 3, 2.0, 2.2, 250, -0.01);
           } else if (Math.random() < 0.55) {
-            const dustColor = this.isSlowed ? '#7dd3fc' : '#57534e';
+            const dustColor = this.winterTier >= 2 || this.isSlowed ? '#bae6fd' : '#57534e';
             game.particles.emit(footX, footY, dustColor, 2, 1.5, 2, 240, 0.02);
+          }
+          if (this.winterTier >= 2 && Math.random() < 0.5) {
+            game.particles.emit(footX, footY - 4, '#e0f2fe', 2, 1.6, 2.0, 260, -0.01);
           }
         }
       }
@@ -300,8 +355,13 @@ export abstract class Attacker extends Entity {
     if (this.health >= this.maxHealth || this.lastDamageTimer <= 0 || this.markedForDeletion) return;
 
     ctx.save();
-    const barW = Math.min(54, Math.max(36, this.width * 0.84));
-    const barH = this.enemyKind === 'troll' ? 6.5 : 5;
+    const isColossal =
+      this.enemyKind === 'troll' ||
+      this.enemyKind === 'frost_giant' ||
+      this.enemyKind === 'magma_juggernaut' ||
+      this.enemyKind === 'draugr_jarl';
+    const barW = Math.min(58, Math.max(36, this.width * 0.84));
+    const barH = isColossal ? 6.5 : 5;
     const bx = this.x + (this.width - barW) / 2;
     const by = this.y - this.getHeadClearance();
     const pct = Math.max(0, Math.min(1, this.health / this.maxHealth));
@@ -318,6 +378,10 @@ export abstract class Attacker extends Entity {
         ? 'rgba(203, 213, 225, 0.8)'
         : this.armorStyle === 'tower_shield'
         ? 'rgba(56, 189, 248, 0.85)'
+        : this.armorStyle === 'frost_helm'
+        ? 'rgba(186, 230, 253, 0.9)'
+        : this.armorStyle === 'runic_plate'
+        ? 'rgba(250, 204, 21, 0.9)'
         : 'rgba(245, 158, 11, 0.8)')
       : 'rgba(239, 68, 68, 0.65)';
     ctx.lineWidth = 1.1;
@@ -348,7 +412,7 @@ export abstract class Attacker extends Entity {
       ctx.roundRect(bx, by, baseW, barH, [2, 0, 0, 2]);
       ctx.fill();
 
-      // Helmet Armor HP segment
+      // Helmet / Plate Armor HP segment
       if (armorW > 0.5) {
         const armGrad = ctx.createLinearGradient(bx + baseW, by, bx + baseW + armorW, by);
         if (this.armorStyle === 'iron_bucket') {
@@ -359,6 +423,14 @@ export abstract class Attacker extends Entity {
           armGrad.addColorStop(0, '#0284c7');
           armGrad.addColorStop(0.5, '#38bdf8');
           armGrad.addColorStop(1, '#bae6fd');
+        } else if (this.armorStyle === 'frost_helm') {
+          armGrad.addColorStop(0, '#0369a1');
+          armGrad.addColorStop(0.5, '#7dd3fc');
+          armGrad.addColorStop(1, '#f0f9ff');
+        } else if (this.armorStyle === 'runic_plate') {
+          armGrad.addColorStop(0, '#991b1b');
+          armGrad.addColorStop(0.45, '#d97706');
+          armGrad.addColorStop(1, '#fef08a');
         } else {
           armGrad.addColorStop(0, '#b45309');
           armGrad.addColorStop(0.5, '#f59e0b');

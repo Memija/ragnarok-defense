@@ -27,6 +27,9 @@ import { FenrirRaider } from '../units/FenrirRaider';
 import { BerserkerDraugr } from '../units/BerserkerDraugr';
 import { ShieldwallDraugr } from '../units/ShieldwallDraugr';
 import { FlameDrake } from '../units/FlameDrake';
+import { DraugrJarl } from '../units/DraugrJarl';
+import { JotunnFrostbreaker } from '../units/JotunnFrostbreaker';
+import { MagmaJuggernaut } from '../units/MagmaJuggernaut';
 import { SoundManager } from './SoundManager';
 import { getSavedLoadout, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDefenderAllowedInRealm } from './DefenderRegistry';
 import { DEFENDER_ICONS } from './DefenderIcons';
@@ -63,12 +66,25 @@ type EnemyUnitKind =
   | 'shieldbearer'
   | 'flame_drake'
   | 'buckethead'
-  | 'troll';
+  | 'troll'
+  | 'draugr_jarl'
+  | 'frost_giant'
+  | 'magma_juggernaut';
 
 interface WaveSpec {
   waveNumber: number;
   count: number;
   kind: WaveKind;
+}
+
+interface ResourceAssessment {
+  isInfinite: boolean;
+  deployedCost: number;
+  producerCount: number;
+  effectiveWealth: number;
+  resourcePressure: number;
+  winterDepth: number;
+  empowerment: number;
 }
 
 interface QueuedWaveSpawn {
@@ -89,12 +105,17 @@ type BattleDebrisKind =
   | 'bronze_cone'
   | 'iron_bucket'
   | 'tower_shield'
+  | 'frost_helm'
+  | 'jarl_crown'
   | 'sword'
   | 'mace'
   | 'axe'
+  | 'dane_axe'
+  | 'ice_maul'
   | 'spear'
   | 'club'
-  | 'crag_stone';
+  | 'crag_stone'
+  | 'magma_slag';
 
 interface BattleDebris {
   x: number;
@@ -193,9 +214,9 @@ export class Game {
   activeBannerWaveSpec: WaveSpec | null = null;
   waveAnnounced: boolean = false;
 
-  // Multi-wave progression director
+  // Endless Fimbulwinter & resource-adaptive wave director
   wavePlan: WaveSpec[] = [];
-  totalWaves: number = 6;
+  currentWaveSpec: WaveSpec | null = null;
   currentWave: number = 0;
   pendingWaveSpawns: QueuedWaveSpawn[] = [];
   nextSpawnTimer: number = 0;
@@ -203,14 +224,14 @@ export class Game {
   interWaveDuration: number = 0;
   lastSpawnRow: number = -1;
   laneWarnings: IncomingLaneWarning[] = [];
+  ordnanceHeat: number = 0;
+  totalOrdnanceCast: number = 0;
+  peakResourcePower: number = 0;
 
   // Game state & statistics
   gameState: 'playing' | 'victory' | 'defeat' = 'playing';
   zombiesSpawned: number = 0;
-  zombiesTotal: number = 76;
   zombiesKilled: number = 0;
-  victoryTimer: number = 0;
-  defeatTimer: number = 0;
   
   // Cinematic Bifrost entrance transition
   realmEntranceTimer: number = 2.8;
@@ -463,8 +484,7 @@ export class Game {
     const isMajorOrFinal = spec.kind === 'major' || spec.kind === 'final';
     const headerTemplate = isMajorOrFinal ? t('wave_warning_header') : t('wave_header');
     this.waveBannerHeader = headerTemplate
-      .replace('{current}', spec.waveNumber.toString())
-      .replace('{total}', this.totalWaves.toString());
+      .replace('{current}', spec.waveNumber.toString());
 
     if (spec.kind === 'scout') {
       this.waveBannerText = t('wave_scout_call');
@@ -709,6 +729,17 @@ export class Game {
 
   handleInfiniteResourcesSettingChange = () => {
     this.updateUI();
+    if (this.gameState === 'playing') {
+      const isInf = getInfiniteResourcesForLevel(this.level);
+      if (isInf) {
+        if (this.spawnGraceTimer > 14000) {
+          this.spawnGraceTimer = 14000;
+        }
+        if (this.interWaveTimer > 15000) {
+          this.interWaveTimer = 15000;
+        }
+      }
+    }
   };
 
   handleLanguageChange = () => {
@@ -779,50 +810,148 @@ export class Game {
     }
   }
 
-  private getInitialSpawnGraceMs(): number {
-    return Math.max(25000, 32000 - (this.level - 1) * 750);
+  public computeOrdnanceDamage(baseDamage: number): number {
+    const assessment = this.getResourceAssessment();
+    const dampen = 1 + this.ordnanceHeat * 0.55 + Math.max(0, assessment.winterDepth - 1.2) * 0.28;
+    return Math.max(45, Math.round(baseDamage / dampen));
   }
 
-  private buildWavePlan(): WaveSpec[] {
+  public registerOrdnanceCast(heatAmount: number): void {
+    this.ordnanceHeat += heatAmount;
+    this.totalOrdnanceCast += 1;
+    if (this.interWaveTimer > 4500 && this.ordnanceHeat >= 3.2) {
+      this.interWaveTimer = Math.max(4500, this.interWaveTimer - 2400);
+    }
+  }
+
+  private getWinterOnsetWave(): number {
     const clampedLevel = Math.max(1, Math.min(10, this.level));
-    const totalWaves = Math.min(10, 6 + Math.floor(clampedLevel / 2));
-    const midMajorWave = totalWaves >= 8 ? Math.ceil(totalWaves / 2) : -1;
-    const stepGrowth = 3 + Math.floor(clampedLevel / 4);
-    const plan: WaveSpec[] = [];
+    return Math.min(8, 5 + Math.floor(clampedLevel / 3));
+  }
 
-    let baseline = 3 + Math.ceil(clampedLevel * 0.8);
-    for (let w = 1; w <= totalWaves; w++) {
-      if (w === 2) {
-        baseline += Math.max(2, stepGrowth - 1);
-      } else if (w > 2) {
-        baseline += stepGrowth;
+  private getResourceAssessment(forWave?: number): ResourceAssessment {
+    const wave = Math.max(1, forWave ?? Math.max(1, this.currentWave));
+    const isInfinite = getInfiniteResourcesForLevel(this.level);
+
+    let deployedCost = 0;
+    let producerCount = 0;
+    for (let i = 0; i < this.defenders.length; i++) {
+      const d = this.defenders[i];
+      if (!d.markedForDeletion) {
+        deployedCost += d.cost;
+        if (d instanceof SunFlower) {
+          producerCount++;
+        }
       }
-
-      let kind: WaveKind = 'standard';
-      let count = baseline;
-
-      if (w === totalWaves) {
-        kind = 'final';
-        count = Math.round(baseline * 1.30) + 2;
-      } else if (w === totalWaves - 1) {
-        kind = 'major';
-        count = Math.round(baseline * 1.15) + 2;
-      } else if (w === midMajorWave) {
-        kind = 'major';
-        count = Math.round(baseline * 1.20) + 2;
-      } else if (count === 1) {
-        kind = 'scout';
-      }
-
-      plan.push({ waveNumber: w, count, kind });
     }
 
-    return plan;
+    const defaultStart = getDefaultStartingCurrency(this.level);
+    const configuredStart = getStartingCurrencyForLevel(this.level);
+    let effectiveWealth: number;
+    let resourcePressure: number;
+
+    if (isInfinite) {
+      effectiveWealth = 9999 + deployedCost + this.totalOrdnanceCast * 150;
+      this.peakResourcePower = Math.max(this.peakResourcePower, deployedCost);
+      const effectiveDeployed = Math.max(deployedCost, this.peakResourcePower * 0.85);
+      resourcePressure =
+        1.45 +
+        effectiveDeployed / 1050 +
+        this.ordnanceHeat * 0.45 +
+        this.totalOrdnanceCast * 0.14;
+    } else {
+      const liveWealth = this.sun + deployedCost + producerCount * 95 + this.totalOrdnanceCast * 75;
+      this.peakResourcePower = Math.max(this.peakResourcePower, liveWealth);
+      effectiveWealth = Math.max(liveWealth, this.peakResourcePower * 0.85, configuredStart);
+      const expectedWealth = defaultStart + (wave - 1) * 145;
+      if (effectiveWealth >= expectedWealth) {
+        const surplus = (effectiveWealth - expectedWealth) / Math.max(200, defaultStart * 1.3);
+        resourcePressure = Math.pow(surplus, 0.78) * 0.85 + this.ordnanceHeat * 0.32;
+      } else {
+        const deficitRatio = (expectedWealth - effectiveWealth) / Math.max(200, expectedWealth);
+        resourcePressure = -Math.min(0.25, deficitRatio * 0.3) + this.ordnanceHeat * 0.25;
+      }
+    }
+
+    let winterDepth = 0;
+    if (wave === 2) {
+      winterDepth = 0.25;
+    } else if (wave === 3) {
+      winterDepth = 0.55;
+    } else if (wave === 4) {
+      winterDepth = 0.95;
+    } else if (wave >= 5) {
+      winterDepth = 0.95 + (wave - 4) * 0.72 + Math.pow(wave - 4, 1.58) * 0.3;
+    }
+
+    if (isInfinite || resourcePressure >= 2.2) {
+      winterDepth += (wave - 1) * (isInfinite ? 0.55 : 0.26);
+    }
+
+    const posPressure = Math.max(0, resourcePressure);
+    const empowerment =
+      posPressure * 0.48 +
+      winterDepth * 0.56 +
+      Math.max(0, winterDepth - 1.4) * posPressure * 0.22;
+
+    return {
+      isInfinite,
+      deployedCost,
+      producerCount,
+      effectiveWealth,
+      resourcePressure,
+      winterDepth,
+      empowerment
+    };
+  }
+
+  private getInitialSpawnGraceMs(): number {
+    const isInf = getInfiniteResourcesForLevel(this.level);
+    if (isInf) {
+      return 14000;
+    }
+    const baseGrace = Math.max(25000, 32000 - (this.level - 1) * 750);
+    const defaultStart = getDefaultStartingCurrency(this.level);
+    const actualStart = Math.max(this.sun, getStartingCurrencyForLevel(this.level));
+    if (actualStart > defaultStart * 1.25) {
+      const wealthRatio = actualStart / Math.max(100, defaultStart);
+      return Math.max(15000, Math.round(baseGrace / (1 + (wealthRatio - 1) * 0.22)));
+    }
+    return baseGrace;
+  }
+
+  private generateWaveSpec(waveNumber: number): WaveSpec {
+    const clampedLevel = Math.max(1, Math.min(10, this.level));
+    const onsetWave = this.getWinterOnsetWave();
+    const assessment = this.getResourceAssessment(waveNumber);
+    const stepGrowth = 3 + Math.floor(clampedLevel / 4);
+
+    let baseline = 3 + Math.ceil(clampedLevel * 0.8);
+    if (waveNumber === 2) {
+      baseline += Math.max(2, stepGrowth - 1);
+    } else if (waveNumber > 2) {
+      baseline += (waveNumber - 1) * stepGrowth + Math.max(0, waveNumber - 4) * 3;
+    }
+
+    let kind: WaveKind = 'standard';
+    if (waveNumber > onsetWave) {
+      kind = (waveNumber - onsetWave) % 2 === 1 ? 'final' : 'major';
+    } else if (waveNumber === onsetWave) {
+      kind = 'major';
+    } else if (waveNumber >= 3 && (assessment.isInfinite || assessment.resourcePressure >= 2.6) && waveNumber % 2 === 1) {
+      kind = 'major';
+    }
+
+    const resourceCountMult = 1 + Math.min(2.35, Math.max(-0.18, assessment.resourcePressure * 0.27));
+    const kindMult = kind === 'final' ? 1.32 : kind === 'major' ? 1.18 : 1.0;
+    const count = Math.min(96, Math.max(3, Math.round(baseline * resourceCountMult * kindMult)));
+
+    return { waveNumber, count, kind };
   }
 
   private initWaveDirector(): void {
-    this.wavePlan = this.buildWavePlan();
-    this.totalWaves = this.wavePlan.length;
+    this.wavePlan = [];
+    this.currentWaveSpec = null;
     this.currentWave = 0;
     this.pendingWaveSpawns = [];
     this.nextSpawnTimer = 0;
@@ -834,79 +963,86 @@ export class Game {
     this.activeBannerWaveSpec = null;
     this.waveAnnounced = false;
     this.zombiesSpawned = 0;
-    this.zombiesTotal = this.wavePlan.reduce((sum, spec) => sum + spec.count, 0);
+    this.ordnanceHeat = 0;
+    this.totalOrdnanceCast = 0;
+    this.peakResourcePower = 0;
     this.spawnGraceTimer = this.getInitialSpawnGraceMs();
   }
 
   private computeSalvoSize(spec: WaveSpec): number {
+    const assessment = this.getResourceAssessment(spec.waveNumber);
+    const extraPressure = assessment.resourcePressure >= 3.2 || assessment.winterDepth >= 3.0 ? 1 : 0;
     if (spec.kind === 'final') {
-      return 3 + Math.floor(Math.random() * 3); // 3-5 enemies across lanes
+      return Math.min(5, 3 + Math.floor(Math.random() * 3) + extraPressure);
     }
     if (spec.kind === 'major') {
-      return 3 + Math.floor(Math.random() * 2); // 3-4 enemies across lanes
+      return Math.min(5, 3 + Math.floor(Math.random() * 2) + extraPressure);
     }
-    if (spec.waveNumber === 1) {
+    if (spec.waveNumber === 1 && !assessment.isInfinite && assessment.resourcePressure < 1.0) {
       return spec.count >= 8 && Math.random() > 0.5 ? 3 : 2;
     }
-    return 2 + (spec.count >= 12 && Math.random() > 0.4 ? 1 : 0);
+    return Math.min(5, 2 + extraPressure + (spec.count >= 12 && Math.random() > 0.4 ? 1 : 0));
   }
 
   private computeIntraSalvoGapMs(spec: WaveSpec): number {
+    const assessment = this.getResourceAssessment(spec.waveNumber);
+    const haste = 1 + Math.min(0.85, assessment.empowerment * 0.08);
     if (spec.kind === 'final') {
-      return 320 + Math.random() * 360;
+      return (280 + Math.random() * 320) / haste;
     }
     if (spec.kind === 'major') {
-      return 360 + Math.random() * 400;
+      return (340 + Math.random() * 380) / haste;
     }
-    return 440 + Math.random() * 460;
+    return (440 + Math.random() * 440) / haste;
   }
 
   private computeInterSalvoGapMs(spec: WaveSpec): number {
+    const assessment = this.getResourceAssessment(spec.waveNumber);
+    const haste = 1 + Math.min(1.4, assessment.empowerment * 0.12);
     if (spec.kind === 'final') {
-      return 2100 + Math.random() * 650;
+      return Math.max(780, (2050 + Math.random() * 600) / haste);
     }
     if (spec.kind === 'major') {
-      return 2500 + Math.random() * 750;
+      return Math.max(900, (2450 + Math.random() * 700) / haste);
     }
     if (spec.waveNumber === 1) {
-      return 4400 + Math.random() * 900;
+      return Math.max(1500, (4300 + Math.random() * 850) / haste);
     }
     if (spec.waveNumber === 2) {
-      return 3900 + Math.random() * 850;
+      return Math.max(1350, (3800 + Math.random() * 800) / haste);
     }
-    const progress = (spec.waveNumber - 1) / Math.max(1, this.totalWaves - 1);
-    const base = Math.max(2800, 3600 - progress * 600);
-    return base + Math.random() * 750;
+    const base = Math.max(2400, 3500 - spec.waveNumber * 120);
+    return Math.max(1050, (base + Math.random() * 700) / haste);
   }
 
   private computeInterWaveDelayMs(completedWave: number): number {
-    const nextSpec = this.wavePlan[completedWave];
-    if (!nextSpec) return 0;
-    if (nextSpec.kind === 'major' || nextSpec.kind === 'final') {
-      return 48000;
+    const assessment = this.getResourceAssessment(completedWave + 1);
+    const onsetWave = this.getWinterOnsetWave();
+    const compress = 1 + Math.min(1.6, Math.max(0, assessment.empowerment - 0.5) * 0.16);
+    if (completedWave >= onsetWave) {
+      return Math.max(13000, Math.round(34000 / compress));
     }
-    if (completedWave === 1) return 42000;
-    if (completedWave === 2) return 40000;
-    return Math.max(35000, 39000 - (this.level - 1) * 400);
+    if (completedWave === 1) return Math.max(18000, Math.round(42000 / compress));
+    if (completedWave === 2) return Math.max(17000, Math.round(40000 / compress));
+    const base = Math.max(33000, 39000 - (this.level - 1) * 400);
+    return Math.max(15000, Math.round(base / compress));
   }
 
   private computeStragglerDelayMs(completedWave: number): number {
-    const nextSpec = this.wavePlan[completedWave];
-    if (!nextSpec) return 0;
-    if (nextSpec.kind === 'major' || nextSpec.kind === 'final') {
-      return 26000;
-    }
-    return 22000;
+    const assessment = this.getResourceAssessment(completedWave + 1);
+    const compress = 1 + Math.min(1.5, Math.max(0, assessment.empowerment - 0.5) * 0.18);
+    return Math.max(9000, Math.round(23000 / compress));
   }
 
   private computePostClearDelayMs(completedWave: number): number {
-    const nextSpec = this.wavePlan[completedWave];
-    if (!nextSpec) return 0;
-    if (nextSpec.kind === 'major' || nextSpec.kind === 'final') {
-      return 16500;
+    const assessment = this.getResourceAssessment(completedWave + 1);
+    const onsetWave = this.getWinterOnsetWave();
+    const compress = 1 + Math.min(1.8, Math.max(0, assessment.empowerment - 0.4) * 0.2);
+    if (completedWave >= onsetWave) {
+      return Math.max(4500, Math.round(11500 / compress));
     }
-    if (completedWave <= 2) return 14500;
-    return 12500;
+    if (completedWave <= 2) return Math.max(7000, Math.round(14500 / compress));
+    return Math.max(5500, Math.round(12500 / compress));
   }
 
   private isHeavyEnemyKind(kind: EnemyUnitKind): boolean {
@@ -914,7 +1050,10 @@ export class Game {
       kind === 'buckethead' ||
       kind === 'troll' ||
       kind === 'shieldbearer' ||
-      kind === 'flame_drake'
+      kind === 'flame_drake' ||
+      kind === 'draugr_jarl' ||
+      kind === 'frost_giant' ||
+      kind === 'magma_juggernaut'
     );
   }
 
@@ -954,34 +1093,48 @@ export class Game {
 
   private pickEnemyUnitForWave(spec: WaveSpec, spawnIndex: number): EnemyUnitKind {
     const { waveNumber, count, kind } = spec;
-    const waveProgress = (waveNumber - 1) / Math.max(1, this.totalWaves - 1);
-    const isLateClimax = kind === 'final' || (kind === 'major' && waveProgress >= 0.72);
+    const assessment = this.getResourceAssessment(waveNumber);
+    const onsetWave = this.getWinterOnsetWave();
+    const effectiveWave = waveNumber + Math.floor(Math.max(0, assessment.resourcePressure) * 0.85);
+    const effectiveStage =
+      this.level +
+      Math.floor(assessment.winterDepth * 1.15) +
+      Math.floor(Math.max(0, assessment.resourcePressure) * 0.95);
+    const isLateClimax =
+      kind === 'final' ||
+      waveNumber >= onsetWave ||
+      (kind === 'major' && effectiveStage >= 4) ||
+      assessment.empowerment >= 2.4;
     const spawnRatio = count > 1 ? spawnIndex / (count - 1) : 1;
     const rand = Math.random();
 
-    // Thematic frost roster in Jotunheim & Niflheim, escalating gradually across waves
+    // Thematic frost roster in Jotunheim & Niflheim, featuring Rime-Jötunn Frostbreakers & Draugr Jarls
     if (this.realm === 'jotunheim' || this.realm === 'niflheim') {
-      if (waveNumber <= 2) {
+      if (effectiveWave <= 2) {
         return 'small_troll';
       }
-      if (waveNumber === 3) {
-        if (spawnRatio >= 0.70 && rand > 0.35) {
-          return rand > 0.65 ? 'fenrir_wolf' : 'conehead';
+      if (effectiveWave === 3 && !isLateClimax) {
+        if (spawnRatio >= 0.65 && rand > 0.35) {
+          return rand > 0.62 ? 'fenrir_wolf' : 'conehead';
         }
         return 'small_troll';
       }
       if (!isLateClimax) {
         if (kind === 'major' && spawnIndex === Math.floor(count / 2)) {
-          return this.level >= 3 ? 'troll' : 'shieldbearer';
+          if (effectiveStage >= 4) return 'frost_giant';
+          if (effectiveStage >= 3) return 'troll';
+          return 'shieldbearer';
         }
-        if (waveProgress >= 0.58 && spawnRatio >= 0.75 && rand > 0.55) {
-          return 'troll';
+        if (spawnRatio >= 0.72 && rand > 0.45) {
+          if (effectiveStage >= 3 && rand > 0.62) return 'frost_giant';
+          return rand > 0.45 ? 'troll' : 'draugr_jarl';
         }
-        if (waveProgress >= 0.42 || kind === 'major') {
-          if (rand > 0.78) return 'shieldbearer';
-          if (rand > 0.60) return 'berserker';
-          if (rand > 0.40) return 'fenrir_wolf';
-          if (rand > 0.22) return 'conehead';
+        if (effectiveStage >= 3 || kind === 'major') {
+          if (effectiveStage >= 3 && rand > 0.86) return 'draugr_jarl';
+          if (rand > 0.72) return 'shieldbearer';
+          if (rand > 0.55) return 'berserker';
+          if (rand > 0.36) return 'fenrir_wolf';
+          if (rand > 0.20) return 'conehead';
           return 'small_troll';
         }
         if (rand > 0.66) return 'fenrir_wolf';
@@ -989,33 +1142,34 @@ export class Game {
         return 'small_troll';
       }
       if (spawnIndex === Math.floor(count / 2)) {
-        return 'troll';
+        return effectiveStage >= 4 ? 'frost_giant' : 'troll';
       }
-      if (rand > 0.72) return 'troll';
-      if (rand > 0.52) return 'shieldbearer';
-      if (rand > 0.35) return 'berserker';
-      if (rand > 0.18) return 'fenrir_wolf';
-      return 'small_troll';
+      if (rand > 0.78) return 'frost_giant';
+      if (rand > 0.62) return 'troll';
+      if (rand > 0.48) return 'draugr_jarl';
+      if (effectiveStage >= 5 && rand > 0.36) return 'flame_drake';
+      if (rand > 0.25) return 'shieldbearer';
+      if (rand > 0.14) return 'berserker';
+      return 'fenrir_wolf';
     }
 
-    // Thematic fire roster in Muspelheim, introducing Flame Drakes & Berserkers after early setup
+    // Thematic fire roster in Muspelheim, introducing Magma Juggernauts, Flame Drakes & Jarls
     if (this.realm === 'muspelheim') {
-      if (waveNumber <= 2) {
+      if (effectiveWave <= 2) {
         return 'basic';
       }
-      if (waveNumber === 3) {
-        return (spawnRatio >= 0.70 && rand > 0.40) ? 'fenrir_wolf' : 'basic';
-      }
-      if (waveNumber === 4 && kind !== 'major') {
-        if (spawnRatio >= 0.75) return rand > 0.45 ? 'berserker' : 'conehead';
-        return rand > 0.65 ? 'fenrir_wolf' : 'basic';
+      if (effectiveWave === 3 && !isLateClimax) {
+        return (spawnRatio >= 0.65 && rand > 0.40) ? 'fenrir_wolf' : 'basic';
       }
       if (!isLateClimax) {
         if (kind === 'major' && spawnIndex === Math.floor(count / 2)) {
-          return 'flame_drake';
+          return effectiveStage >= 3 ? 'magma_juggernaut' : 'flame_drake';
         }
-        if ((waveProgress >= 0.50 || kind === 'major') && spawnRatio >= 0.50 && rand > 0.60) {
-          return 'flame_drake';
+        if (effectiveStage >= 3 && spawnRatio >= 0.75 && rand > 0.58) {
+          return 'magma_juggernaut';
+        }
+        if (spawnRatio >= 0.48 && rand > 0.55) {
+          return rand > 0.75 ? 'draugr_jarl' : 'flame_drake';
         }
         if (rand > 0.68) return 'berserker';
         if (rand > 0.50) return 'shieldbearer';
@@ -1023,131 +1177,147 @@ export class Game {
         return 'basic';
       }
       if (spawnIndex === Math.floor(count / 2)) {
-        return 'flame_drake';
+        return 'magma_juggernaut';
       }
-      if (rand > 0.84) return 'troll';
-      if (rand > 0.56) return 'flame_drake';
-      if (rand > 0.36) return 'berserker';
-      if (rand > 0.20) return 'shieldbearer';
-      return 'fenrir_wolf';
+      if (rand > 0.78) return 'magma_juggernaut';
+      if (rand > 0.64) return 'frost_giant';
+      if (rand > 0.44) return 'flame_drake';
+      if (rand > 0.30) return 'draugr_jarl';
+      if (rand > 0.18) return 'berserker';
+      return 'shieldbearer';
     }
 
-    // Waves 1-2: strictly basic raiders while the player establishes economy
-    if (waveNumber <= 2) {
-      return 'basic';
-    }
-
-    // Wave 3: basic raiders with agile small trolls or dire-wolves joining in the rear ranks
-    if (waveNumber === 3) {
-      if (spawnRatio >= 0.68) {
-        if (this.level >= 2 && rand > 0.62) return 'fenrir_wolf';
-        if (rand > 0.42) return 'small_troll';
+    // Early setup waves when resources & winter depth are still low
+    if (effectiveWave <= 2 && !isLateClimax) {
+      if (assessment.resourcePressure >= 1.2 && spawnRatio >= 0.55) {
+        return rand > 0.5 ? 'conehead' : 'fenrir_wolf';
       }
       return 'basic';
     }
 
-    // Wave 4 (when not a mid-battle Major Wave): blend of scouts, dire-wolves, and light armor
-    if (waveNumber === 4 && kind !== 'major') {
-      if (spawnRatio >= 0.78) {
-        if (this.level >= 3 && rand > 0.55) return 'shieldbearer';
-        if (this.level >= 2 && rand > 0.35) return 'conehead';
-        if (rand > 0.45) return 'fenrir_wolf';
-      }
-      if (spawnRatio >= 0.52 && rand > 0.55) {
-        return rand > 0.5 ? 'fenrir_wolf' : 'small_troll';
+    if (effectiveWave === 3 && !isLateClimax) {
+      if (spawnRatio >= 0.62) {
+        if (effectiveStage >= 2 && rand > 0.58) return 'fenrir_wolf';
+        if (effectiveStage >= 3 && rand > 0.45) return 'conehead';
+        if (rand > 0.40) return 'small_troll';
       }
       return 'basic';
     }
 
-    // Mid-game standard waves & Mid-Battle Major Waves (prior to Late Climax)
+    if (effectiveWave === 4 && !isLateClimax) {
+      if (spawnRatio >= 0.70) {
+        if (effectiveStage >= 3 && rand > 0.52) return 'shieldbearer';
+        if (effectiveStage >= 2 && rand > 0.34) return 'conehead';
+        if (rand > 0.42) return 'fenrir_wolf';
+      }
+      if (spawnRatio >= 0.48 && rand > 0.52) {
+        return rand > 0.5 ? 'berserker' : 'small_troll';
+      }
+      return 'basic';
+    }
+
+    // Mid-game escalating waves prior to full Fimbulwinter climax
     if (!isLateClimax) {
       if (kind === 'major' && spawnIndex === Math.floor(count / 2)) {
-        if (this.level >= 5) return 'buckethead';
-        if (this.level >= 3) return 'shieldbearer';
+        if (effectiveStage >= 6) return 'magma_juggernaut';
+        if (effectiveStage >= 5) return 'frost_giant';
+        if (effectiveStage >= 4) return 'draugr_jarl';
+        if (effectiveStage >= 3) return 'shieldbearer';
         return 'conehead';
       }
-      if (this.level >= 4 && waveProgress >= 0.65 && spawnRatio >= 0.82 && rand > 0.45) {
-        return this.level >= 6 && rand > 0.45 ? 'flame_drake' : 'troll';
+      if (effectiveStage >= 4 && spawnRatio >= 0.75 && rand > 0.42) {
+        if (effectiveStage >= 6 && rand > 0.70) return 'magma_juggernaut';
+        if (effectiveStage >= 5 && rand > 0.62) return 'frost_giant';
+        if (rand > 0.50) return 'draugr_jarl';
+        return effectiveStage >= 5 && rand > 0.45 ? 'flame_drake' : 'troll';
       }
-      if (this.level >= 4 && waveProgress >= 0.56 && spawnRatio >= 0.50 && rand > 0.76) {
-        return 'flame_drake';
+      if (effectiveStage >= 3 && spawnRatio >= 0.45 && rand > 0.70) {
+        return rand > 0.65 ? 'draugr_jarl' : 'buckethead';
       }
-      if (this.level >= 3 && (waveProgress >= 0.50 || kind === 'major') && spawnRatio >= 0.50 && rand > 0.74) {
-        return 'buckethead';
-      }
-      if (this.level >= 2 && (waveProgress >= 0.42 || kind === 'major') && rand > 0.78) {
-        return 'shieldbearer';
-      }
-      if (this.level >= 2 && (waveProgress >= 0.38 || kind === 'major') && rand > 0.64) {
-        return 'berserker';
-      }
-      if (this.level >= 2 && rand > 0.52) {
-        return 'conehead';
-      }
-      if (rand > 0.36) {
-        return 'fenrir_wolf';
-      }
-      if (rand > 0.20) {
-        return 'small_troll';
-      }
+      if (effectiveStage >= 2 && rand > 0.76) return 'shieldbearer';
+      if (effectiveStage >= 2 && rand > 0.62) return 'berserker';
+      if (effectiveStage >= 2 && rand > 0.48) return 'conehead';
+      if (rand > 0.34) return 'fenrir_wolf';
+      if (rand > 0.18) return 'small_troll';
       return 'basic';
     }
 
-    // Late-battle Major & Final waves
-    if (this.level === 1) {
-      if (
-        spawnIndex === 2 ||
-        spawnIndex === Math.floor(count / 2) ||
-        (kind === 'final' && spawnIndex === count - 3)
-      ) {
-        return 'conehead';
-      }
-      if (rand > 0.82) return 'conehead';
-      if (rand > 0.60) return 'fenrir_wolf';
-      return rand > 0.35 ? 'small_troll' : 'basic';
-    }
-
-    if (this.level === 2) {
-      if (spawnIndex === Math.floor(count / 2)) {
-        return kind === 'final' ? 'troll' : 'shieldbearer';
-      }
-      if (kind === 'final' && rand > 0.86) return 'troll';
-      if (rand > 0.72) return 'shieldbearer';
-      if (rand > 0.54) return 'berserker';
-      if (rand > 0.38) return 'conehead';
-      if (rand > 0.22) return 'fenrir_wolf';
-      return 'basic';
-    }
-
-    if (this.level === 3) {
-      if (spawnIndex === Math.floor(count / 2)) {
-        return kind === 'final' ? 'troll' : 'buckethead';
-      }
-      if (rand > 0.84) return 'troll';
-      if (rand > 0.68) return 'buckethead';
-      if (rand > 0.52) return 'shieldbearer';
-      if (rand > 0.36) return 'berserker';
-      if (rand > 0.20) return 'fenrir_wolf';
-      return rand > 0.10 ? 'conehead' : 'small_troll';
-    }
-
-    // Levels 4+ (culminating in Sindri's Forge & Nidavellir with Elite Flame Drakes)
+    // Fimbulwinter Climax & Endless Winter Waves — combined-arms heavy & aerial onslaught
     if (spawnIndex === Math.floor(count / 2)) {
-      if (this.level >= 6) {
-        return kind === 'final' ? 'flame_drake' : 'shieldbearer';
-      }
-      return kind === 'final' ? 'troll' : 'flame_drake';
+      if (effectiveStage >= 6) return waveNumber % 2 === 0 ? 'magma_juggernaut' : 'frost_giant';
+      if (effectiveStage >= 4) return kind === 'final' ? 'frost_giant' : 'draugr_jarl';
+      return 'troll';
     }
-    const trollCut = Math.max(0.80, 0.88 - (this.level - 4) * 0.02);
-    const drakeCut = this.level >= 6 ? 0.58 : 0.66;
-    const bucketCut = this.level >= 6 ? 0.44 : 0.50;
-    if (rand > trollCut) return 'troll';
-    if (rand > drakeCut) return 'flame_drake';
-    if (rand > bucketCut) return 'buckethead';
-    if (rand > 0.31) return 'shieldbearer';
-    if (rand > 0.18) return 'berserker';
-    if (rand > 0.08) return 'fenrir_wolf';
-    return 'conehead';
+
+    if (effectiveStage <= 3) {
+      if (rand > 0.84) return 'draugr_jarl';
+      if (rand > 0.70) return 'troll';
+      if (rand > 0.54) return 'buckethead';
+      if (rand > 0.38) return 'shieldbearer';
+      if (rand > 0.24) return 'berserker';
+      if (rand > 0.12) return 'fenrir_wolf';
+      return 'conehead';
+    }
+
+    const juggCut = Math.max(0.80, 0.91 - (effectiveStage - 5) * 0.02);
+    const frostCut = Math.max(0.64, 0.79 - (effectiveStage - 4) * 0.025);
+    if (effectiveStage >= 5 && rand > juggCut) return 'magma_juggernaut';
+    if (rand > frostCut) return 'frost_giant';
+    if (rand > 0.55) return 'draugr_jarl';
+    if (rand > 0.40) return 'flame_drake';
+    if (rand > 0.29) return 'troll';
+    if (rand > 0.19) return 'buckethead';
+    if (rand > 0.10) return 'shieldbearer';
+    return rand > 0.45 ? 'berserker' : 'fenrir_wolf';
+  }
+
+  private resolveDynamicEnemyKind(baseKind: EnemyUnitKind, assessment: ResourceAssessment): EnemyUnitKind {
+    // If the player's live resource/tower deployment surged after the wave was queued, promote light spawns on the fly
+    const e = assessment.empowerment;
+    if (e < 1.8) return baseKind;
+    const isLight = baseKind === 'basic' || baseKind === 'small_troll' || baseKind === 'conehead';
+    if (!isLight) return baseKind;
+
+    const promoteChance = Math.min(0.92, (e - 1.5) * 0.24);
+    if (Math.random() > promoteChance) return baseKind;
+
+    const r = Math.random();
+    if (e >= 4.2) {
+      if (r > 0.76) return 'frost_giant';
+      if (r > 0.54) return 'magma_juggernaut';
+      if (r > 0.34) return 'flame_drake';
+      if (r > 0.16) return 'draugr_jarl';
+      return 'troll';
+    }
+    if (r > 0.75) return 'draugr_jarl';
+    if (r > 0.50) return 'flame_drake';
+    if (r > 0.25) return 'buckethead';
+    return 'shieldbearer';
+  }
+
+  private applyFimbulwinterScaling(attacker: Attacker, assessment: ResourceAssessment): void {
+    const e = Math.max(0, assessment.empowerment);
+    if (e <= 0.05) return;
+
+    const hpMult = 1 + e * 0.55 + Math.pow(Math.max(0, e - 1.15), 1.75) * 0.4;
+    const dmgMult = 1 + e * 0.36 + Math.pow(Math.max(0, e - 1.4), 1.45) * 0.34;
+    const speedMult = 1 + Math.min(1.4, e * 0.095);
+    const rateDiv = 1 + Math.min(0.9, e * 0.085);
+
+    attacker.maxHealth = Math.round(attacker.maxHealth * hpMult);
+    attacker.health = attacker.maxHealth;
+    attacker.trailHealth = attacker.maxHealth;
+    if (attacker.armorThreshold > 0) {
+      attacker.armorThreshold = Math.round(attacker.armorThreshold * hpMult);
+    }
+
+    attacker.damage = Math.max(attacker.damage, Math.round(attacker.damage * dmgMult));
+    attacker.speed = attacker.speed * speedMult;
+    attacker.attackRate = Math.max(460, Math.round(attacker.attackRate / rateDiv));
+
+    attacker.frostResistance = Math.min(0.95, attacker.frostResistance + e * 0.1);
+    attacker.stunResistance = Math.min(0.95, attacker.stunResistance + e * 0.11);
+    attacker.winterTier = e >= 5.5 ? 3 : e >= 2.6 ? 2 : e >= 1.1 ? 1 : 0;
   }
 
   private addIncomingLaneWarning(row: number, durationMs: number, isHeavy: boolean): void {
@@ -1167,9 +1337,11 @@ export class Game {
   }
 
   private startNextWave(): void {
-    if (this.currentWave >= this.wavePlan.length) return;
-    const spec = this.wavePlan[this.currentWave];
+    const nextWaveNum = this.currentWave + 1;
+    const spec = this.generateWaveSpec(nextWaveNum);
     this.currentWave = spec.waveNumber;
+    this.currentWaveSpec = spec;
+    this.wavePlan.push(spec);
     this.announceWave(spec);
 
     const rows = this.pickSpawnRowsForWave(spec.count);
@@ -1206,40 +1378,60 @@ export class Game {
 
   private spawnQueuedEnemy(spawn: QueuedWaveSpawn): void {
     this.zombiesSpawned++;
+    const assessment = this.getResourceAssessment();
+    const unitKind = this.resolveDynamicEnemyKind(spawn.unitKind, assessment);
+    if (this.isHeavyEnemyKind(unitKind)) {
+      const existingWarn = this.laneWarnings.find(w => w.row === spawn.row);
+      if (existingWarn) existingWarn.isHeavy = true;
+    }
+
     const laneJitterY = (Math.random() - 0.5) * 8;
     const spawnY = (spawn.row + 0.5) * this.grid.cellHeight - 45 + laneJitterY;
     const spawnX = this.width + 10 + Math.random() * 18;
+    let spawned: Attacker;
 
-    switch (spawn.unitKind) {
+    switch (unitKind) {
+      case 'magma_juggernaut':
+        spawned = new MagmaJuggernaut(spawnX, spawnY, spawn.row);
+        break;
+      case 'frost_giant':
+        spawned = new JotunnFrostbreaker(spawnX, spawnY, spawn.row);
+        break;
+      case 'draugr_jarl':
+        spawned = new DraugrJarl(spawnX, spawnY, spawn.row);
+        break;
       case 'troll':
-        this.attackers.push(new Troll(spawnX, spawnY - 10, spawn.row));
+        spawned = new Troll(spawnX, spawnY - 10, spawn.row);
         break;
       case 'flame_drake':
-        this.attackers.push(new FlameDrake(spawnX, spawnY, spawn.row));
+        spawned = new FlameDrake(spawnX, spawnY, spawn.row);
         break;
       case 'buckethead':
-        this.attackers.push(new BucketheadZombie(spawnX, spawnY, spawn.row));
+        spawned = new BucketheadZombie(spawnX, spawnY, spawn.row);
         break;
       case 'shieldbearer':
-        this.attackers.push(new ShieldwallDraugr(spawnX, spawnY, spawn.row));
+        spawned = new ShieldwallDraugr(spawnX, spawnY, spawn.row);
         break;
       case 'berserker':
-        this.attackers.push(new BerserkerDraugr(spawnX, spawnY, spawn.row));
+        spawned = new BerserkerDraugr(spawnX, spawnY, spawn.row);
         break;
       case 'conehead':
-        this.attackers.push(new ConeheadZombie(spawnX, spawnY, spawn.row));
+        spawned = new ConeheadZombie(spawnX, spawnY, spawn.row);
         break;
       case 'fenrir_wolf':
-        this.attackers.push(new FenrirRaider(spawnX, spawnY, spawn.row));
+        spawned = new FenrirRaider(spawnX, spawnY, spawn.row);
         break;
       case 'small_troll':
-        this.attackers.push(new SmallTroll(spawnX, spawnY + 5, spawn.row));
+        spawned = new SmallTroll(spawnX, spawnY + 5, spawn.row);
         break;
       case 'basic':
       default:
-        this.attackers.push(new BasicZombie(spawnX, spawnY, spawn.row));
+        spawned = new BasicZombie(spawnX, spawnY, spawn.row);
         break;
     }
+
+    this.applyFimbulwinterScaling(spawned, assessment);
+    this.attackers.push(spawned);
   }
 
   restartBattle() {
@@ -1261,11 +1453,11 @@ export class Game {
       document.body.className = this.city ? `theme-${this.realm} location-${this.city}` : `theme-${this.realm}`;
     }
     this.grid = new Grid(this.width, this.height, this.realm, this.city);
+    this.sun = getStartingCurrencyForLevel(this.level);
     this.initWaveDirector();
     this.cachedBgGradient = null;
     this.cachedCastleCanvas = null;
     this.initWeather();
-    this.sun = getStartingCurrencyForLevel(this.level);
     for (let r = 0; r < this.grid.rows; r++) {
       this.valkyrieAvailable[r] = true;
     }
@@ -1327,12 +1519,22 @@ export class Game {
       this.updateUI();
       this.triggerScreenShake(450, 12);
       SoundManager.getInstance().playExplosion();
+      const dragonDamage = this.computeOrdnanceDamage(1000);
+      this.registerOrdnanceCast(1.15);
+      const isDampened = dragonDamage < 650;
       const rowAttackers = this.attackersByRow[row];
       if (rowAttackers) {
         for (let zi = 0; zi < rowAttackers.length; zi++) {
           const z = rowAttackers[zi];
-          z.takeDamage(1000);
-          this.addFloatingText(z.x + z.width/2, z.y, '-1000 🔥', '#ff5722', true);
+          z.takeDamage(dragonDamage);
+          this.handleEnemyArmorBreak(z);
+          this.addFloatingText(
+            z.x + z.width / 2,
+            z.y,
+            isDampened ? `-${dragonDamage} ❄️` : `-${dragonDamage} 🔥`,
+            isDampened ? '#7dd3fc' : '#ff5722',
+            true
+          );
         }
       }
       for (let i = 0; i < this.width; i += 40) {
@@ -1429,7 +1631,7 @@ export class Game {
     });
   }
 
-  private handleEnemyArmorBreak(zombie: Attacker) {
+  public handleEnemyArmorBreak(zombie: Attacker) {
     if (!zombie.justBrokeArmor) return;
     zombie.justBrokeArmor = false;
     const zcx = zombie.x + zombie.width * 0.5;
@@ -1450,6 +1652,14 @@ export class Game {
       this.spawnBattleDebris(zcx - 10, zombie.y + 42, groundY, 'tower_shield', 2.2 + Math.random() * 2.0, -4.8);
       this.particles.emit(zcx - 10, zombie.y + 42, '#0f766e', 12, 5, 3, 380);
       this.particles.emit(zcx - 10, zombie.y + 42, '#38bdf8', 8, 4.5, 2.5, 300);
+    } else if (zombie.armorStyle === 'frost_helm') {
+      this.spawnBattleDebris(zcx - 4, headY - 2, groundY, 'frost_helm', 2.5 + Math.random() * 2.2, -5.4);
+      this.particles.emit(zcx - 4, headY, '#bae6fd', 14, 5.2, 3.2, 400);
+      this.particles.emit(zcx - 4, headY, '#38bdf8', 8, 4.5, 2.5, 320);
+    } else if (zombie.armorStyle === 'runic_plate') {
+      this.spawnBattleDebris(zcx - 2, headY - 2, groundY, 'jarl_crown', 2.6 + Math.random() * 2.2, -5.4);
+      this.particles.emit(zcx, zombie.y + 38, '#fbbf24', 14, 5.2, 3.2, 400);
+      this.particles.emit(zcx, zombie.y + 38, '#94a3b8', 8, 4.5, 2.5, 320);
     }
   }
 
@@ -1471,14 +1681,23 @@ export class Game {
           const hitArmored = zombie.hasArmor();
           const isFire = proj instanceof FirePea;
           const isButter = proj instanceof Butter;
-          const finalDamage = zombie.modifyProjectileDamage(proj.damage, isFire, isButter);
+          const isIce = proj instanceof SnowProjectile;
+          const finalDamage = zombie.modifyProjectileDamage(proj.damage, isFire, isButter, isIce);
           zombie.takeDamage(finalDamage);
 
           if (hitArmored) {
-            const isHeavyMetal = zombie.armorStyle === 'iron_bucket' || zombie.armorStyle === 'tower_shield';
+            const isHeavyMetal =
+              zombie.armorStyle === 'iron_bucket' ||
+              zombie.armorStyle === 'tower_shield' ||
+              zombie.armorStyle === 'frost_helm' ||
+              zombie.armorStyle === 'runic_plate';
             SoundManager.getInstance().playArmorHit(isHeavyMetal);
             const sparkColor = zombie.armorStyle === 'tower_shield'
               ? (isFire ? '#fb923c' : '#38bdf8')
+              : zombie.armorStyle === 'frost_helm'
+              ? (isFire ? '#fb923c' : '#bae6fd')
+              : zombie.armorStyle === 'runic_plate'
+              ? '#fde047'
               : zombie.armorStyle === 'iron_bucket'
               ? '#e2e8f0'
               : '#fbbf24';
@@ -1498,7 +1717,7 @@ export class Game {
           }
 
           let damageColor = '#ffffff';
-          if (proj instanceof SnowProjectile) {
+          if (isIce) {
             const chillMs = Math.round(5000 * (1 - zombie.frostResistance));
             if (chillMs > 0) {
               zombie.slowTimer = Math.max(zombie.slowTimer, chillMs);
@@ -1518,13 +1737,25 @@ export class Game {
             damageColor = '#ff9800';
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#ff9800', 8, 4, 3, 300);
           } else if (isButter) {
-            zombie.stunTimer = 4000;
-            damageColor = '#ffeb3b';
-            this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#ffeb3b', 8, 4, 3, 300);
+            const stunned = zombie.applyStun(4000);
+            damageColor = stunned ? '#ffeb3b' : '#cbd5e1';
+            this.particles.emit(
+              proj.x + proj.width,
+              proj.y + proj.height / 2,
+              stunned ? '#ffeb3b' : '#cbd5e1',
+              stunned ? 8 : 5,
+              4,
+              3,
+              stunned ? 300 : 200
+            );
           } else if (zombie.enemyKind === 'troll' || zombie.enemyKind === 'small_troll') {
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#94a3b8', 5, 3.2, 2.2, 220);
-          } else if (zombie.enemyKind === 'flame_drake') {
+          } else if (zombie.enemyKind === 'frost_giant') {
+            this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#bae6fd', 5, 3.2, 2.2, 220);
+          } else if (zombie.enemyKind === 'flame_drake' || zombie.enemyKind === 'magma_juggernaut') {
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#fb923c', 5, 3.2, 2.2, 220);
+          } else if (zombie.enemyKind === 'draugr_jarl') {
+            this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#fbbf24', 5, 3.2, 2.2, 220);
           } else {
             this.particles.emit(proj.x + proj.width, proj.y + proj.height/2, '#38bdf8', 5, 3, 2, 200);
           }
@@ -1597,17 +1828,28 @@ export class Game {
 
           if (directContact && !zombie.isFlying && defender instanceof PotatoMine && defender.isArmed) {
             defender.markedForDeletion = true;
+            const mineDamage = this.computeOrdnanceDamage(1800);
+            this.registerOrdnanceCast(0.25);
             this.particles.emitExplosion(defender.x + defender.width / 2, defender.y + defender.height / 2);
             this.triggerScreenShake(400, 10);
             SoundManager.getInstance().playExplosion();
-            this.addFloatingText(defender.x + defender.width / 2, defender.y - 10, '-1800 💥', '#ff5722', true);
+            this.addFloatingText(
+              defender.x + defender.width / 2,
+              defender.y - 10,
+              `-${mineDamage} 💥`,
+              mineDamage < 1100 ? '#7dd3fc' : '#ff5722',
+              true
+            );
             const rowAttackers = this.attackersByRow[defender.row];
             if (rowAttackers) {
               for (let zi = 0; zi < rowAttackers.length; zi++) {
                 const z = rowAttackers[zi];
                 if (!z.isFlying && Math.abs(z.x - defender.x) < 80) {
-                  z.overkilled = true;
-                  z.markedForDeletion = true;
+                  if (mineDamage >= z.health) {
+                    z.overkilled = true;
+                  }
+                  z.takeDamage(mineDamage);
+                  this.handleEnemyArmorBreak(z);
                 }
               }
             }
@@ -1622,14 +1864,27 @@ export class Game {
             zombie.x - defender.x < defender.range &&
             zombie.x - defender.x > -20
           ) {
-            zombie.swallowed = true;
-            zombie.markedForDeletion = true;
-            defender.isDigesting = true;
-            defender.digestTimer = 0;
-            this.addFloatingText(defender.x + defender.width, defender.y - 10, 'Crunch! 🦷', '#ab47bc', true);
-            this.particles.emit(defender.x + defender.width, defender.y + defender.height / 2, '#ab47bc', 20, 5, 4, 300);
-            targetDefender = null;
-            break;
+            if (zombie.maxHealth > 950 || zombie.winterTier >= 2) {
+              zombie.takeDamage(600);
+              this.handleEnemyArmorBreak(zombie);
+              defender.isDigesting = true;
+              defender.digestTimer = Math.max(0, defender.digestDuration - 6500);
+              this.addFloatingText(defender.x + defender.width, defender.y - 10, 'Crunch! -600 🦷', '#ab47bc', true);
+              this.particles.emit(defender.x + defender.width, defender.y + defender.height / 2, '#ab47bc', 16, 5, 4, 300);
+              if (zombie.markedForDeletion) {
+                targetDefender = null;
+                break;
+              }
+            } else {
+              zombie.swallowed = true;
+              zombie.markedForDeletion = true;
+              defender.isDigesting = true;
+              defender.digestTimer = 0;
+              this.addFloatingText(defender.x + defender.width, defender.y - 10, 'Crunch! 🦷', '#ab47bc', true);
+              this.particles.emit(defender.x + defender.width, defender.y + defender.height / 2, '#ab47bc', 20, 5, 4, 300);
+              targetDefender = null;
+              break;
+            }
           }
 
           if (!targetDefender || defender.x > targetDefender.x) {
@@ -1653,10 +1908,25 @@ export class Game {
               const hitY = targetDefender.y + targetDefender.height * 0.48;
               if (zombie.attackStyle === 'heavy') {
                 if (this.shakeTimer <= 0) {
-                  this.triggerScreenShake(130, 3);
+                  const shakeMag = zombie.enemyKind === 'magma_juggernaut' ? 4 : 3;
+                  this.triggerScreenShake(140, shakeMag);
                 }
-                this.particles.emit(hitX, targetDefender.y + targetDefender.height - 6, '#94a3b8', 8, 4, 3, 320);
-                this.particles.emit(hitX, hitY, '#fbbf24', 6, 3.5, 2.4, 240);
+                const groundCol =
+                  zombie.enemyKind === 'frost_giant'
+                    ? '#bae6fd'
+                    : zombie.enemyKind === 'magma_juggernaut'
+                    ? '#44403c'
+                    : '#94a3b8';
+                const sparkCol =
+                  zombie.enemyKind === 'frost_giant'
+                    ? '#38bdf8'
+                    : zombie.enemyKind === 'magma_juggernaut'
+                    ? '#f97316'
+                    : zombie.enemyKind === 'draugr_jarl' && zombie.enraged
+                    ? '#ef4444'
+                    : '#fbbf24';
+                this.particles.emit(hitX, targetDefender.y + targetDefender.height - 6, groundCol, 8, 4, 3, 320);
+                this.particles.emit(hitX, hitY, sparkCol, 6, 3.5, 2.4, 240);
               } else if (zombie.attackStyle === 'fire_breath') {
                 this.particles.emit(hitX, hitY, '#fb923c', 9, 4.2, 3, 280, -0.03);
                 this.particles.emit(hitX, hitY, '#fef08a', 5, 3, 2, 210, -0.02);
@@ -1739,6 +2009,10 @@ export class Game {
     }
 
     if (this.gameState === 'playing') {
+      if (this.ordnanceHeat > 0) {
+        this.ordnanceHeat = Math.max(0, this.ordnanceHeat - deltaTime * 0.00004);
+      }
+
       if (this.realmEntranceTimer <= 0) {
         if (!getInfiniteResourcesForLevel(this.level)) {
           this.ambientCurrencyTimer += deltaTime;
@@ -1755,7 +2029,7 @@ export class Game {
           }
         }
 
-        // Multi-wave progression director: grace period -> wave call -> salvo spawns -> breather
+        // Endless Fimbulwinter wave director: winter deepens every wave with no final victory
         if (this.spawnGraceTimer > 0) {
           this.spawnGraceTimer -= deltaTime;
           if (this.spawnGraceTimer <= 0) {
@@ -1788,19 +2062,19 @@ export class Game {
 
             if (this.pendingWaveSpawns.length > 0) {
               this.nextSpawnTimer += this.pendingWaveSpawns[0].delayMs;
-            } else if (this.currentWave < this.totalWaves) {
+            } else {
               this.interWaveDuration = this.computeInterWaveDelayMs(this.currentWave);
               this.interWaveTimer = this.interWaveDuration;
             }
           }
-        } else if (this.currentWave < this.totalWaves) {
+        } else {
           if (this.attackers.length === 0) {
             this.interWaveTimer = Math.min(
               this.interWaveTimer,
               this.computePostClearDelayMs(this.currentWave)
             );
           } else {
-            const completedSpec = this.wavePlan[this.currentWave - 1];
+            const completedSpec = this.currentWaveSpec;
             const stragglerCap = completedSpec ? Math.max(1, Math.floor(completedSpec.count * 0.15)) : 1;
             const elapsedInterWave = this.interWaveDuration - this.interWaveTimer;
             if (elapsedInterWave >= 16000 && this.attackers.length <= stragglerCap) {
@@ -1816,17 +2090,6 @@ export class Game {
             this.startNextWave();
           }
         }
-      }
-
-      // Victory Condition check
-      if (
-        this.currentWave >= this.totalWaves &&
-        this.pendingWaveSpawns.length === 0 &&
-        this.zombiesSpawned >= this.zombiesTotal &&
-        this.attackers.length === 0
-      ) {
-        this.gameState = 'victory';
-        SoundManager.getInstance().playVictory();
       }
     }
 
@@ -1923,10 +2186,39 @@ export class Game {
               a.enemyKind === 'troll' ||
               a.enemyKind === 'buckethead' ||
               a.enemyKind === 'shieldbearer' ||
-              a.enemyKind === 'flame_drake';
+              a.enemyKind === 'flame_drake' ||
+              a.enemyKind === 'draugr_jarl' ||
+              a.enemyKind === 'frost_giant' ||
+              a.enemyKind === 'magma_juggernaut';
             SoundManager.getInstance().playEnemyDeath(isHeavy);
 
-            if (a.enemyKind === 'troll') {
+            if (a.enemyKind === 'magma_juggernaut') {
+              if (this.shakeTimer <= 0) {
+                this.triggerScreenShake(210, 5);
+              }
+              this.particles.emit(acx, acy, '#292524', 18, 5.6, 4.5, 540);
+              this.particles.emit(acx, acy, '#f97316', 14, 5.0, 3.6, 480, -0.02);
+              this.particles.emit(acx, acy - 6, '#fef08a', 10, 4.2, 2.6, 440, -0.03);
+              this.spawnBattleDebris(acx - 10, acy, groundY, 'magma_slag', -2.4, -4.8);
+              this.spawnBattleDebris(acx + 10, acy - 6, groundY, 'magma_slag', 2.8, -5.2);
+            } else if (a.enemyKind === 'frost_giant') {
+              if (this.shakeTimer <= 0) {
+                this.triggerScreenShake(190, 4.5);
+              }
+              this.particles.emit(acx, acy, '#0284c7', 16, 5.4, 4.2, 520);
+              this.particles.emit(acx, acy, '#bae6fd', 14, 4.8, 3.4, 460);
+              this.particles.emit(acx, acy - 6, '#f0f9ff', 8, 4.0, 2.5, 440, -0.02);
+              this.spawnBattleDebris(acx - 10, acy, groundY, 'ice_maul', -2.2, -4.6);
+              this.spawnBattleDebris(acx + 9, acy - 5, groundY, 'crag_stone', 2.6, -4.9);
+            } else if (a.enemyKind === 'draugr_jarl') {
+              if (this.shakeTimer <= 0) {
+                this.triggerScreenShake(150, 3.5);
+              }
+              this.particles.emit(acx, acy, '#991b1b', 14, 5.0, 3.6, 460);
+              this.particles.emit(acx, acy, '#fbbf24', 12, 4.6, 3.0, 480, -0.02);
+              this.particles.emit(acx, acy - 8, '#ef4444', 10, 3.8, 2.5, 460, -0.03);
+              this.spawnBattleDebris(acx - 10, acy - 2, groundY, 'dane_axe', -2.3, -4.8);
+            } else if (a.enemyKind === 'troll') {
               if (this.shakeTimer <= 0) {
                 this.triggerScreenShake(180, 4);
               }
@@ -1983,8 +2275,12 @@ export class Game {
             }
             const wispColor = a.enemyKind === 'buckethead' || a.enemyKind === 'berserker'
               ? '#f87171'
-              : a.enemyKind === 'flame_drake'
+              : a.enemyKind === 'flame_drake' || a.enemyKind === 'magma_juggernaut'
               ? '#fb923c'
+              : a.enemyKind === 'frost_giant'
+              ? '#7dd3fc'
+              : a.enemyKind === 'draugr_jarl'
+              ? '#f59e0b'
               : a.enemyKind === 'fenrir_wolf'
               ? '#5eead4'
               : a.enemyKind === 'conehead' || a.enemyKind === 'troll'
@@ -5596,6 +5892,89 @@ export class Game {
       ctx.lineWidth = 1.2;
 
       switch (db.kind) {
+        case 'frost_helm': {
+          ctx.fillStyle = '#7dd3fc';
+          ctx.beginPath();
+          ctx.roundRect(-9, -7, 18, 14, 3);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#f0f9ff';
+          ctx.beginPath();
+          ctx.moveTo(-9, -4);
+          ctx.lineTo(-14, -10);
+          ctx.lineTo(-6, -7);
+          ctx.moveTo(9, -4);
+          ctx.lineTo(14, -10);
+          ctx.lineTo(6, -7);
+          ctx.closePath();
+          ctx.fill();
+          break;
+        }
+        case 'jarl_crown': {
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.roundRect(-8, -5, 16, 10, 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.moveTo(-8, -4);
+          ctx.lineTo(-5, -10);
+          ctx.lineTo(0, -5);
+          ctx.lineTo(5, -10);
+          ctx.lineTo(8, -4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'dane_axe': {
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 2.8;
+          ctx.beginPath();
+          ctx.moveTo(-12, 8);
+          ctx.lineTo(10, -10);
+          ctx.stroke();
+          ctx.fillStyle = '#e2e8f0';
+          ctx.beginPath();
+          ctx.arc(8, -8, 8, 0.2, 2.5);
+          ctx.lineTo(6, -7);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'ice_maul': {
+          ctx.strokeStyle = '#334155';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-11, 7);
+          ctx.lineTo(6, -6);
+          ctx.stroke();
+          ctx.fillStyle = '#7dd3fc';
+          ctx.beginPath();
+          ctx.roundRect(1, -12, 12, 9, 2);
+          ctx.fill();
+          ctx.stroke();
+          break;
+        }
+        case 'magma_slag': {
+          ctx.fillStyle = '#292524';
+          ctx.beginPath();
+          ctx.moveTo(-7, -4);
+          ctx.lineTo(2, -7);
+          ctx.lineTo(8, 0);
+          ctx.lineTo(2, 7);
+          ctx.lineTo(-7, 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.arc(0, 0, 2.6, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
         case 'tower_shield': {
           ctx.fillStyle = '#0f766e';
           ctx.beginPath();
@@ -5881,53 +6260,73 @@ export class Game {
     ctx.save();
 
     if (this.gameState === 'defeat') {
-      // Defeat backdrop
+      // Icy Fimbulwinter & Blood-Runes Defeat Backdrop
       const defGrad = ctx.createRadialGradient(cx, cy, 50, cx, cy, w * 0.7);
       if (isLight) {
-        defGrad.addColorStop(0, 'rgba(254, 226, 226, 0.75)');
-        defGrad.addColorStop(1, 'rgba(127, 29, 29, 0.65)');
+        defGrad.addColorStop(0, 'rgba(224, 242, 254, 0.78)');
+        defGrad.addColorStop(1, 'rgba(30, 41, 59, 0.72)');
       } else {
-        defGrad.addColorStop(0, 'rgba(40, 10, 10, 0.85)');
-        defGrad.addColorStop(1, 'rgba(10, 2, 2, 0.95)');
+        defGrad.addColorStop(0, 'rgba(18, 28, 44, 0.88)');
+        defGrad.addColorStop(1, 'rgba(4, 10, 20, 0.96)');
       }
       ctx.fillStyle = defGrad;
       ctx.fillRect(0, 0, w, h);
 
       // Carved Norse Stone Tablet
-      ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.97)' : 'rgba(15, 20, 28, 0.96)';
-      ctx.strokeStyle = isLight ? '#dc2626' : '#d32f2f';
+      ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.97)' : 'rgba(12, 19, 30, 0.96)';
+      ctx.strokeStyle = isLight ? '#0284c7' : '#38bdf8';
       ctx.lineWidth = 3;
-      ctx.shadowColor = isLight ? 'rgba(185, 28, 28, 0.35)' : '#ff1744';
+      ctx.shadowColor = isLight ? 'rgba(2, 132, 199, 0.35)' : 'rgba(56, 189, 248, 0.55)';
       ctx.shadowBlur = 35;
       ctx.beginPath();
       ctx.roundRect(cx - 220, cy - 140, 440, 260, 16);
       ctx.fill();
       ctx.stroke();
 
-      // Skull Runes
-      ctx.fillStyle = isLight ? '#b91c1c' : '#ff5252';
-      ctx.font = 'bold 16px serif';
+      // Fimbulwinter Runes
+      ctx.fillStyle = isLight ? '#0369a1' : '#7dd3fc';
+      ctx.font = 'bold 15px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('ᛞ ᛖ ᚨ ᚦ   ·   ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ', cx, cy - 105);
+      ctx.shadowBlur = 0;
+      ctx.fillText('ᚠ ᛁ ᛗ ᛒ ᚢ ᛚ ᚹ ᛁ ᚾ ᛏ ᛖ ᚱ   ·   ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ', cx, cy - 105);
 
-      // Main Title
-      ctx.fillStyle = isLight ? '#7f1d1d' : '#ffffff';
-      ctx.font = 'bold 26px "Outfit", "Inter", sans-serif';
+      // Main Title (auto-fitted to 404px inner width)
+      const defeatTitle = t('defeat_title');
+      ctx.fillStyle = isLight ? '#0f172a' : '#f8fafc';
+      let titleSize = 24;
+      ctx.font = `bold ${titleSize}px "Outfit", "Inter", sans-serif`;
+      while (titleSize > 16 && ctx.measureText(defeatTitle).width > 404) {
+        titleSize -= 0.5;
+        ctx.font = `bold ${titleSize}px "Outfit", "Inter", sans-serif`;
+      }
       if (!isLight) {
-        ctx.shadowColor = '#d32f2f';
-        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#0284c7';
+        ctx.shadowBlur = 18;
       } else {
         ctx.shadowBlur = 0;
       }
-      ctx.fillText('Realm has fallen', cx, cy - 65);
+      ctx.fillText(defeatTitle, cx, cy - 65);
 
-      // Description
-      ctx.fillStyle = isLight ? '#334155' : 'rgba(220, 200, 200, 0.85)';
-      ctx.font = '500 13px "Outfit", sans-serif';
+      // Description & Survival Stats (auto-fitted)
+      const subLine = t('defeat_winter_sub');
+      const statsLine = t('defeat_stats')
+        .replace('{waves}', Math.max(1, this.currentWave).toString())
+        .replace('{kills}', this.zombiesKilled.toString());
+
+      ctx.fillStyle = isLight ? '#334155' : 'rgba(203, 228, 245, 0.9)';
       ctx.shadowBlur = 0;
-      ctx.fillText('The fortress defenses were breached by the invaders.', cx, cy - 25);
-      ctx.fillText(`Monsters Cleared: ${this.zombiesKilled} / ${this.zombiesTotal}`, cx, cy - 5);
+      let subSize = 13;
+      ctx.font = `500 ${subSize}px "Outfit", sans-serif`;
+      while (subSize > 10.5 && ctx.measureText(subLine).width > 406) {
+        subSize -= 0.5;
+        ctx.font = `500 ${subSize}px "Outfit", sans-serif`;
+      }
+      ctx.fillText(subLine, cx, cy - 26);
+
+      ctx.fillStyle = isLight ? '#0369a1' : '#bae6fd';
+      ctx.font = 'bold 13px "Outfit", sans-serif';
+      ctx.fillText(statsLine, cx, cy - 3);
 
       // Buttons
       // 1. Retry Button (Left)
@@ -6040,6 +6439,51 @@ export class Game {
     ctx.restore();
   }
 
+  private drawFimbulwinterFrost(): void {
+    const assessment = this.getResourceAssessment();
+    const intensity = Math.min(1, Math.max(0, (assessment.empowerment - 0.75) / 4.5));
+    if (intensity <= 0.02) return;
+
+    const ctx = this.ctx;
+    const w = this.width;
+    const h = this.height;
+    const cx = w * 0.5;
+    const cy = h * 0.5;
+
+    ctx.save();
+
+    // Creeping glacial rime vignette around the battlefield edges
+    const innerR = Math.min(w, h) * (0.48 - intensity * 0.14);
+    const outerR = Math.hypot(cx, cy);
+    const frostGrad = ctx.createRadialGradient(cx, cy, innerR, cx, cy, outerR);
+    frostGrad.addColorStop(0, 'rgba(186, 230, 253, 0)');
+    frostGrad.addColorStop(0.68, `rgba(125, 211, 252, ${(intensity * 0.13).toFixed(3)})`);
+    frostGrad.addColorStop(1, `rgba(14, 116, 144, ${(intensity * 0.34).toFixed(3)})`);
+    ctx.fillStyle = frostGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Driving leftward Fimbulwinter blizzard streaks as winter deepens
+    if (intensity >= 0.18) {
+      const now = this.lastTime || 0;
+      const streakCount = Math.min(28, Math.floor(8 + intensity * 22));
+      ctx.strokeStyle = `rgba(224, 242, 254, ${(0.12 + intensity * 0.26).toFixed(3)})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for (let i = 0; i < streakCount; i++) {
+        const seed = i * 137.5;
+        const speed = 0.42 + (i % 5) * 0.11 + intensity * 0.35;
+        const rawX = (w + 120) - ((now * speed + seed * 19) % (w + 180));
+        const rawY = ((seed * 43 + now * (0.06 + (i % 3) * 0.02)) % (h + 40)) - 20;
+        const len = 18 + (i % 4) * 9 + intensity * 22;
+        ctx.moveTo(rawX, rawY);
+        ctx.lineTo(rawX - len, rawY + len * 0.16);
+      }
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
   draw() {
     const ctx = this.ctx;
     
@@ -6071,6 +6515,7 @@ export class Game {
     this.drawStatusAilments();
     for (let i = 0; i < this.projectiles.length; i++) this.projectiles[i].draw(ctx);
     this.particles.draw(ctx);
+    this.drawFimbulwinterFrost();
 
     // Draw summoning hologram and grid hover previews
     this.drawSummoningPreview();

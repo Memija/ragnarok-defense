@@ -18,7 +18,7 @@ export class BerserkerDraugr extends Attacker {
   }
 
   override getEffectiveAttackRate(): number {
-    return this.enraged ? 620 : this.attackRate;
+    return this.enraged ? Math.max(380, Math.round(this.attackRate * 0.66)) : this.attackRate;
   }
 
   override takeDamage(amount: number) {

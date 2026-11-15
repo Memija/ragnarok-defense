@@ -368,12 +368,15 @@ export const translations: Record<string, Record<string, string>> = {
     plant: 'Plant',
     build: 'Build',
     occupied: 'Occupied',
-    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Wave {current} / {total}',
-    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Wave {current} / {total}',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Wave {current}',
+    wave_warning_header: 'ᚠ ᛁ ᛗ ᛒ ᚢ ᛚ ᚹ ᛁ ᚾ ᛏ ᛖ ᚱ   ·   Wave {current}',
     wave_scout_call: '⚔️ Enemy Scout Approaching! ⚔️',
     wave_standard_call: '⚔️ Enemy Wave Advancing ({count}) ⚔️',
     wave_major_call: '⚔️ A Large Wave of Enemies Approaches! ⚔️',
-    wave_final_call: '⚔️ Final Wave — Huge Horde Approaching! ⚔️'
+    wave_final_call: '❄️ Fimbulwinter Deepens — No Force Can Stop the Winter! ❄️',
+    defeat_title: 'Fimbulwinter Claims the Realm',
+    defeat_winter_sub: 'No defense — nor boundless wealth — can stop the Great Winter.',
+    defeat_stats: 'Waves Endured: {waves}  ·  Invaders Felled: {kills}'
   },
   de: {
     foreignUnitsTitle: 'Heimatwelt verteidigen',
@@ -742,12 +745,15 @@ export const translations: Record<string, Record<string, string>> = {
     plant: 'Pflanzen',
     build: 'Bauen',
     occupied: 'Besetzt',
-    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Welle {current} / {total}',
-    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Welle {current} / {total}',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Welle {current}',
+    wave_warning_header: 'ᚠ ᛁ ᛗ ᛒ ᚢ ᛚ ᚹ ᛁ ᚾ ᛏ ᛖ ᚱ   ·   Welle {current}',
     wave_scout_call: '⚔️ Feindlicher Späher nähert sich! ⚔️',
     wave_standard_call: '⚔️ Feindliche Welle rückt vor ({count}) ⚔️',
     wave_major_call: '⚔️ Eine große Feindeswelle nähert sich! ⚔️',
-    wave_final_call: '⚔️ Letzte Welle — Gewaltige Horde im Anmarsch! ⚔️'
+    wave_final_call: '❄️ Fimbulwinter bricht herein — Niemand hält den Winter auf! ❄️',
+    defeat_title: 'Fimbulwinter verschlingt das Reich',
+    defeat_winter_sub: 'Weder Bollwerk noch endloser Reichtum kann den Großen Winter aufhalten.',
+    defeat_stats: 'Überstandene Wellen: {waves}  ·  Besiegte Feinde: {kills}'
   },
   id: {
     foreignUnitsTitle: 'Mempertahankan Dunia Asal',
@@ -1116,12 +1122,15 @@ export const translations: Record<string, Record<string, string>> = {
     plant: 'Tanam',
     build: 'Bangun',
     occupied: 'Terisi',
-    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Gelombang {current} / {total}',
-    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Gelombang {current} / {total}',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Gelombang {current}',
+    wave_warning_header: 'ᚠ ᛁ ᛗ ᛒ ᚢ ᛚ ᚹ ᛁ ᚾ ᛏ ᛖ ᚱ   ·   Gelombang {current}',
     wave_scout_call: '⚔️ Pengintai Musuh Mendekat! ⚔️',
     wave_standard_call: '⚔️ Gelombang Musuh Maju ({count}) ⚔️',
     wave_major_call: '⚔️ Gelombang Besar Musuh Mendekat! ⚔️',
-    wave_final_call: '⚔️ Gelombang Terakhir — Pasukan Besar Mendekat! ⚔️'
+    wave_final_call: '❄️ Fimbulwinter Mengganas — Musim Dingin Tak Terhentikan! ❄️',
+    defeat_title: 'Fimbulwinter Menelan Alam Ini',
+    defeat_winter_sub: 'Tiada benteng maupun harta tak terbatas dapat menghentikan Musim Dingin.',
+    defeat_stats: 'Gelombang Bertahan: {waves}  ·  Penyerbu Tumbang: {kills}'
   },
   bs: {
     foreignUnitsTitle: 'Odbrana domovine',
@@ -1490,12 +1499,15 @@ export const translations: Record<string, Record<string, string>> = {
     plant: 'Posadi',
     build: 'Izgradi',
     occupied: 'Zauzeto',
-    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Val {current} / {total}',
-    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Val {current} / {total}',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Val {current}',
+    wave_warning_header: 'ᚠ ᛁ ᛗ ᛒ ᚢ ᛚ ᚹ ᛁ ᚾ ᛏ ᛖ ᚱ   ·   Val {current}',
     wave_scout_call: '⚔️ Neprijateljski izviđač dolazi! ⚔️',
     wave_standard_call: '⚔️ Neprijateljski val napreduje ({count}) ⚔️',
     wave_major_call: '⚔️ Veliki val neprijatelja se približava! ⚔️',
-    wave_final_call: '⚔️ Posljednji val — Ogromna horda dolazi! ⚔️'
+    wave_final_call: '❄️ Fimbulwinter jača — Zimu nije moguće zaustaviti! ❄️',
+    defeat_title: 'Fimbulwinter je pokorio kraljevstvo',
+    defeat_winter_sub: 'Nijedna odbrana — ni beskrajno blago — ne može zaustaviti Veliku zimu.',
+    defeat_stats: 'Preživljeni valovi: {waves}  ·  Poraženi napadači: {kills}'
   },
   pl: {
     foreignUnitsTitle: 'Obrona ojczystego świata',
@@ -1864,12 +1876,15 @@ export const translations: Record<string, Record<string, string>> = {
     plant: 'Zasadź',
     build: 'Zbuduj',
     occupied: 'Zajęte',
-    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Fala {current} / {total}',
-    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Fala {current} / {total}',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Fala {current}',
+    wave_warning_header: 'ᚠ ᛁ ᛗ ᛒ ᚢ ᛚ ᚹ ᛁ ᚾ ᛏ ᛖ ᚱ   ·   Fala {current}',
     wave_scout_call: '⚔️ Nadchodzi zwiadowca wroga! ⚔️',
     wave_standard_call: '⚔️ Fala wrogów naciera ({count}) ⚔️',
     wave_major_call: '⚔️ Nadciąga duża fala wrogów! ⚔️',
-    wave_final_call: '⚔️ Ostatnia fala — Nadciąga ogromna horda! ⚔️'
+    wave_final_call: '❄️ Fimbulwinter narasta — Zimy nie sposób powstrzymać! ❄️',
+    defeat_title: 'Fimbulwinter pochłania królestwo',
+    defeat_winter_sub: 'Żadna obrona — ani bezkresne bogactwa — nie powstrzyma Wielkiej Zimy.',
+    defeat_stats: 'Przetrwane fale: {waves}  ·  Pokonani najeźdźcy: {kills}'
   },
   'sr-Cyrl': {
     foreignUnitsTitle: 'Одбрана матичног света',
@@ -2238,12 +2253,15 @@ export const translations: Record<string, Record<string, string>> = {
     plant: 'Посади',
     build: 'Изгради',
     occupied: 'Заузето',
-    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Талас {current} / {total}',
-    wave_warning_header: 'ᚱ ᚨ ᚷ ᚾ ᚨ ᚱ ᛟ ᚲ   ·   Талас {current} / {total}',
+    wave_header: 'ᚹ ᚨ ᚡ ᛖ   ·   Талас {current}',
+    wave_warning_header: 'ᚠ ᛁ ᛗ ᛒ ᚢ ᛚ ᚹ ᛁ ᚾ ᛏ ᛖ ᚱ   ·   Талас {current}',
     wave_scout_call: '⚔️ Непријатељски извиђач долази! ⚔️',
     wave_standard_call: '⚔️ Непријатељски талас напредује ({count}) ⚔️',
     wave_major_call: '⚔️ Велики талас непријатеља се приближава! ⚔️',
-    wave_final_call: '⚔️ Последњи талас — Огромна хорда долази! ⚔️'
+    wave_final_call: '❄️ Фимбулвинтер јача — Зиму није могуће зауставити! ❄️',
+    defeat_title: 'Фимбулвинтер је покорио краљевство',
+    defeat_winter_sub: 'Ниједна одбрана — ни бескрајно благо — не може зауставити Велику зиму.',
+    defeat_stats: 'Издржани таласи: {waves}  ·  Поражени нападачи: {kills}'
   }
 };
 
