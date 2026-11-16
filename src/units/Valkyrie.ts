@@ -48,9 +48,9 @@ export class Valkyrie extends Entity {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
       const t = this.animTimer / 60;
 
       const isDwarvenWaterway = this.realm === 'svartalfheim' && (this.city === 'althjofs-wheel' || this.city === 'andvaris-falls');

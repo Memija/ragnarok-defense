@@ -152,6 +152,9 @@ export const REALM_CURRENCIES: Record<string, RealmCurrency> = {
  * Get currency metadata for a specific realm. Defaults to Midgard.
  */
 export function getRealmCurrency(realm: string = 'midgard'): RealmCurrency {
+  if (realm && REALM_CURRENCIES[realm]) {
+    return REALM_CURRENCIES[realm];
+  }
   const normalized = (realm || 'midgard').toLowerCase().trim();
   return REALM_CURRENCIES[normalized] || REALM_CURRENCIES.midgard;
 }

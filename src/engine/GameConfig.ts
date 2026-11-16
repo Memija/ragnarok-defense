@@ -508,3 +508,51 @@ export function isForeignWorldAllowedInLimited(worldId: string): boolean {
   const allowedList = getLimitedForeignWorlds();
   return allowedList.includes(worldId.toLowerCase().trim());
 }
+
+/**
+ * Returns devicePixelRatio capped to 2.0 so 3x–4x HiDPI displays do not incur
+ * 9x–16x Canvas2D fill-rate and Gaussian shadow-blur penalties.
+ */
+export function getEffectiveDpr(): number {
+  if (typeof window === 'undefined') return 1;
+  return Math.min(window.devicePixelRatio || 1, 2);
+}
+
+export const PROGRESSION_ORDER: readonly string[] = [
+  'althjofs-wheel',
+  'andvaris-falls',
+  'ivaldis-workshop',
+  'jarnsmida-quarry',
+  'dvalins-depths',
+  'sindris-forge',
+  'nidavellir'
+];
+
+export const INITIAL_UNLOCKED_CITY = 'althjofs-wheel';
+
+let legacyUnlockCleared = false;
+
+export function getUnlockedCities(): string[] {
+  if (!legacyUnlockCleared) {
+    legacyUnlockCleared = true;
+    try {
+      localStorage.removeItem('ragnarok_svartalfheim_unlocked');
+    } catch (_) {}
+  }
+  return [INITIAL_UNLOCKED_CITY];
+}
+
+export function isCityUnlocked(cityId: string): boolean {
+  return getUnlockedCities().includes(cityId);
+}
+
+export function getNextUnlockedCity(currentCityId: string): string | null {
+  const idx = (PROGRESSION_ORDER as readonly string[]).indexOf(currentCityId);
+  if (idx !== -1 && idx < PROGRESSION_ORDER.length - 1) {
+    const nextId = PROGRESSION_ORDER[idx + 1];
+    if (isCityUnlocked(nextId)) {
+      return nextId;
+    }
+  }
+  return null;
+}

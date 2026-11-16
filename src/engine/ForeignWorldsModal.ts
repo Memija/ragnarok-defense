@@ -106,6 +106,7 @@ export class ForeignWorldsModal {
     this.modalEl.classList.remove('hidden');
     this.modalEl.classList.add('active');
     document.body.classList.add('foreign-worlds-modal-open');
+    window.dispatchEvent(new CustomEvent('ragnarok-modal-visibility'));
   }
 
   public close() {
@@ -113,6 +114,7 @@ export class ForeignWorldsModal {
     this.modalEl.classList.add('hidden');
     this.modalEl.classList.remove('active');
     document.body.classList.remove('foreign-worlds-modal-open');
+    window.dispatchEvent(new CustomEvent('ragnarok-modal-visibility'));
   }
 
   public saveAndClose() {
@@ -167,7 +169,7 @@ export class ForeignWorldsModal {
       const defWorld = (def.world || def.origin.toLowerCase().trim()) as WorldId;
       return defWorld === worldId && !def.isCurrencyProducer && def.id !== 'sunflower';
     });
-    return list.map(d => getLocalizedDefender(d).name);
+    return list.map(d => getLocalizedDefender(d, undefined, false).name);
   }
 
   private render() {

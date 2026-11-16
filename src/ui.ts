@@ -1,5 +1,5 @@
 import { SoundManager } from './engine/SoundManager';
-import { translations, t, setCurrentLang, type SupportedLang } from './i18n';
+import { translations, t, setCurrentLang, ensureLocaleLoaded, type SupportedLang } from './i18n';
 import {
   CONFIG_LEVELS,
   getStartingCurrencyForLevel,
@@ -25,7 +25,7 @@ import {
   setInfiniteResourcesForAllLevels,
   applyLevelConfigToAllLevels
 } from './engine/GameConfig';
-import { ForeignWorldsModal } from './engine/ForeignWorldsModal';
+import type { ForeignWorldsModal } from './engine/ForeignWorldsModal';
 
 export function initUI() {
   const soundToggleBtn = document.getElementById('sound-toggle');
@@ -89,8 +89,12 @@ export function initUI() {
       if (soundManager.isMuted && pct > 0) {
         soundManager.toggleMute();
       }
-      soundManager.setVolume(pct / 100);
+      soundManager.setVolume(pct / 100, false);
       updateSoundUI();
+    });
+    volumeSlider.addEventListener('change', () => {
+      const pct = parseInt(volumeSlider.value, 10);
+      soundManager.setVolume(pct / 100, true);
     });
   }
 
@@ -179,6 +183,7 @@ export function initUI() {
       settingsModal.style.visibility = 'visible';
       settingsModal.setAttribute('aria-hidden', 'false');
     }
+    window.dispatchEvent(new CustomEvent('ragnarok-modal-visibility'));
   };
 
   const closeSettings = () => {
@@ -197,6 +202,7 @@ export function initUI() {
       settingsModal.style.visibility = 'hidden';
       settingsModal.setAttribute('aria-hidden', 'true');
     }
+    window.dispatchEvent(new CustomEvent('ragnarok-modal-visibility'));
     const defenderModalEl = document.getElementById('defender-modal');
     const isDefenderModalOpen = defenderModalEl && !defenderModalEl.classList.contains('hidden');
     const game = (window as any).__getGame?.();
@@ -308,7 +314,8 @@ export function initUI() {
     }
   };
 
-  const applyLanguage = (lang: string) => {
+  const applyLanguage = async (lang: string) => {
+    await ensureLocaleLoaded(lang);
     setCurrentLang(lang as SupportedLang);
     const dict = translations[lang] || translations['en'];
     document.body.dataset.lang = lang;
@@ -374,12 +381,19 @@ export function initUI() {
     });
   }
 
-  // Foreign Worlds Modal Instance
-  const foreignWorldsModal = new ForeignWorldsModal();
-  (window as any).__foreignWorldsModal = foreignWorldsModal;
-  (window as any).__openForeignWorldsModal = () => foreignWorldsModal.open();
-  (window as any).__foreignTroopsModal = foreignWorldsModal;
-  (window as any).__openForeignTroopsModal = () => foreignWorldsModal.open();
+  // Foreign Worlds Modal Instance (lazily loaded on demand)
+  let foreignWorldsModal: ForeignWorldsModal | null = null;
+  const openForeignWorldsModal = async () => {
+    if (!foreignWorldsModal) {
+      const { ForeignWorldsModal: ModalClass } = await import('./engine/ForeignWorldsModal');
+      foreignWorldsModal = new ModalClass();
+      (window as any).__foreignWorldsModal = foreignWorldsModal;
+      (window as any).__foreignTroopsModal = foreignWorldsModal;
+    }
+    foreignWorldsModal.open();
+  };
+  (window as any).__openForeignWorldsModal = openForeignWorldsModal;
+  (window as any).__openForeignTroopsModal = openForeignWorldsModal;
 
   // Foreign Units Policy Controls in Settings
   const segmentedOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('.foreign-units-segmented .segmented-opt'));
@@ -412,9 +426,9 @@ export function initUI() {
           clearTimeout(closeTimeout);
           closeTimeout = null;
         }
-        foreignWorldsModal.open();
+        void openForeignWorldsModal();
       } else {
-        if (foreignWorldsModal.isOpen()) {
+        if (foreignWorldsModal?.isOpen()) {
           foreignWorldsModal.close();
         }
         const defenderModalEl = document.getElementById('defender-modal');
@@ -434,7 +448,7 @@ export function initUI() {
   if (configureForeignUnitsBtn) {
     configureForeignUnitsBtn.addEventListener('click', () => {
       soundManager.playClick();
-      foreignWorldsModal.open();
+      void openForeignWorldsModal();
     });
   }
 
@@ -443,12 +457,18 @@ export function initUI() {
 
   const infiniteCurrencyBadge = document.getElementById('infinite-currency-badge');
 
-  window.addEventListener('infiniteresourcessettingchanged', () => {
-    updateLevelSettingsUI();
-  });
-  window.addEventListener('levelconfigchanged', () => {
-    updateLevelSettingsUI();
-  });
+  let levelSettingsPending = false;
+  const scheduleLevelSettingsUpdate = () => {
+    if (levelSettingsPending) return;
+    levelSettingsPending = true;
+    queueMicrotask(() => {
+      levelSettingsPending = false;
+      updateLevelSettingsUI();
+    });
+  };
+
+  window.addEventListener('infiniteresourcessettingchanged', scheduleLevelSettingsUpdate);
+  window.addEventListener('levelconfigchanged', scheduleLevelSettingsUpdate);
 
   // Custom Select (i18n)
   const customSelect = document.getElementById('lang-select');
@@ -550,6 +570,27 @@ export function initUI() {
   const applyAllLevelsBtn = document.getElementById('apply-all-levels-btn') as HTMLButtonElement | null;
   const resetCurrentLevelBtn = document.getElementById('reset-current-level-btn') as HTMLButtonElement | null;
   const resetAllLevelsBtn = document.getElementById('reset-all-levels-btn') as HTMLButtonElement | null;
+
+  const slotPipButtons: HTMLButtonElement[] = [];
+  if (slotPipsContainer) {
+    slotPipsContainer.innerHTML = '';
+    for (let i = 1; i <= MAX_SLOTS; i++) {
+      const pip = document.createElement('button');
+      pip.type = 'button';
+      pip.className = 'slot-pip empty';
+      pip.innerHTML = `<span class="pip-num">${i}</span>`;
+      pip.addEventListener('click', () => {
+        soundManager.playClick();
+        if (currentSettingsLevel === 'all') {
+          setSlotLimitForAllLevels(i);
+        } else {
+          setSlotLimitForLevel(currentSettingsLevel as number, i);
+        }
+      });
+      slotPipsContainer.appendChild(pip);
+      slotPipButtons.push(pip);
+    }
+  }
 
   updateLevelSettingsUI = () => {
     const lang = document.body.dataset.lang || 'en';
@@ -679,27 +720,17 @@ export function initUI() {
         slotsPlusBtn.disabled = slotsList.every(s => s >= MAX_SLOTS);
       }
 
-      if (slotPipsContainer) {
-        slotPipsContainer.innerHTML = '';
-        for (let i = 1; i <= MAX_SLOTS; i++) {
-          const pip = document.createElement('button');
-          pip.type = 'button';
-          const stateClass = i <= minSlots ? 'active' : (i <= maxSlots ? 'partial' : 'empty');
-          const statusLabel = i <= minSlots
-            ? t('slotActive', lang)
-            : (i <= maxSlots ? t('slotPartial', lang) : t('locked', lang));
-          const setActionLabel = t('setSlotsTooltip', lang).replace('{count}', i.toString());
-          pip.className = `slot-pip ${stateClass}`;
-          pip.title = `${t('slot', lang)} ${i} (${statusLabel}) — ${setActionLabel}`;
-          pip.setAttribute('aria-label', setActionLabel);
-          pip.innerHTML = `<span class="pip-num">${i}</span>`;
-          pip.addEventListener('click', () => {
-            soundManager.playClick();
-            setSlotLimitForAllLevels(i);
-            updateLevelSettingsUI();
-          });
-          slotPipsContainer.appendChild(pip);
-        }
+      for (let idx = 0; idx < slotPipButtons.length; idx++) {
+        const i = idx + 1;
+        const pip = slotPipButtons[idx];
+        const stateClass = i <= minSlots ? 'active' : (i <= maxSlots ? 'partial' : 'empty');
+        const statusLabel = i <= minSlots
+          ? t('slotActive', lang)
+          : (i <= maxSlots ? t('slotPartial', lang) : t('locked', lang));
+        const setActionLabel = t('setSlotsTooltip', lang).replace('{count}', i.toString());
+        pip.className = `slot-pip ${stateClass}`;
+        pip.title = `${t('slot', lang)} ${i} (${statusLabel}) — ${setActionLabel}`;
+        pip.setAttribute('aria-label', setActionLabel);
       }
       return;
     }
@@ -779,25 +810,15 @@ export function initUI() {
       slotsPlusBtn.disabled = currentSlots >= MAX_SLOTS;
     }
 
-    // Render slot visual pips (up to 12)
-    if (slotPipsContainer) {
-      slotPipsContainer.innerHTML = '';
-      for (let i = 1; i <= MAX_SLOTS; i++) {
-        const pip = document.createElement('button');
-        pip.type = 'button';
-        const isActive = i <= currentSlots;
-        const setActionLabel = t('setSlotsTooltip', lang).replace('{count}', i.toString());
-        pip.className = `slot-pip ${isActive ? 'active' : 'empty'}`;
-        pip.title = `${t('slot', lang)} ${i} (${isActive ? t('slotActive', lang) : t('locked', lang)}) — ${setActionLabel}`;
-        pip.setAttribute('aria-label', setActionLabel);
-        pip.innerHTML = `<span class="pip-num">${i}</span>`;
-        pip.addEventListener('click', () => {
-          soundManager.playClick();
-          setSlotLimitForLevel(activeLevel, i);
-          updateLevelSettingsUI();
-        });
-        slotPipsContainer.appendChild(pip);
-      }
+    // Update slot visual pips in-place (up to 12)
+    for (let idx = 0; idx < slotPipButtons.length; idx++) {
+      const i = idx + 1;
+      const pip = slotPipButtons[idx];
+      const isActive = i <= currentSlots;
+      const setActionLabel = t('setSlotsTooltip', lang).replace('{count}', i.toString());
+      pip.className = `slot-pip ${isActive ? 'active' : 'empty'}`;
+      pip.title = `${t('slot', lang)} ${i} (${isActive ? t('slotActive', lang) : t('locked', lang)}) — ${setActionLabel}`;
+      pip.setAttribute('aria-label', setActionLabel);
     }
   };
 
@@ -823,7 +844,7 @@ export function initUI() {
         const cur = getStartingCurrencyForLevel(currentSettingsLevel);
         setStartingCurrencyForLevel(currentSettingsLevel, Math.max(MIN_STARTING_CURRENCY, cur - 50));
       }
-      updateLevelSettingsUI();
+      scheduleLevelSettingsUpdate();
     });
   }
 
@@ -836,7 +857,7 @@ export function initUI() {
         const cur = getStartingCurrencyForLevel(currentSettingsLevel);
         setStartingCurrencyForLevel(currentSettingsLevel, Math.min(MAX_STARTING_CURRENCY, cur + 50));
       }
-      updateLevelSettingsUI();
+      scheduleLevelSettingsUpdate();
     });
   }
 
@@ -847,14 +868,14 @@ export function initUI() {
         if (!isNaN(val)) {
           setStartingCurrencyForAllLevels(val);
         }
-        updateLevelSettingsUI();
+        scheduleLevelSettingsUpdate();
         return;
       }
       if (isNaN(val)) {
         val = getStartingCurrencyForLevel(currentSettingsLevel);
       }
       setStartingCurrencyForLevel(currentSettingsLevel, val);
-      updateLevelSettingsUI();
+      scheduleLevelSettingsUpdate();
     };
 
     currencyInput.addEventListener('change', handleCurrencyCommit);
@@ -877,7 +898,7 @@ export function initUI() {
           const nextInfinite = !getInfiniteResourcesForLevel(currentSettingsLevel);
           setInfiniteResourcesForLevel(currentSettingsLevel, nextInfinite);
         }
-        updateLevelSettingsUI();
+        scheduleLevelSettingsUpdate();
       } else {
         const amt = parseInt(amtStr || '0', 10);
         if (amt > 0) {
@@ -886,7 +907,7 @@ export function initUI() {
           } else {
             setStartingCurrencyForLevel(currentSettingsLevel, amt);
           }
-          updateLevelSettingsUI();
+          scheduleLevelSettingsUpdate();
         }
       }
     });
@@ -897,12 +918,12 @@ export function initUI() {
       soundManager.playClick();
       if (currentSettingsLevel === 'all') {
         adjustSlotLimitForAllLevels(-1);
-        updateLevelSettingsUI();
+        scheduleLevelSettingsUpdate();
       } else {
         const cur = getSlotLimitForLevel(currentSettingsLevel);
         if (cur > MIN_SLOTS) {
           setSlotLimitForLevel(currentSettingsLevel, cur - 1);
-          updateLevelSettingsUI();
+          scheduleLevelSettingsUpdate();
         }
       }
     });
@@ -913,12 +934,12 @@ export function initUI() {
       soundManager.playClick();
       if (currentSettingsLevel === 'all') {
         adjustSlotLimitForAllLevels(1);
-        updateLevelSettingsUI();
+        scheduleLevelSettingsUpdate();
       } else {
         const cur = getSlotLimitForLevel(currentSettingsLevel);
         if (cur < MAX_SLOTS) {
           setSlotLimitForLevel(currentSettingsLevel, cur + 1);
-          updateLevelSettingsUI();
+          scheduleLevelSettingsUpdate();
         }
       }
     });
@@ -941,7 +962,7 @@ export function initUI() {
         applyAllLevelsBtn.textContent = t('applyToAllLevels', curLang);
         applyFeedbackTimeout = null;
       }, 1200);
-      updateLevelSettingsUI();
+      scheduleLevelSettingsUpdate();
     });
   }
 
@@ -953,7 +974,7 @@ export function initUI() {
       } else {
         resetLevelConfig(currentSettingsLevel);
       }
-      updateLevelSettingsUI();
+      scheduleLevelSettingsUpdate();
     });
   }
 
@@ -961,12 +982,12 @@ export function initUI() {
     resetAllLevelsBtn.addEventListener('click', () => {
       soundManager.playClick();
       resetAllLevelConfigs();
-      updateLevelSettingsUI();
+      scheduleLevelSettingsUpdate();
     });
   }
 
   // Initial call
-  updateLevelSettingsUI();
+  scheduleLevelSettingsUpdate();
 }
 
 

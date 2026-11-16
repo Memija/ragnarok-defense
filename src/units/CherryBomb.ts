@@ -62,10 +62,13 @@ export class CherryBomb extends Defender {
     }
   }
 
+  private static readonly SPIKE_XS = [-16, -5, 5, 16] as const;
+  private static readonly RIVET_XS = [-18, -9, 0, 9, 18] as const;
+
   draw(ctx: CanvasRenderingContext2D) {
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
 
       // Progress ratio (0 to 1)
       const fuseRatio = Math.min(1, this.fuseTimer / this.fuseTime);
@@ -92,14 +95,14 @@ export class CherryBomb extends Defender {
 
       // Base armor spikes
       ctx.fillStyle = '#78716c';
-      for (const ox of [-16, -5, 5, 16]) {
-        ctx.beginPath();
+      ctx.beginPath();
+      for (const ox of CherryBomb.SPIKE_XS) {
         ctx.moveTo(cx + ox, cy + 20);
         ctx.lineTo(cx + ox - 3, cy + 30);
         ctx.lineTo(cx + ox + 3, cy + 30);
         ctx.closePath();
-        ctx.fill();
       }
+      ctx.fill();
 
       // --- 2. Fortified Cast-Iron Magma Ordnance Dome ---
       ctx.save();
@@ -117,6 +120,7 @@ export class CherryBomb extends Defender {
       ctx.beginPath();
       ctx.arc(cx, cy + 4, 22, 0, Math.PI * 2);
       ctx.fill();
+      ctx.shadowBlur = 0;
       ctx.stroke();
 
       // --- 3. Overheating Magma Pressure Fissures ---
@@ -139,6 +143,7 @@ export class CherryBomb extends Defender {
       ctx.moveTo(cx + 6, cy + 4);
       ctx.lineTo(cx + 15, cy - 2);
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // Inner white-hot crack glow
       ctx.strokeStyle = '#ffffff';
@@ -157,11 +162,12 @@ export class CherryBomb extends Defender {
       ctx.stroke();
 
       ctx.fillStyle = '#fef08a';
-      for (const bx of [-18, -9, 0, 9, 18]) {
-        ctx.beginPath();
+      ctx.beginPath();
+      for (const bx of CherryBomb.RIVET_XS) {
+        ctx.moveTo(cx + bx + 1.5, cy + 4);
         ctx.arc(cx + bx, cy + 4, 1.5, 0, Math.PI * 2);
-        ctx.fill();
       }
+      ctx.fill();
 
       // --- 5. Blast Turret Exhaust Chimney & Sizzling Fuse ---
       ctx.fillStyle = '#292524';
@@ -183,14 +189,15 @@ export class CherryBomb extends Defender {
       // Sizzling Fuse Spark
       ctx.shadowBlur = 18;
       ctx.shadowColor = '#ffff00';
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(cx + 2, cy - 35, 3 + flash * 2, 0, Math.PI * 2);
-      ctx.fill();
-
       ctx.fillStyle = '#ff9100';
       ctx.beginPath();
       ctx.arc(cx + 2, cy - 35, 5 + flash * 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(cx + 2, cy - 35, 3 + flash * 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     });

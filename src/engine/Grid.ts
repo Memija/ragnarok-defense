@@ -1,3 +1,5 @@
+import { getEffectiveDpr } from './GameConfig';
+
 export class Grid {
   rows: number = 5;
   cols: number = 9;
@@ -31,19 +33,22 @@ export class Grid {
     this.cachedCanvas = null;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
-    const dpr = window.devicePixelRatio || 1;
-    const currentTheme = (typeof document !== 'undefined' && document.body?.dataset.activeTheme) || 'dark';
+  draw(ctx: CanvasRenderingContext2D, isLightOverride?: boolean) {
+    const dpr = getEffectiveDpr();
+    const isLight = isLightOverride !== undefined
+      ? isLightOverride
+      : (typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light');
+    const currentTheme = isLight ? 'light' : 'dark';
     if (!this.cachedCanvas || this.cachedDpr !== dpr || this.cachedTheme !== currentTheme) {
       this.cachedTheme = currentTheme;
-      this.buildCache(dpr);
+      this.buildCache(dpr, isLight);
     }
     if (this.cachedCanvas) {
       ctx.drawImage(this.cachedCanvas, 0, 0, this.width, this.height);
     }
   }
 
-  private buildCache(dpr: number) {
+  private buildCache(dpr: number, isLight: boolean) {
     const offscreen = document.createElement('canvas');
     offscreen.width = Math.ceil(this.width * dpr);
     offscreen.height = Math.ceil(this.height * dpr);
@@ -51,15 +56,14 @@ export class Grid {
     if (!offCtx) return;
 
     offCtx.scale(dpr, dpr);
-    this.renderGrid(offCtx);
+    this.renderGrid(offCtx, isLight);
 
     this.cachedCanvas = offscreen;
     this.cachedDpr = dpr;
   }
 
-  private renderGrid(ctx: CanvasRenderingContext2D) {
+  private renderGrid(ctx: CanvasRenderingContext2D, isLight: boolean) {
     ctx.save();
-    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
 
     const isDwarvenWaterway = this.realm === 'svartalfheim' && (this.city === 'althjofs-wheel' || this.city === 'andvaris-falls');
     const isAndvariFalls = this.city === 'andvaris-falls';

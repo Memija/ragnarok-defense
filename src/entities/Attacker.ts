@@ -34,6 +34,13 @@ export interface MeleePose {
 }
 
 export abstract class Attacker extends Entity {
+  private static readonly LEFT_CORNERS: [number, number, number, number] = [2, 0, 0, 2];
+  private static readonly RIGHT_CORNERS: [number, number, number, number] = [0, 2, 2, 0];
+  private static attackerHpGradHigh: CanvasGradient | null = null;
+  private static attackerHpGradLow: CanvasGradient | null = null;
+  private static baseArmorHpGrad: CanvasGradient | null = null;
+  private static armorGrads: Partial<Record<EnemyArmorStyle, CanvasGradient>> = {};
+
   speed: number;
   damage: number;
   row: number;
@@ -68,6 +75,7 @@ export abstract class Attacker extends Entity {
   swallowed: boolean = false;
   overkilled: boolean = false;
   private lastStepSign: number = 0;
+  private readonly cachedPose: MeleePose = { armSwing: 0, bodyLean: 0, jawOpen: 0, slashAlpha: 0 };
 
   constructor(
     x: number,
@@ -160,17 +168,21 @@ export abstract class Attacker extends Entity {
   }
 
   getMeleePose(): MeleePose {
+    const out = this.cachedPose;
     if (!this.isEating) {
       if (this.strikeFlashTimer > 0) {
         const s = this.strikeFlashTimer / 220;
-        return {
-          armSwing: -0.75 * s,
-          bodyLean: -0.08 * s,
-          jawOpen: 0.3 * s,
-          slashAlpha: s
-        };
+        out.armSwing = -0.75 * s;
+        out.bodyLean = -0.08 * s;
+        out.jawOpen = 0.3 * s;
+        out.slashAlpha = s;
+        return out;
       }
-      return { armSwing: 0, bodyLean: 0, jawOpen: 0, slashAlpha: 0 };
+      out.armSwing = 0;
+      out.bodyLean = 0;
+      out.jawOpen = 0;
+      out.slashAlpha = 0;
+      return out;
     }
 
     const slashAlpha = this.strikeFlashTimer > 0 ? this.strikeFlashTimer / 220 : 0;
@@ -180,35 +192,32 @@ export abstract class Attacker extends Entity {
     if (p < 0.22 && this.strikeFlashTimer > 0) {
       const t = p / 0.22;
       const ease = t * t * (3 - 2 * t);
-      return {
-        armSwing: -0.82 * (1 - ease) + 0.05 * ease,
-        bodyLean: -0.12 * (1 - ease),
-        jawOpen: 0.4 * (1 - ease),
-        slashAlpha
-      };
+      out.armSwing = -0.82 * (1 - ease) + 0.05 * ease;
+      out.bodyLean = -0.12 * (1 - ease);
+      out.jawOpen = 0.4 * (1 - ease);
+      out.slashAlpha = slashAlpha;
+      return out;
     }
 
     // 0.00 -> 0.80: Coiling back & raising weapon menacingly overhead
     if (p < 0.80) {
       const t = Math.max(0, (p - 0.1) / 0.7);
       const windup = Math.sin(t * Math.PI * 0.5);
-      return {
-        armSwing: windup * 0.98,
-        bodyLean: windup * 0.09,
-        jawOpen: Math.max(0, (t - 0.25) / 0.75),
-        slashAlpha
-      };
+      out.armSwing = windup * 0.98;
+      out.bodyLean = windup * 0.09;
+      out.jawOpen = Math.max(0, (t - 0.25) / 0.75);
+      out.slashAlpha = slashAlpha;
+      return out;
     }
 
     // 0.80 -> 1.00: Violent downward cleave into the defender
     const strikeT = (p - 0.80) / 0.20;
     const fast = strikeT * strikeT;
-    return {
-      armSwing: 0.98 * (1 - fast) - 0.88 * fast,
-      bodyLean: 0.09 * (1 - fast) - 0.14 * fast,
-      jawOpen: 1 - strikeT * 0.25,
-      slashAlpha: Math.max(slashAlpha, strikeT * 0.65)
-    };
+    out.armSwing = 0.98 * (1 - fast) - 0.88 * fast;
+    out.bodyLean = 0.09 * (1 - fast) - 0.14 * fast;
+    out.jawOpen = 1 - strikeT * 0.25;
+    out.slashAlpha = Math.max(slashAlpha, strikeT * 0.65);
+    return out;
   }
 
   protected getStrideCadenceMultiplier(stridePhase: number): number {
@@ -369,6 +378,7 @@ export abstract class Attacker extends Entity {
     const alpha = Math.min(1, this.lastDamageTimer / 500);
     const armored = this.hasArmor();
 
+    ctx.translate(bx, by);
     ctx.globalAlpha = alpha;
 
     // Dark Forged Iron Frame
@@ -386,7 +396,7 @@ export abstract class Attacker extends Entity {
       : 'rgba(239, 68, 68, 0.65)';
     ctx.lineWidth = 1.1;
     ctx.beginPath();
-    ctx.roundRect(bx - 1.5, by - 1.5, barW + 3, barH + 3, 3);
+    ctx.roundRect(-1.5, -1.5, barW + 3, barH + 3, 3);
     ctx.fill();
     ctx.stroke();
 
@@ -394,7 +404,7 @@ export abstract class Attacker extends Entity {
     if (trailPct > pct + 0.005) {
       ctx.fillStyle = 'rgba(255, 241, 242, 0.78)';
       ctx.beginPath();
-      ctx.roundRect(bx, by, barW * trailPct, barH, 2);
+      ctx.roundRect(0, 0, barW * trailPct, barH, 2);
       ctx.fill();
     }
 
@@ -403,61 +413,76 @@ export abstract class Attacker extends Entity {
       const baseW = barW * baseRatio;
       const armorW = Math.max(0, barW * pct - baseW);
 
-      // Underlying Flesh/Bone HP segment
-      const baseGrad = ctx.createLinearGradient(bx, by, bx + baseW, by);
-      baseGrad.addColorStop(0, '#991b1b');
-      baseGrad.addColorStop(1, '#ef4444');
-      ctx.fillStyle = baseGrad;
+      // Underlying Flesh/Bone HP segment (cached gradient)
+      if (!Attacker.baseArmorHpGrad) {
+        const g = ctx.createLinearGradient(0, 0, 28, 0);
+        g.addColorStop(0, '#991b1b');
+        g.addColorStop(1, '#ef4444');
+        Attacker.baseArmorHpGrad = g;
+      }
+      ctx.fillStyle = Attacker.baseArmorHpGrad;
       ctx.beginPath();
-      ctx.roundRect(bx, by, baseW, barH, [2, 0, 0, 2]);
+      ctx.roundRect(0, 0, baseW, barH, Attacker.LEFT_CORNERS);
       ctx.fill();
 
       // Helmet / Plate Armor HP segment
       if (armorW > 0.5) {
-        const armGrad = ctx.createLinearGradient(bx + baseW, by, bx + baseW + armorW, by);
-        if (this.armorStyle === 'iron_bucket') {
-          armGrad.addColorStop(0, '#64748b');
-          armGrad.addColorStop(0.5, '#cbd5e1');
-          armGrad.addColorStop(1, '#f8fafc');
-        } else if (this.armorStyle === 'tower_shield') {
-          armGrad.addColorStop(0, '#0284c7');
-          armGrad.addColorStop(0.5, '#38bdf8');
-          armGrad.addColorStop(1, '#bae6fd');
-        } else if (this.armorStyle === 'frost_helm') {
-          armGrad.addColorStop(0, '#0369a1');
-          armGrad.addColorStop(0.5, '#7dd3fc');
-          armGrad.addColorStop(1, '#f0f9ff');
-        } else if (this.armorStyle === 'runic_plate') {
-          armGrad.addColorStop(0, '#991b1b');
-          armGrad.addColorStop(0.45, '#d97706');
-          armGrad.addColorStop(1, '#fef08a');
-        } else {
-          armGrad.addColorStop(0, '#b45309');
-          armGrad.addColorStop(0.5, '#f59e0b');
-          armGrad.addColorStop(1, '#fef08a');
+        let armGrad = Attacker.armorGrads[this.armorStyle];
+        if (!armGrad) {
+          armGrad = ctx.createLinearGradient(14, 0, 58, 0);
+          if (this.armorStyle === 'iron_bucket') {
+            armGrad.addColorStop(0, '#64748b');
+            armGrad.addColorStop(0.5, '#cbd5e1');
+            armGrad.addColorStop(1, '#f8fafc');
+          } else if (this.armorStyle === 'tower_shield') {
+            armGrad.addColorStop(0, '#0284c7');
+            armGrad.addColorStop(0.5, '#38bdf8');
+            armGrad.addColorStop(1, '#bae6fd');
+          } else if (this.armorStyle === 'frost_helm') {
+            armGrad.addColorStop(0, '#0369a1');
+            armGrad.addColorStop(0.5, '#7dd3fc');
+            armGrad.addColorStop(1, '#f0f9ff');
+          } else if (this.armorStyle === 'runic_plate') {
+            armGrad.addColorStop(0, '#991b1b');
+            armGrad.addColorStop(0.45, '#d97706');
+            armGrad.addColorStop(1, '#fef08a');
+          } else {
+            armGrad.addColorStop(0, '#b45309');
+            armGrad.addColorStop(0.5, '#f59e0b');
+            armGrad.addColorStop(1, '#fef08a');
+          }
+          Attacker.armorGrads[this.armorStyle] = armGrad;
         }
         ctx.fillStyle = armGrad;
         ctx.beginPath();
-        ctx.roundRect(bx + baseW, by, armorW, barH, [0, 2, 2, 0]);
+        ctx.roundRect(baseW, 0, armorW, barH, Attacker.RIGHT_CORNERS);
         ctx.fill();
       }
 
       // Crisp Armor Notch Divider
       ctx.fillStyle = '#020617';
-      ctx.fillRect(bx + baseW - 0.6, by - 0.5, 1.2, barH + 1);
+      ctx.fillRect(baseW - 0.6, -0.5, 1.2, barH + 1);
     } else {
-      const hpGrad = ctx.createLinearGradient(bx, by, bx + barW, by);
       if (pct > 0.35) {
-        hpGrad.addColorStop(0, '#b91c1c');
-        hpGrad.addColorStop(0.6, '#ef4444');
-        hpGrad.addColorStop(1, '#fb7185');
+        if (!Attacker.attackerHpGradHigh) {
+          const g = ctx.createLinearGradient(0, 0, 58, 0);
+          g.addColorStop(0, '#b91c1c');
+          g.addColorStop(0.6, '#ef4444');
+          g.addColorStop(1, '#fb7185');
+          Attacker.attackerHpGradHigh = g;
+        }
+        ctx.fillStyle = Attacker.attackerHpGradHigh;
       } else {
-        hpGrad.addColorStop(0, '#7f1d1d');
-        hpGrad.addColorStop(1, '#dc2626');
+        if (!Attacker.attackerHpGradLow) {
+          const g = ctx.createLinearGradient(0, 0, 58, 0);
+          g.addColorStop(0, '#7f1d1d');
+          g.addColorStop(1, '#dc2626');
+          Attacker.attackerHpGradLow = g;
+        }
+        ctx.fillStyle = Attacker.attackerHpGradLow;
       }
-      ctx.fillStyle = hpGrad;
       ctx.beginPath();
-      ctx.roundRect(bx, by, barW * pct, barH, 2);
+      ctx.roundRect(0, 0, barW * pct, barH, 2);
       ctx.fill();
     }
 

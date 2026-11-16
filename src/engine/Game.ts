@@ -31,11 +31,10 @@ import { DraugrJarl } from '../units/DraugrJarl';
 import { JotunnFrostbreaker } from '../units/JotunnFrostbreaker';
 import { MagmaJuggernaut } from '../units/MagmaJuggernaut';
 import { SoundManager } from './SoundManager';
-import { getSavedLoadout, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDefenderAllowedInRealm } from './DefenderRegistry';
+import { getSavedLoadout, CITY_LEVELS, getDefenderInfo, isCurrencyProducer, isDefenderAllowedInRealm, type DefenderInfo } from './DefenderRegistry';
 import { DEFENDER_ICONS, scopeSvgIds } from './DefenderIcons';
-import { MapMenu } from './MapMenu';
 import { getRealmCurrency, getRealmCurrencyName } from './Currency';
-import { getStartingCurrencyForLevel, getDefaultStartingCurrency, getInfiniteResourcesForLevel } from './GameConfig';
+import { getStartingCurrencyForLevel, getDefaultStartingCurrency, getInfiniteResourcesForLevel, getEffectiveDpr, getNextUnlockedCity } from './GameConfig';
 import { t } from '../i18n';
 
 interface WeatherParticle {
@@ -196,6 +195,21 @@ export class Game {
   private cachedCastleHeight: number = 0;
   private cachedCastleTheme: string = '';
 
+  // Cached Atmosphere Offscreen Canvases & Sprites
+  private isLightTheme: boolean = false;
+  private cachedAtmosBackCanvas: HTMLCanvasElement | null = null;
+  private cachedAtmosFrontCanvas: HTMLCanvasElement | null = null;
+  private cachedWaterwheelCanvas: HTMLCanvasElement | null = null;
+  private cachedWaterwheelRadius: number = 0;
+  private cachedAtmosKey: string = '';
+  private cachedMoteSprites: Map<string, HTMLCanvasElement> = new Map();
+  private cachedFloaterStamps: Map<string, { canvas: HTMLCanvasElement; w: number; h: number }> = new Map();
+  private cachedPreviewKey: string = '';
+  private cachedPreviewInfo: DefenderInfo | undefined = undefined;
+  private sidebarUnitCardEls: HTMLElement[] = [];
+  private static readonly PREVIEW_RUNES = ['ᚱ', 'ᚨ', 'ᚷ', 'ᚾ', 'ᚨ', 'ᚱ'] as const;
+  private static readonly DASH_8_8 = [8, 8];
+
   // Screen shake FX
   shakeTimer: number = 0;
   shakeMagnitude: number = 0;
@@ -270,8 +284,9 @@ export class Game {
       this.selectedDefenders = getSavedLoadout(this.level, this.realm);
     }
 
-    const cssW = canvas.clientWidth || (canvas.width / (window.devicePixelRatio || 1));
-    const cssH = canvas.clientHeight || (canvas.height / (window.devicePixelRatio || 1));
+    const cssW = canvas.clientWidth || (canvas.width / getEffectiveDpr());
+    const cssH = canvas.clientHeight || (canvas.height / getEffectiveDpr());
+    this.isLightTheme = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
     this.grid = new Grid(cssW, cssH, realm, city);
 
     this.initWaveDirector();
@@ -418,9 +433,8 @@ export class Game {
       levelDisplay.textContent = this.level.toString();
     }
     
-    const unitCards = document.querySelectorAll('.unit-card');
-    unitCards.forEach(card => {
-      const el = card as HTMLElement;
+    for (let i = 0; i < this.sidebarUnitCardEls.length; i++) {
+      const el = this.sidebarUnitCardEls[i];
       const cost = parseInt(el.dataset.cost || '0', 10);
       if (!isInfinite && this.sun < cost) {
         el.classList.add('unavailable');
@@ -431,7 +445,7 @@ export class Game {
       } else {
         el.classList.remove('unavailable');
       }
-    });
+    }
   }
 
   addFloatingText(x: number, y: number, text: string, color: string, isCritical: boolean = false) {
@@ -515,8 +529,12 @@ export class Game {
   }
 
   handleKeyDown = (e: KeyboardEvent) => {
+    if (this.isPaused) return;
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return;
+
     const key = e.key.toUpperCase();
-    const unitCards = Array.from(document.querySelectorAll('.unit-card:not(.shovel-card)')) as HTMLElement[];
+    const unitCards = this.sidebarUnitCardEls.filter(el => !el.classList.contains('shovel-card'));
     
     // Numeric hotkeys 1-9, 0
     if (/^[1-9]$/.test(key)) {
@@ -530,23 +548,14 @@ export class Game {
       }
     } else if (key === 'D') {
       // Shovel hotkey
-      const shovelCard = document.querySelector('.shovel-card') as HTMLElement;
+      const shovelCard = this.sidebarUnitCardEls.find(el => el.classList.contains('shovel-card'));
       if (shovelCard) shovelCard.click();
     } else if (key === 'ESCAPE') {
       // Deselect unit
-      const allCards = document.querySelectorAll('.unit-card');
-      allCards.forEach(c => c.classList.remove('selected'));
-      this.selectedUnit = null;
-    } else if (key === 'M') {
-      // Mute hotkey
-      const isMuted = SoundManager.getInstance().toggleMute();
-      const soundBtn = document.getElementById('sound-toggle');
-      if (soundBtn) {
-        soundBtn.innerHTML = `
-          <span class="sound-icon">${isMuted ? '🔇' : '🔊'}</span>
-          <span class="settings-pulse"></span>
-        `;
+      for (let i = 0; i < this.sidebarUnitCardEls.length; i++) {
+        this.sidebarUnitCardEls[i].classList.remove('selected');
       }
+      this.selectedUnit = null;
     }
   };
 
@@ -621,24 +630,26 @@ export class Game {
     this.updateUI();
   }
 
+  private handleSidebarClick = (e: MouseEvent) => {
+    if (this.isPaused) return;
+    const card = (e.target as HTMLElement | null)?.closest<HTMLElement>('.unit-card');
+    if (!card || card.classList.contains('unavailable')) return;
+
+    SoundManager.getInstance().playClick();
+    if (card.classList.contains('selected')) {
+      card.classList.remove('selected');
+      this.selectedUnit = null;
+    } else {
+      for (let i = 0; i < this.sidebarUnitCardEls.length; i++) {
+        this.sidebarUnitCardEls[i].classList.remove('selected');
+      }
+      card.classList.add('selected');
+      this.selectedUnit = card.dataset.unit || null;
+    }
+  };
+
   bindUnitCardEvents() {
-    const unitCards = document.querySelectorAll('.unit-card');
-    unitCards.forEach(card => {
-      card.addEventListener('click', (e) => {
-        const target = e.currentTarget as HTMLElement;
-        if (target.classList.contains('unavailable')) return;
-        
-        SoundManager.getInstance().playClick();
-        if (target.classList.contains('selected')) {
-           target.classList.remove('selected');
-           this.selectedUnit = null;
-        } else {
-           unitCards.forEach(c => c.classList.remove('selected'));
-           target.classList.add('selected');
-           this.selectedUnit = target.dataset.unit || null;
-        }
-      });
-    });
+    this.sidebarUnitCardEls = Array.from(document.querySelectorAll<HTMLElement>('#sidebar .unit-card'));
   }
 
   startNextBattle(nextCity: string | undefined, nextLevel: number, defenders: string[]) {
@@ -652,6 +663,9 @@ export class Game {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('languagechange', this.handleLanguageChange);
 
+    const sidebar = document.getElementById('sidebar');
+    sidebar?.addEventListener('click', this.handleSidebarClick);
+
     this.canvas.addEventListener('mousemove', this.handleMouseMove);
     this.canvas.addEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.addEventListener('click', this.handleCanvasClick);
@@ -662,14 +676,17 @@ export class Game {
   }
 
   handleThemeChange = () => {
+    this.isLightTheme = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
     this.updateRealmHeader();
     this.updateUI();
+    if (this.isPaused) {
+      this.draw();
+    }
   };
 
   handleMouseMove = (e: MouseEvent) => {
-    const rect = this.canvas.getBoundingClientRect();
-    this.mouseX = e.clientX - rect.left;
-    this.mouseY = e.clientY - rect.top;
+    this.mouseX = e.offsetX;
+    this.mouseY = e.offsetY;
 
     const cell = this.grid.getCellFromCoordinates(this.mouseX, this.mouseY);
     this.hoverCell = cell ? { row: cell.row, col: cell.col } : null;
@@ -682,9 +699,9 @@ export class Game {
   };
 
   handleCanvasClick = (e: MouseEvent) => {
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    if (this.isPaused && this.gameState === 'playing') return;
+    const x = e.offsetX;
+    const y = e.offsetY;
 
     // Handle Victory / Defeat Button Clicks
     if (this.gameState === 'defeat' || this.gameState === 'victory') {
@@ -695,7 +712,7 @@ export class Game {
         SoundManager.getInstance().playClick();
         if (this.gameState === 'victory') {
           const nextUnlockedCity = (this.realm === 'svartalfheim' && this.city)
-            ? MapMenu.getNextUnlockedCity(this.city)
+            ? getNextUnlockedCity(this.city)
             : null;
           if (nextUnlockedCity) {
             const nextLevel = CITY_LEVELS[nextUnlockedCity] || (this.level + 1);
@@ -1664,8 +1681,6 @@ export class Game {
   }
 
   checkCollisions(deltaTime: number) {
-    this.updateAttackerRowBuckets();
-
     for (let pi = 0; pi < this.projectiles.length; pi++) {
       const proj = this.projectiles[pi];
       if (proj.markedForDeletion) continue;
@@ -1971,11 +1986,13 @@ export class Game {
       this.odinCommandTimer -= deltaTime;
     }
 
+    const dtScale = deltaTime / 16.667;
+
     // Update floating texts (O(1) swap-and-pop with object pool)
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
       const ft = this.floatingTexts[i];
       ft.life += deltaTime;
-      ft.y += ft.vy;
+      ft.y += ft.vy * dtScale;
       ft.alpha = Math.max(0, 1 - ft.life / ft.maxLife);
       if (ft.life >= ft.maxLife) {
         const last = this.floatingTexts.pop();
@@ -1991,9 +2008,9 @@ export class Game {
     const h = this.height;
     for (let i = 0; i < this.weatherParticles.length; i++) {
       const p = this.weatherParticles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.angle += p.vAngle;
+      p.x += p.vx * dtScale;
+      p.y += p.vy * dtScale;
+      p.angle += p.vAngle * dtScale;
 
       if (p.x < -20 || p.x > w + 20 || p.y < -20 || p.y > h + 20) {
         this.setWeatherParticleProps(p, false);
@@ -2161,13 +2178,16 @@ export class Game {
       if (this.defenders[i].markedForDeletion) { anyDefDel = true; break; }
     }
     if (anyDefDel) {
-      this.defenders = this.defenders.filter(d => {
+      let writeIdx = 0;
+      for (let i = 0; i < this.defenders.length; i++) {
+        const d = this.defenders[i];
         if (d.markedForDeletion) {
-          this.particles.emit(d.x + d.width/2, d.y + d.height/2, '#4caf50', 20, 5, 4, 400); 
-          return false;
+          this.particles.emit(d.x + d.width * 0.5, d.y + d.height * 0.5, '#4caf50', 20, 5, 4, 400);
+        } else {
+          this.defenders[writeIdx++] = d;
         }
-        return true;
-      });
+      }
+      this.defenders.length = writeIdx;
     }
 
     let anyAttDel = false;
@@ -2175,9 +2195,14 @@ export class Game {
       if (this.attackers[i].markedForDeletion) { anyAttDel = true; break; }
     }
     if (anyAttDel) {
-      this.attackers = this.attackers.filter(a => {
-        if (a.markedForDeletion) {
-          this.zombiesKilled++;
+      let writeIdx = 0;
+      for (let i = 0; i < this.attackers.length; i++) {
+        const a = this.attackers[i];
+        if (!a.markedForDeletion) {
+          this.attackers[writeIdx++] = a;
+          continue;
+        }
+        this.zombiesKilled++;
           if (!a.swallowed) {
             const acx = a.x + a.width * 0.5;
             const acy = a.y + a.height * 0.5;
@@ -2297,10 +2322,8 @@ export class Game {
               soulColor: wispColor
             });
           }
-          return false;
-        }
-        return true;
-      });
+      }
+      this.attackers.length = writeIdx;
     }
 
     let anyProjDel = false;
@@ -2308,7 +2331,13 @@ export class Game {
       if (this.projectiles[i].markedForDeletion) { anyProjDel = true; break; }
     }
     if (anyProjDel) {
-      this.projectiles = this.projectiles.filter(p => !p.markedForDeletion);
+      let writeIdx = 0;
+      for (let i = 0; i < this.projectiles.length; i++) {
+        if (!this.projectiles[i].markedForDeletion) {
+          this.projectiles[writeIdx++] = this.projectiles[i];
+        }
+      }
+      this.projectiles.length = writeIdx;
     }
 
     let anyValkDel = false;
@@ -2316,7 +2345,13 @@ export class Game {
       if (this.valkyries[i].markedForDeletion) { anyValkDel = true; break; }
     }
     if (anyValkDel) {
-      this.valkyries = this.valkyries.filter(v => !v.markedForDeletion);
+      let writeIdx = 0;
+      for (let i = 0; i < this.valkyries.length; i++) {
+        if (!this.valkyries[i].markedForDeletion) {
+          this.valkyries[writeIdx++] = this.valkyries[i];
+        }
+      }
+      this.valkyries.length = writeIdx;
     }
   }
 
@@ -2329,7 +2364,7 @@ export class Game {
 
     ctx.scale(dpr, dpr);
     ctx.save();
-    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
+    const isLight = this.isLightTheme;
 
     // Procedural stone masonry fortification wall
     const wallGrad = ctx.createLinearGradient(0, 0, wallW, 0);
@@ -3785,8 +3820,8 @@ export class Game {
     ctx.save();
     
     const wallW = this.grid.startX;
-    const dpr = window.devicePixelRatio || 1;
-    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
+    const dpr = getEffectiveDpr();
+    const isLight = this.isLightTheme;
     const currentTheme = isLight ? 'light' : 'dark';
 
     // Fast-path: draw cached static masonry and fortification architecture
@@ -4399,6 +4434,475 @@ export class Game {
     ctx.restore();
   }
 
+  private getMoteSprite(
+    fillColor: string,
+    shadowColor: string,
+    blur: number,
+    isEllipse: boolean = false
+  ): HTMLCanvasElement {
+    const dpr = getEffectiveDpr();
+    const key = `${dpr}|${fillColor}|${shadowColor}|${blur}|${isEllipse ? 1 : 0}`;
+    const existing = this.cachedMoteSprites.get(key);
+    if (existing) return existing;
+
+    const logicalSize = 36;
+    const half = logicalSize * 0.5;
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(logicalSize * dpr);
+    c.height = Math.ceil(logicalSize * dpr);
+    const sctx = c.getContext('2d')!;
+    sctx.scale(dpr, dpr);
+    sctx.fillStyle = fillColor;
+    sctx.shadowColor = shadowColor;
+    sctx.shadowBlur = blur;
+    sctx.beginPath();
+    if (isEllipse) {
+      sctx.ellipse(half, half, 6.4, 3.2, 0, 0, Math.PI * 2);
+    } else {
+      sctx.arc(half, half, 4, 0, Math.PI * 2);
+    }
+    sctx.fill();
+    this.cachedMoteSprites.set(key, c);
+    return c;
+  }
+
+  private buildWaterwheelSprite(dpr: number, wheelR: number, isLight: boolean): HTMLCanvasElement {
+    const half = Math.ceil(wheelR + 24);
+    const size = half * 2;
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(size * dpr);
+    c.height = Math.ceil(size * dpr);
+    const ctx = c.getContext('2d')!;
+    ctx.scale(dpr, dpr);
+    ctx.translate(half, half);
+
+    // Outer Aged Canal Bronze Rim
+    ctx.strokeStyle = isLight ? '#475569' : '#0a1a20';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.arc(0, 0, wheelR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Polished Bronze & Teal Tread band with runes
+    ctx.strokeStyle = '#14b8a6';
+    ctx.lineWidth = 3.5;
+    ctx.shadowColor = '#2dd4bf';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Inner basalt timber rim
+    ctx.strokeStyle = isLight ? '#0f766e' : '#042f2e';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(0, 0, wheelR - 12, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Runic inscriptions along the bronze rim
+    const rimRunes = ['ᚨ', 'ᛚ', 'ᛏ', 'ᛗ', 'ᚲ', 'ᚱ', 'ᚦ', 'ᛟ'];
+    ctx.font = 'bold 9.5px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#5eead4';
+    ctx.shadowColor = '#14b8a6';
+    ctx.shadowBlur = 6;
+    for (let ri = 0; ri < 8; ri++) {
+      const rAng = (ri * Math.PI * 2) / 8;
+      ctx.fillText(rimRunes[ri], Math.cos(rAng) * (wheelR - 6), Math.sin(rAng) * (wheelR - 6));
+    }
+    ctx.shadowBlur = 0;
+
+    // 16 Bucket Paddles & Radial Spoke Beams
+    const numPaddles = 16;
+    for (let pIdx = 0; pIdx < numPaddles; pIdx++) {
+      const pAng = (pIdx * Math.PI * 2) / numPaddles;
+      ctx.save();
+      ctx.rotate(pAng);
+
+      ctx.fillStyle = isLight
+        ? (pIdx % 2 === 0 ? '#64748b' : '#475569')
+        : (pIdx % 2 === 0 ? '#111c22' : '#0b1317');
+      ctx.fillRect(-4, 0, 8, wheelR - 10);
+
+      ctx.fillStyle = '#0d9488';
+      ctx.fillRect(-6, wheelR * 0.55 - 3, 12, 6);
+
+      ctx.fillStyle = '#0f766e';
+      ctx.beginPath();
+      ctx.roundRect(wheelR - 14, -6, 26, 12, 3);
+      ctx.fill();
+      ctx.strokeStyle = '#5eead4';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // Central Bronze Axle Hub
+    ctx.fillStyle = isLight ? '#475569' : '#081014';
+    ctx.beginPath();
+    ctx.arc(0, 0, 32, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#14b8a6';
+    ctx.lineWidth = 3.5;
+    ctx.stroke();
+
+    // Center Gear Teeth
+    ctx.fillStyle = '#0d9488';
+    for (let g = 0; g < 10; g++) {
+      const ga = (g * Math.PI * 2) / 10;
+      ctx.fillRect(Math.cos(ga) * 28 - 4, Math.sin(ga) * 28 - 4, 8, 8);
+    }
+
+    // Center Core Cap
+    ctx.fillStyle = isLight ? '#0f766e' : '#042f2e';
+    ctx.beginPath();
+    ctx.arc(0, 0, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5eead4';
+    ctx.shadowColor = '#14b8a6';
+    ctx.shadowBlur = 8;
+    ctx.font = 'bold 12px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ᛱ', 0, 1);
+    ctx.shadowBlur = 0;
+
+    this.cachedWaterwheelRadius = half;
+    return c;
+  }
+
+  private ensureWaterwayAtmosCache(dpr: number, w: number, h: number, gridX: number, isLight: boolean) {
+    const key = `ww|${dpr}|${w}|${h}|${gridX}|${this.city || ''}|${isLight ? 1 : 0}`;
+    if (this.cachedAtmosKey === key && this.cachedAtmosBackCanvas && this.cachedAtmosFrontCanvas && this.cachedWaterwheelCanvas) {
+      return;
+    }
+    this.cachedAtmosKey = key;
+
+    // 1. Back Canvas: Sky + River base + Cavern Ceiling + Static Stalactite Cones
+    const back = document.createElement('canvas');
+    back.width = Math.ceil(w * dpr);
+    back.height = Math.ceil(h * dpr);
+    const bctx = back.getContext('2d')!;
+    bctx.scale(dpr, dpr);
+
+    const skyGrad = bctx.createLinearGradient(gridX, 0, w, h * 0.7);
+    if (isLight) {
+      if (this.city === 'andvaris-falls') {
+        skyGrad.addColorStop(0, '#f0f9ff');
+        skyGrad.addColorStop(0.35, '#e0f2fe');
+        skyGrad.addColorStop(0.75, '#bae6fd');
+        skyGrad.addColorStop(1, '#7dd3fc');
+      } else {
+        skyGrad.addColorStop(0, '#f0fdfa');
+        skyGrad.addColorStop(0.35, '#e6fffa');
+        skyGrad.addColorStop(0.75, '#ccfbf1');
+        skyGrad.addColorStop(1, '#99f6e4');
+      }
+    } else {
+      skyGrad.addColorStop(0, '#0a161b');
+      skyGrad.addColorStop(0.35, '#071015');
+      skyGrad.addColorStop(0.75, '#04090c');
+      skyGrad.addColorStop(1, '#020507');
+    }
+    bctx.fillStyle = skyGrad;
+    bctx.fillRect(gridX, 0, w - gridX, h);
+
+    const riverTopY = h * 0.28;
+    const riverBotY = h * 0.78;
+    const riverGrad = bctx.createLinearGradient(gridX, riverTopY, gridX, riverBotY);
+    if (isLight) {
+      riverGrad.addColorStop(0, '#e0f2fe');
+      riverGrad.addColorStop(0.3, '#bae6fd');
+      riverGrad.addColorStop(0.65, '#7dd3fc');
+      riverGrad.addColorStop(1, '#38bdf8');
+    } else {
+      riverGrad.addColorStop(0, '#04171d');
+      riverGrad.addColorStop(0.3, '#0b323c');
+      riverGrad.addColorStop(0.65, '#07242c');
+      riverGrad.addColorStop(1, '#031116');
+    }
+    bctx.fillStyle = riverGrad;
+    bctx.fillRect(gridX, riverTopY, w - gridX, riverBotY - riverTopY);
+
+    bctx.fillStyle = isLight ? '#cbd5e1' : '#060d10';
+    bctx.beginPath();
+    bctx.moveTo(gridX, 0);
+    bctx.lineTo(gridX, h * 0.16);
+    bctx.quadraticCurveTo(w * 0.45, h * 0.22, w * 0.55, h * 0.14);
+    bctx.quadraticCurveTo(w * 0.68, h * 0.25, w * 0.82, h * 0.16);
+    bctx.quadraticCurveTo(w * 0.92, h * 0.20, w, h * 0.12);
+    bctx.lineTo(w, 0);
+    bctx.closePath();
+    bctx.fill();
+
+    const stalactites = [
+      { x: w * 0.38, len: 45, w: 14 },
+      { x: w * 0.44, len: 65, w: 18 },
+      { x: w * 0.52, len: 38, w: 12 },
+      { x: w * 0.61, len: 75, w: 20 },
+      { x: w * 0.69, len: 50, w: 15 },
+      { x: w * 0.80, len: 80, w: 22 },
+      { x: w * 0.89, len: 42, w: 14 },
+      { x: w * 0.96, len: 60, w: 16 },
+    ];
+    bctx.fillStyle = isLight ? '#94a3b8' : '#0a1317';
+    bctx.beginPath();
+    for (let si = 0; si < stalactites.length; si++) {
+      const st = stalactites[si];
+      bctx.moveTo(st.x - st.w * 0.5, 0);
+      bctx.lineTo(st.x + st.w * 0.5, 0);
+      bctx.lineTo(st.x, st.len);
+      bctx.closePath();
+    }
+    bctx.fill();
+    this.cachedAtmosBackCanvas = back;
+
+    // 2. Rotating Waterwheel Sprite
+    const wheelR = Math.min(85, (riverBotY - riverTopY) * 0.50);
+    this.cachedWaterwheelCanvas = this.buildWaterwheelSprite(dpr, wheelR, isLight);
+
+    // 3. Right Embankment Wall & River Gate Strip (width 88px on right edge)
+    const stripW = 88;
+    const stripLeft = w - stripW;
+    const front = document.createElement('canvas');
+    front.width = Math.ceil(stripW * dpr);
+    front.height = Math.ceil(h * dpr);
+    const fctx = front.getContext('2d')!;
+    fctx.scale(dpr, dpr);
+    fctx.translate(-stripLeft, 0);
+
+    const rWallW = 56;
+    const rWallX = w - rWallW;
+
+    const rCastShadow = fctx.createLinearGradient(rWallX - 24, 0, rWallX, 0);
+    rCastShadow.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    rCastShadow.addColorStop(1, isLight ? 'rgba(15, 23, 42, 0.22)' : 'rgba(2, 6, 8, 0.72)');
+    fctx.fillStyle = rCastShadow;
+    fctx.fillRect(rWallX - 24, 0, 24, h);
+
+    const rWallGrad = fctx.createLinearGradient(rWallX, 0, w, 0);
+    if (isLight) {
+      rWallGrad.addColorStop(0, '#e2e8f0');
+      rWallGrad.addColorStop(0.45, '#cbd5e1');
+      rWallGrad.addColorStop(1, '#94a3b8');
+    } else {
+      rWallGrad.addColorStop(0, '#0b161b');
+      rWallGrad.addColorStop(0.45, '#122229');
+      rWallGrad.addColorStop(1, '#070f13');
+    }
+    fctx.fillStyle = rWallGrad;
+    fctx.fillRect(rWallX, 0, rWallW, h);
+
+    const rCourses = [34, 30, 36, 32, 34, 28, 36];
+    let rCurY = 0;
+    let rCIdx = 0;
+    while (rCurY < h) {
+      const cH = rCourses[rCIdx % rCourses.length];
+      const nextY = Math.min(h, rCurY + cH);
+      fctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(2, 6, 8, 0.75)';
+      fctx.fillRect(rWallX, nextY - 2, rWallW, 2.5);
+      fctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.45)' : 'rgba(45, 212, 191, 0.09)';
+      fctx.fillRect(rWallX, rCurY, rWallW, 1.5);
+      const vJointX = rWallX + 18 + ((rCIdx % 2) * 18);
+      fctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(2, 6, 8, 0.65)';
+      fctx.fillRect(vJointX, rCurY, 2, cH);
+      fctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.35)' : 'rgba(45, 212, 191, 0.06)';
+      fctx.fillRect(vJointX + 2, rCurY, 1, cH);
+      rCurY = nextY;
+      rCIdx++;
+    }
+
+    const rSeepGrad = fctx.createLinearGradient(rWallX, 0, w, 0);
+    rSeepGrad.addColorStop(0, isLight ? 'rgba(20, 184, 166, 0.18)' : 'rgba(20, 184, 166, 0.24)');
+    rSeepGrad.addColorStop(0.6, isLight ? 'rgba(13, 148, 136, 0.06)' : 'rgba(13, 148, 136, 0.09)');
+    rSeepGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    fctx.fillStyle = rSeepGrad;
+    fctx.fillRect(rWallX, 0, rWallW, h);
+
+    fctx.fillStyle = isLight ? '#0d9488' : '#061014';
+    fctx.fillRect(rWallX, 0, 11, h);
+    const rBeamG = fctx.createLinearGradient(rWallX, 0, rWallX + 10, 0);
+    if (isLight) {
+      rBeamG.addColorStop(0, '#115e59');
+      rBeamG.addColorStop(0.35, '#2dd4bf');
+      rBeamG.addColorStop(0.75, '#0d9488');
+      rBeamG.addColorStop(1, '#0f766e');
+    } else {
+      rBeamG.addColorStop(0, '#040b0e');
+      rBeamG.addColorStop(0.35, '#14b8a6');
+      rBeamG.addColorStop(0.75, '#0f766e');
+      rBeamG.addColorStop(1, '#081419');
+    }
+    fctx.fillStyle = rBeamG;
+    fctx.fillRect(rWallX, 0, 10, h);
+
+    for (let r = 0; r <= this.grid.rows; r++) {
+      const ly = r * this.grid.cellHeight;
+      fctx.fillStyle = isLight ? '#94a3b8' : '#0a181f';
+      fctx.beginPath();
+      fctx.moveTo(rWallX - 4, ly - 5);
+      fctx.lineTo(w, ly - 6);
+      fctx.lineTo(w, ly + 6);
+      fctx.lineTo(rWallX - 4, ly + 5);
+      fctx.closePath();
+      fctx.fill();
+      fctx.strokeStyle = '#0f766e';
+      fctx.lineWidth = 1.2;
+      fctx.stroke();
+
+      fctx.fillStyle = '#b45309';
+      fctx.fillRect(rWallX - 4, ly - 3.5, 14, 7);
+      fctx.strokeStyle = '#f59e0b';
+      fctx.lineWidth = 1;
+      fctx.strokeRect(rWallX - 4, ly - 3.5, 14, 7);
+    }
+
+    fctx.fillStyle = '#2dd4bf';
+    fctx.shadowColor = '#2dd4bf';
+    fctx.shadowBlur = 4;
+    fctx.beginPath();
+    for (let ri = 0; ri < Math.floor(h / 26); ri++) {
+      const ry = 13 + ri * 26;
+      fctx.moveTo(rWallX + 7.3, ry);
+      fctx.arc(rWallX + 5, ry, 2.3, 0, Math.PI * 2);
+    }
+    fctx.fill();
+    fctx.shadowBlur = 0;
+
+    const rEmbW = 28;
+    const rEmbX = rWallX + 18;
+    const rEmbTop = Math.max(24, h * 0.05);
+    const rEmbFloor = Math.max(72, h * 0.16);
+    fctx.fillStyle = isLight ? '#475569' : '#03070a';
+    fctx.beginPath();
+    fctx.moveTo(rEmbX, rEmbTop + rEmbW / 2);
+    fctx.arc(rEmbX + rEmbW / 2, rEmbTop + rEmbW / 2, rEmbW / 2, Math.PI, 0);
+    fctx.lineTo(rEmbX + rEmbW, rEmbFloor);
+    fctx.lineTo(rEmbX, rEmbFloor);
+    fctx.closePath();
+    fctx.fill();
+    const rForgeGlow = fctx.createRadialGradient(rEmbX + rEmbW / 2, rEmbTop + 24, 2, rEmbX + rEmbW / 2, rEmbTop + 24, rEmbW * 0.75);
+    rForgeGlow.addColorStop(0, 'rgba(245, 158, 11, 0.42)');
+    rForgeGlow.addColorStop(0.6, 'rgba(20, 184, 166, 0.15)');
+    rForgeGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    fctx.fillStyle = rForgeGlow;
+    fctx.fill();
+    fctx.strokeStyle = '#0f766e';
+    fctx.lineWidth = 2;
+    fctx.stroke();
+    fctx.fillStyle = '#b45309';
+    fctx.fillRect(rEmbX - 3, rEmbFloor - 4, rEmbW + 6, 5);
+    fctx.fillStyle = '#14b8a6';
+    fctx.fillRect(rEmbX - 4, rEmbFloor - 5, rEmbW + 8, 2);
+
+    const rGateTop = h * 0.23;
+    const rGateH = h * 0.56;
+    const rGateW = 40;
+    const rGateX = rWallX + 12;
+    const rGateCenterX = rGateX + rGateW / 2;
+
+    fctx.fillStyle = isLight ? '#cbd5e1' : '#0a161c';
+    fctx.beginPath();
+    fctx.moveTo(rGateX - 4, rGateTop + 22);
+    fctx.arc(rGateCenterX, rGateTop + 22, rGateW / 2 + 4, Math.PI, 0);
+    fctx.lineTo(rGateX + rGateW + 4, rGateTop + rGateH);
+    fctx.lineTo(rGateX - 4, rGateTop + rGateH);
+    fctx.closePath();
+    fctx.fill();
+    fctx.strokeStyle = '#0f766e';
+    fctx.lineWidth = 2;
+    fctx.stroke();
+
+    fctx.fillStyle = isLight ? '#334155' : '#020507';
+    fctx.beginPath();
+    fctx.moveTo(rGateX, rGateTop + 22);
+    fctx.arc(rGateCenterX, rGateTop + 22, rGateW / 2, Math.PI, 0);
+    fctx.lineTo(rGateX + rGateW, rGateTop + rGateH);
+    fctx.lineTo(rGateX, rGateTop + rGateH);
+    fctx.closePath();
+    fctx.fill();
+
+    fctx.fillStyle = isLight ? '#e2e8f0' : '#162830';
+    fctx.beginPath();
+    fctx.moveTo(rGateCenterX - 8, rGateTop - 3);
+    fctx.lineTo(rGateCenterX + 8, rGateTop - 3);
+    fctx.lineTo(rGateCenterX + 6, rGateTop + 17);
+    fctx.lineTo(rGateCenterX - 6, rGateTop + 17);
+    fctx.closePath();
+    fctx.fill();
+    fctx.strokeStyle = '#14b8a6';
+    fctx.lineWidth = 1.3;
+    fctx.stroke();
+    fctx.fillStyle = '#2dd4bf';
+    fctx.shadowColor = '#14b8a6';
+    fctx.shadowBlur = 7;
+    fctx.font = 'bold 11px serif';
+    fctx.textAlign = 'center';
+    fctx.fillText('ᚦ', rGateCenterX, rGateTop + 12);
+    fctx.shadowBlur = 0;
+
+    fctx.strokeStyle = isLight ? '#475569' : '#1e293b';
+    fctx.lineWidth = 3.2;
+    const rNumBars = 3;
+    fctx.beginPath();
+    for (let bar = 0; bar < rNumBars; bar++) {
+      const bx = rGateX + 8 + bar * 12;
+      fctx.moveTo(bx, rGateTop + 20);
+      fctx.lineTo(bx, rGateTop + rGateH - 6);
+    }
+    fctx.stroke();
+
+    for (let rail = 0; rail < 3; rail++) {
+      const ry = rGateTop + 42 + rail * (rGateH * 0.25);
+      fctx.fillStyle = isLight ? '#0f766e' : '#0f272e';
+      fctx.fillRect(rGateX + 2, ry - 3.5, rGateW - 4, 7);
+      fctx.strokeStyle = '#14b8a6';
+      fctx.lineWidth = 1;
+      fctx.strokeRect(rGateX + 2, ry - 3.5, rGateW - 4, 7);
+
+      fctx.fillStyle = '#2dd4bf';
+      fctx.beginPath();
+      for (let rv = 0; rv < rNumBars; rv++) {
+        const rvx = rGateX + 8 + rv * 12;
+        fctx.moveTo(rvx + 1.6, ry);
+        fctx.arc(rvx, ry, 1.6, 0, Math.PI * 2);
+      }
+      fctx.fill();
+    }
+
+    const rSpillTop = rGateTop + rGateH - 30;
+    const rGateWater = fctx.createLinearGradient(rGateX, rSpillTop, rGateX, rGateTop + rGateH);
+    rGateWater.addColorStop(0, 'rgba(13, 148, 136, 0.35)');
+    rGateWater.addColorStop(0.5, 'rgba(45, 212, 191, 0.65)');
+    rGateWater.addColorStop(1, 'rgba(204, 251, 241, 0.88)');
+    fctx.fillStyle = rGateWater;
+    fctx.fillRect(rGateX + 2, rSpillTop, rGateW - 4, 30);
+
+    fctx.fillStyle = isLight ? '#94a3b8' : '#081216';
+    fctx.fillRect(rGateX - 4, rGateTop + rGateH - 5, rGateW + 8, 9);
+    fctx.fillStyle = '#14b8a6';
+    fctx.fillRect(rGateX - 4, rGateTop + rGateH - 5, rGateW + 8, 2);
+
+    const rLanternYs = [Math.max(44, h * 0.19), Math.min(h - 36, rGateTop + rGateH + 34)];
+    for (let li = 0; li < rLanternYs.length; li++) {
+      const lx = rWallX + 18;
+      const ly = rLanternYs[li];
+      fctx.fillStyle = isLight ? '#475569' : '#1e293b';
+      fctx.fillRect(lx - 4, ly - 3, 14, 5);
+      fctx.fillRect(lx - 1, ly - 12, 4, 12);
+      fctx.fillStyle = isLight ? '#cbd5e1' : '#081216';
+      fctx.beginPath();
+      fctx.roundRect(lx - 7, ly - 22, 16, 17, 3);
+      fctx.fill();
+      fctx.strokeStyle = '#14b8a6';
+      fctx.lineWidth = 1.4;
+      fctx.stroke();
+    }
+
+    this.cachedAtmosFrontCanvas = front;
+  }
+
   // Draw 100% Procedural Animated Living Realm Environments
   drawAtmosphere() {
     const ctx = this.ctx;
@@ -4406,52 +4910,19 @@ export class Game {
     const h = this.height;
     const time = Date.now() / 1000;
     const gridX = this.grid.startX;
-    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
+    const isLight = this.isLightTheme;
 
     // === ALTHJOF'S WHEEL & ANDVARI'S FALLS: SUBTERRANEAN DWARVEN WATERWAYS & CANAL RAPIDS ===
     if (this.isDwarvenWaterwayCity()) {
       ctx.save();
-
-      // ── 1. SKY / CAVERN GORGE AMBIENCE ──
-      const skyGrad = ctx.createLinearGradient(gridX, 0, w, h * 0.7);
-      if (isLight) {
-        if (this.city === 'andvaris-falls') {
-          skyGrad.addColorStop(0, '#f0f9ff');
-          skyGrad.addColorStop(0.35, '#e0f2fe');
-          skyGrad.addColorStop(0.75, '#bae6fd');
-          skyGrad.addColorStop(1, '#7dd3fc');
-        } else {
-          skyGrad.addColorStop(0, '#f0fdfa');
-          skyGrad.addColorStop(0.35, '#e6fffa');
-          skyGrad.addColorStop(0.75, '#ccfbf1');
-          skyGrad.addColorStop(1, '#99f6e4');
-        }
-      } else {
-        skyGrad.addColorStop(0, '#0a161b');
-        skyGrad.addColorStop(0.35, '#071015');
-        skyGrad.addColorStop(0.75, '#04090c');
-        skyGrad.addColorStop(1, '#020507');
+      const dpr = getEffectiveDpr();
+      this.ensureWaterwayAtmosCache(dpr, w, h, gridX, isLight);
+      if (this.cachedAtmosBackCanvas) {
+        ctx.drawImage(this.cachedAtmosBackCanvas, 0, 0, w, h);
       }
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(gridX, 0, w - gridX, h);
 
-      // ── 2. SUBTERRANEAN WATERWAY CANAL (Cascading rapids flowing behind grid) ──
       const riverTopY = h * 0.28;
       const riverBotY = h * 0.78;
-      const riverGrad = ctx.createLinearGradient(gridX, riverTopY, gridX, riverBotY);
-      if (isLight) {
-        riverGrad.addColorStop(0, '#e0f2fe');
-        riverGrad.addColorStop(0.3, '#bae6fd');
-        riverGrad.addColorStop(0.65, '#7dd3fc');
-        riverGrad.addColorStop(1, '#38bdf8');
-      } else {
-        riverGrad.addColorStop(0, '#04171d');
-        riverGrad.addColorStop(0.3, '#0b323c');
-        riverGrad.addColorStop(0.65, '#07242c');
-        riverGrad.addColorStop(1, '#031116');
-      }
-      ctx.fillStyle = riverGrad;
-      ctx.fillRect(gridX, riverTopY, w - gridX, riverBotY - riverTopY);
 
       // Animated Water Torrents & Current Flow Lines
       ctx.save();
@@ -4474,54 +4945,30 @@ export class Game {
       }
       ctx.restore();
 
-      // ── 3. CAVERN VAULT ROCK CEILING & STALACTITES ──
-      ctx.fillStyle = isLight ? '#cbd5e1' : '#060d10';
-      ctx.beginPath();
-      ctx.moveTo(gridX, 0);
-      ctx.lineTo(gridX, h * 0.16);
-      ctx.quadraticCurveTo(w * 0.45, h * 0.22, w * 0.55, h * 0.14);
-      ctx.quadraticCurveTo(w * 0.68, h * 0.25, w * 0.82, h * 0.16);
-      ctx.quadraticCurveTo(w * 0.92, h * 0.20, w, h * 0.12);
-      ctx.lineTo(w, 0);
-      ctx.closePath();
-      ctx.fill();
-
-      // Stalactites hanging from cavern ceiling with bioluminescent crystal tips
-      const stalactites = [
-        { x: w * 0.38, len: 45, w: 14, crystal: true },
-        { x: w * 0.44, len: 65, w: 18, crystal: true },
-        { x: w * 0.52, len: 38, w: 12, crystal: false },
-        { x: w * 0.61, len: 75, w: 20, crystal: true },
-        { x: w * 0.69, len: 50, w: 15, crystal: false },
-        { x: w * 0.80, len: 80, w: 22, crystal: true },
-        { x: w * 0.89, len: 42, w: 14, crystal: true },
-        { x: w * 0.96, len: 60, w: 16, crystal: true },
+      // Bioluminescent crystal tips on ceiling stalactites (0 shadowBlur, crisp radial glow)
+      const crystalStalactites = [
+        { x: w * 0.38, len: 45, idx: 0 },
+        { x: w * 0.44, len: 65, idx: 1 },
+        { x: w * 0.61, len: 75, idx: 3 },
+        { x: w * 0.80, len: 80, idx: 5 },
+        { x: w * 0.89, len: 42, idx: 6 },
+        { x: w * 0.96, len: 60, idx: 7 },
       ];
-      for (let si = 0; si < stalactites.length; si++) {
-        const st = stalactites[si];
-        ctx.fillStyle = isLight ? '#94a3b8' : '#0a1317';
+      for (let ci = 0; ci < crystalStalactites.length; ci++) {
+        const st = crystalStalactites[ci];
+        const cPulse = Math.sin(time * 2.2 + st.idx * 1.5) * 0.25 + 0.75;
+        ctx.fillStyle = `rgba(20, 184, 166, ${0.22 * cPulse})`;
         ctx.beginPath();
-        ctx.moveTo(st.x - st.w * 0.5, 0);
-        ctx.lineTo(st.x + st.w * 0.5, 0);
-        ctx.lineTo(st.x, st.len);
+        ctx.arc(st.x, st.len + 7, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `rgba(45, 212, 191, ${0.8 * cPulse})`;
+        ctx.beginPath();
+        ctx.moveTo(st.x, st.len - 3);
+        ctx.lineTo(st.x + 4, st.len + 10);
+        ctx.lineTo(st.x, st.len + 16);
+        ctx.lineTo(st.x - 4, st.len + 10);
         ctx.closePath();
         ctx.fill();
-
-        if (st.crystal) {
-          const cPulse = Math.sin(time * 2.2 + si * 1.5) * 0.25 + 0.75;
-          // Crystal cluster
-          ctx.fillStyle = `rgba(45, 212, 191, ${0.75 * cPulse})`;
-          ctx.shadowColor = '#14b8a6';
-          ctx.shadowBlur = 10 * cPulse;
-          ctx.beginPath();
-          ctx.moveTo(st.x, st.len - 3);
-          ctx.lineTo(st.x + 4, st.len + 10);
-          ctx.lineTo(st.x, st.len + 16);
-          ctx.lineTo(st.x - 4, st.len + 10);
-          ctx.closePath();
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        }
       }
 
       // ── 4. DWARVEN AQUEDUCT BRIDGE & CATWALK (Midground) ──
@@ -4610,109 +5057,17 @@ export class Game {
       ctx.save();
       ctx.translate(wheelX, wheelY);
 
-      // Wheel shadow on rear stone wall
+      // Wheel shadow on rear stone wall + Cached Rotating Great Waterwheel Sprite
       ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(0, 0, 0, 0.65)';
       ctx.beginPath();
       ctx.arc(6, 6, wheelR + 8, 0, Math.PI * 2);
       ctx.fill();
 
-      // Outer Aged Canal Bronze Rim
       ctx.rotate(wheelRot);
-      ctx.strokeStyle = isLight ? '#475569' : '#0a1a20';
-      ctx.lineWidth = 14;
-      ctx.beginPath();
-      ctx.arc(0, 0, wheelR, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Polished Bronze & Teal Tread band with runes
-      ctx.strokeStyle = '#14b8a6';
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = '#2dd4bf';
-      ctx.shadowBlur = 8;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // Inner basalt timber rim
-      ctx.strokeStyle = isLight ? '#0f766e' : '#042f2e';
-      ctx.lineWidth = 8;
-      ctx.beginPath();
-      ctx.arc(0, 0, wheelR - 12, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Runic inscriptions along the bronze rim
-      const rimRunes = ['ᚨ', 'ᛚ', 'ᛏ', 'ᛗ', 'ᚲ', 'ᚱ', 'ᚦ', 'ᛟ'];
-      ctx.font = 'bold 9.5px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      for (let ri = 0; ri < 8; ri++) {
-        const rAng = (ri * Math.PI * 2) / 8;
-        const rx = Math.cos(rAng) * (wheelR - 6);
-        const ry = Math.sin(rAng) * (wheelR - 6);
-        ctx.fillStyle = '#5eead4';
-        ctx.shadowColor = '#14b8a6';
-        ctx.shadowBlur = 6;
-        ctx.fillText(rimRunes[ri], rx, ry);
+      if (this.cachedWaterwheelCanvas) {
+        const wr = this.cachedWaterwheelRadius;
+        ctx.drawImage(this.cachedWaterwheelCanvas, -wr, -wr, wr * 2, wr * 2);
       }
-      ctx.shadowBlur = 0;
-
-      // 16 Bucket Paddles & Radial Spoke Beams
-      const numPaddles = 16;
-      for (let pIdx = 0; pIdx < numPaddles; pIdx++) {
-        const pAng = (pIdx * Math.PI * 2) / numPaddles;
-        ctx.save();
-        ctx.rotate(pAng);
-
-        // Heavy Bog-Oak Spoke
-        ctx.fillStyle = isLight
-          ? (pIdx % 2 === 0 ? '#64748b' : '#475569')
-          : (pIdx % 2 === 0 ? '#111c22' : '#0b1317');
-        ctx.fillRect(-4, 0, 8, wheelR - 10);
-
-        // Aged Bronze Spoke Reinforcement Ring
-        ctx.fillStyle = '#0d9488';
-        ctx.fillRect(-6, wheelR * 0.55 - 3, 12, 6);
-
-        // Water Bucket Blade on the rim
-        ctx.fillStyle = '#0f766e';
-        ctx.beginPath();
-        ctx.roundRect(wheelR - 14, -6, 26, 12, 3);
-        ctx.fill();
-        ctx.strokeStyle = '#5eead4';
-        ctx.lineWidth = 1.4;
-        ctx.stroke();
-
-        ctx.restore();
-      }
-
-      // Central Bronze Axle Hub
-      ctx.fillStyle = isLight ? '#475569' : '#081014';
-      ctx.beginPath();
-      ctx.arc(0, 0, 32, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#14b8a6';
-      ctx.lineWidth = 3.5;
-      ctx.stroke();
-
-      // Center Gear Teeth (rotates with wheel)
-      for (let g = 0; g < 10; g++) {
-        const ga = (g * Math.PI * 2) / 10;
-        ctx.fillStyle = '#0d9488';
-        ctx.fillRect(Math.cos(ga) * 28 - 4, Math.sin(ga) * 28 - 4, 8, 8);
-      }
-
-      // Center Core Cap
-      ctx.fillStyle = isLight ? '#0f766e' : '#042f2e';
-      ctx.beginPath();
-      ctx.arc(0, 0, 16, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#5eead4';
-      ctx.shadowColor = '#14b8a6';
-      ctx.shadowBlur = 8;
-      ctx.font = 'bold 12px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('ᛱ', 0, 1);
-      ctx.shadowBlur = 0;
 
       ctx.restore(); // Exit wheel rotation
 
@@ -4740,308 +5095,62 @@ export class Game {
       }
       ctx.restore(); // Exit distant waterwheel alpha
 
-      // ── 6b. DWARVEN CANAL OUTER EMBANKMENT & RIVER GATE (Right Bulwark) ──
+      // ── 6b. DWARVEN CANAL OUTER EMBANKMENT & RIVER GATE (Cached Static Masonry + Live Accents) ──
       const rWallW = 56;
       const rWallX = w - rWallW;
-
-      // Cast shadow from right embankment onto the canal waters
-      const rCastShadow = ctx.createLinearGradient(rWallX - 24, 0, rWallX, 0);
-      rCastShadow.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      rCastShadow.addColorStop(1, isLight ? 'rgba(15, 23, 42, 0.22)' : 'rgba(2, 6, 8, 0.72)');
-      ctx.fillStyle = rCastShadow;
-      ctx.fillRect(rWallX - 24, 0, 24, h);
-
-      // Subterranean Dwarven Basalt Embankment Wall
-      const rWallGrad = ctx.createLinearGradient(rWallX, 0, w, 0);
-      if (isLight) {
-        rWallGrad.addColorStop(0, '#e2e8f0');
-        rWallGrad.addColorStop(0.45, '#cbd5e1');
-        rWallGrad.addColorStop(1, '#94a3b8');
-      } else {
-        rWallGrad.addColorStop(0, '#0b161b');
-        rWallGrad.addColorStop(0.45, '#122229');
-        rWallGrad.addColorStop(1, '#070f13');
-      }
-      ctx.fillStyle = rWallGrad;
-      ctx.fillRect(rWallX, 0, rWallW, h);
-
-      // Staggered Basalt Ashlar Masonry Courses & Vertical Head Joints
-      const rCourses = [34, 30, 36, 32, 34, 28, 36];
-      let rCurY = 0;
-      let rCIdx = 0;
-      while (rCurY < h) {
-        const cH = rCourses[rCIdx % rCourses.length];
-        const nextY = Math.min(h, rCurY + cH);
-
-        // Recessed mortar bed joint
-        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(2, 6, 8, 0.75)';
-        ctx.fillRect(rWallX, nextY - 2, rWallW, 2.5);
-
-        // Top stone edge bevel highlight (mineral sheen)
-        ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.45)' : 'rgba(45, 212, 191, 0.09)';
-        ctx.fillRect(rWallX, rCurY, rWallW, 1.5);
-
-        // Staggered vertical stone joints
-        const vJointX = rWallX + 18 + ((rCIdx % 2) * 18);
-        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(2, 6, 8, 0.65)';
-        ctx.fillRect(vJointX, rCurY, 2, cH);
-        ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.35)' : 'rgba(45, 212, 191, 0.06)';
-        ctx.fillRect(vJointX + 2, rCurY, 1, cH);
-
-        rCurY = nextY;
-        rCIdx++;
-      }
-
-      // Aquamarine Mineral Seepage along right embankment
-      const rSeepGrad = ctx.createLinearGradient(rWallX, 0, w, 0);
-      rSeepGrad.addColorStop(0, isLight ? 'rgba(20, 184, 166, 0.18)' : 'rgba(20, 184, 166, 0.24)');
-      rSeepGrad.addColorStop(0.6, isLight ? 'rgba(13, 148, 136, 0.06)' : 'rgba(13, 148, 136, 0.09)');
-      rSeepGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = rSeepGrad;
-      ctx.fillRect(rWallX, 0, rWallW, h);
-
-      // Heavy Dwarven Bronze Canal Rim Border Beam facing the battlefield
-      ctx.fillStyle = isLight ? '#0d9488' : '#061014';
-      ctx.fillRect(rWallX, 0, 11, h);
-      const rBeamG = ctx.createLinearGradient(rWallX, 0, rWallX + 10, 0);
-      if (isLight) {
-        rBeamG.addColorStop(0, '#115e59');
-        rBeamG.addColorStop(0.35, '#2dd4bf');
-        rBeamG.addColorStop(0.75, '#0d9488');
-        rBeamG.addColorStop(1, '#0f766e');
-      } else {
-        rBeamG.addColorStop(0, '#040b0e');
-        rBeamG.addColorStop(0.35, '#14b8a6');
-        rBeamG.addColorStop(0.75, '#0f766e');
-        rBeamG.addColorStop(1, '#081419');
-      }
-      ctx.fillStyle = rBeamG;
-      ctx.fillRect(rWallX, 0, 10, h);
-
-      // Fortified Stone Buttress Corbels & Bronze Pier Caps aligned with grid lanes
-      for (let r = 0; r <= this.grid.rows; r++) {
-        const ly = r * this.grid.cellHeight;
-        ctx.fillStyle = isLight ? '#94a3b8' : '#0a181f';
-        ctx.beginPath();
-        ctx.moveTo(rWallX - 4, ly - 5);
-        ctx.lineTo(w, ly - 6);
-        ctx.lineTo(w, ly + 6);
-        ctx.lineTo(rWallX - 4, ly + 5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#0f766e';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-
-        // Burnished bronze nose cap on each right-side lane pier
-        ctx.fillStyle = '#b45309';
-        ctx.fillRect(rWallX - 4, ly - 3.5, 14, 7);
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(rWallX - 4, ly - 3.5, 14, 7);
-      }
-
-      // Water-ward glowing teal rivets along the right border beam
-      ctx.fillStyle = '#2dd4bf';
-      ctx.shadowColor = '#2dd4bf';
-      ctx.shadowBlur = 4;
-      for (let ri = 0; ri < Math.floor(h / 26); ri++) {
-        ctx.beginPath();
-        ctx.arc(rWallX + 5, 13 + ri * 26, 2.3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.shadowBlur = 0;
-
-      // Upper Dwarven Watch-Embrasure Slit & Warm Forge Lookout (above the River Gate)
-      const rEmbW = 28;
-      const rEmbX = rWallX + 18;
-      const rEmbTop = Math.max(24, h * 0.05);
-      const rEmbFloor = Math.max(72, h * 0.16);
-      ctx.fillStyle = isLight ? '#475569' : '#03070a';
-      ctx.beginPath();
-      ctx.moveTo(rEmbX, rEmbTop + rEmbW / 2);
-      ctx.arc(rEmbX + rEmbW / 2, rEmbTop + rEmbW / 2, rEmbW / 2, Math.PI, 0);
-      ctx.lineTo(rEmbX + rEmbW, rEmbFloor);
-      ctx.lineTo(rEmbX, rEmbFloor);
-      ctx.closePath();
-      ctx.fill();
-      const rForgeGlow = ctx.createRadialGradient(rEmbX + rEmbW / 2, rEmbTop + 24, 2, rEmbX + rEmbW / 2, rEmbTop + 24, rEmbW * 0.75);
-      rForgeGlow.addColorStop(0, 'rgba(245, 158, 11, 0.42)');
-      rForgeGlow.addColorStop(0.6, 'rgba(20, 184, 166, 0.15)');
-      rForgeGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = rForgeGlow;
-      ctx.fill();
-      ctx.strokeStyle = '#0f766e';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      // Bronze parapet rail on upper watch slit
-      ctx.fillStyle = '#b45309';
-      ctx.fillRect(rEmbX - 3, rEmbFloor - 4, rEmbW + 6, 5);
-      ctx.fillStyle = '#14b8a6';
-      ctx.fillRect(rEmbX - 4, rEmbFloor - 5, rEmbW + 8, 2);
-
-      // Breached Outer River Gate Arch (From where attackers advance)
       const rGateTop = h * 0.23;
       const rGateH = h * 0.56;
       const rGateW = 40;
       const rGateX = rWallX + 12;
-      const rGateCenterX = rGateX + rGateW / 2;
+      const rSpillTop = rGateTop + rGateH - 30;
 
-      // Heavy Dressed Stone Arch Surround & Bronze Voussoir Ring
-      ctx.fillStyle = isLight ? '#cbd5e1' : '#0a161c';
-      ctx.beginPath();
-      ctx.moveTo(rGateX - 4, rGateTop + 22);
-      ctx.arc(rGateCenterX, rGateTop + 22, rGateW / 2 + 4, Math.PI, 0);
-      ctx.lineTo(rGateX + rGateW + 4, rGateTop + rGateH);
-      ctx.lineTo(rGateX - 4, rGateTop + rGateH);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#0f766e';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Canal Culvert Portal Void
-      ctx.fillStyle = isLight ? '#334155' : '#020507';
-      ctx.beginPath();
-      ctx.moveTo(rGateX, rGateTop + 22);
-      ctx.arc(rGateCenterX, rGateTop + 22, rGateW / 2, Math.PI, 0);
-      ctx.lineTo(rGateX + rGateW, rGateTop + rGateH);
-      ctx.lineTo(rGateX, rGateTop + rGateH);
-      ctx.closePath();
-      ctx.fill();
-
-      // Arch Stone Keystone with Glowing Rune ᚦ (Gateway / Threshold)
-      ctx.fillStyle = isLight ? '#e2e8f0' : '#162830';
-      ctx.beginPath();
-      ctx.moveTo(rGateCenterX - 8, rGateTop - 3);
-      ctx.lineTo(rGateCenterX + 8, rGateTop - 3);
-      ctx.lineTo(rGateCenterX + 6, rGateTop + 17);
-      ctx.lineTo(rGateCenterX - 6, rGateTop + 17);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#14b8a6';
-      ctx.lineWidth = 1.3;
-      ctx.stroke();
-      ctx.fillStyle = '#2dd4bf';
-      ctx.shadowColor = '#14b8a6';
-      ctx.shadowBlur = 7;
-      ctx.font = 'bold 11px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('ᚦ', rGateCenterX, rGateTop + 12);
-      ctx.shadowBlur = 0;
-
-      // Heavy Iron Portcullis Bars & Riveted Bronze Cross-Girders
-      ctx.strokeStyle = isLight ? '#475569' : '#1e293b';
-      ctx.lineWidth = 3.2;
-      const rNumBars = 3;
-      for (let bar = 0; bar < rNumBars; bar++) {
-        const bx = rGateX + 8 + bar * 12;
-        ctx.beginPath();
-        ctx.moveTo(bx, rGateTop + 20);
-        ctx.lineTo(bx, rGateTop + rGateH - 6);
-        ctx.stroke();
-      }
-      for (let rail = 0; rail < 3; rail++) {
-        const ry = rGateTop + 42 + rail * (rGateH * 0.25);
-        ctx.fillStyle = isLight ? '#0f766e' : '#0f272e';
-        ctx.fillRect(rGateX + 2, ry - 3.5, rGateW - 4, 7);
-        ctx.strokeStyle = '#14b8a6';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(rGateX + 2, ry - 3.5, rGateW - 4, 7);
-
-        // Glowing bronze-teal rivets at bar intersections
-        ctx.fillStyle = '#2dd4bf';
-        for (let rv = 0; rv < rNumBars; rv++) {
-          const rvx = rGateX + 8 + rv * 12;
-          ctx.beginPath();
-          ctx.arc(rvx, ry, 1.6, 0, Math.PI * 2);
-          ctx.fill();
-        }
+      if (this.cachedAtmosFrontCanvas) {
+        ctx.drawImage(this.cachedAtmosFrontCanvas, w - 88, 0, 88, h);
       }
 
-      // Pulsing Carved Dwarven Ward Runes along the right gate jamb
+      // Pulsing Carved Dwarven Ward Runes along the right gate jamb (zero shadowBlur)
       const rGateRunes = ['ᚦ', 'ᚢ', 'ᚱ', 'ᛋ'];
       const rRuneGlow = 0.5 + Math.sin(time * 2.0 + 1.1) * 0.25;
       ctx.fillStyle = `rgba(45, 212, 191, ${rRuneGlow})`;
-      ctx.shadowColor = '#14b8a6';
-      ctx.shadowBlur = 6;
       ctx.font = 'bold 10px serif';
       ctx.textAlign = 'center';
       for (let ri = 0; ri < rGateRunes.length; ri++) {
         ctx.fillText(rGateRunes[ri], rWallX + 5.5, rGateTop + 48 + ri * 38);
       }
-      ctx.shadowBlur = 0;
 
-      // Torrents pouring into the battlefield from the breached gate spillway
-      const rSpillTop = rGateTop + rGateH - 30;
-      const rGateWater = ctx.createLinearGradient(rGateX, rSpillTop, rGateX, rGateTop + rGateH);
-      rGateWater.addColorStop(0, 'rgba(13, 148, 136, 0.35)');
-      rGateWater.addColorStop(0.5, 'rgba(45, 212, 191, 0.65)');
-      rGateWater.addColorStop(1, 'rgba(204, 251, 241, 0.88)');
-      ctx.fillStyle = rGateWater;
-      ctx.fillRect(rGateX + 2, rSpillTop, rGateW - 4, 30);
-
-      // Animated churning water ripple lines & foam at the right gate spillway
+      // Animated churning water ripple lines at the right gate spillway (single batched stroke)
       ctx.strokeStyle = 'rgba(240, 253, 250, 0.85)';
       ctx.lineWidth = 1.3;
+      ctx.beginPath();
       for (let wLine = 0; wLine < 3; wLine++) {
         const wY = rSpillTop + 7 + wLine * 8;
         const wPhase = -time * 4.5 + wLine * 1.6;
-        ctx.beginPath();
         ctx.moveTo(rGateX + 3, wY);
         for (let wx = rGateX + 3; wx <= rGateX + rGateW - 3; wx += 5) {
           ctx.lineTo(wx, wY + Math.sin(wx * 0.22 + wPhase) * 2.0);
         }
-        ctx.stroke();
       }
+      ctx.stroke();
 
-      // Heavy Stone Culvert Base Threshold & Bronze Sill
-      ctx.fillStyle = isLight ? '#94a3b8' : '#081216';
-      ctx.fillRect(rGateX - 4, rGateTop + rGateH - 5, rGateW + 8, 9);
-      ctx.fillStyle = '#14b8a6';
-      ctx.fillRect(rGateX - 4, rGateTop + rGateH - 5, rGateW + 8, 2);
-
-      // Twin Animated Water-Ward Wall Lanterns on the Right Embankment (Upper & Lower)
-      const rLanternPositions = [
-        { x: rWallX + 18, y: Math.max(44, h * 0.19) },
-        { x: rWallX + 18, y: Math.min(h - 36, rGateTop + rGateH + 34) }
-      ];
-      for (let li = 0; li < rLanternPositions.length; li++) {
-        const rLt = rLanternPositions[li];
+      // Twin Animated Water-Ward Wall Lanterns Dynamic Light Halos
+      const rLanternYs = [Math.max(44, h * 0.19), Math.min(h - 36, rGateTop + rGateH + 34)];
+      for (let li = 0; li < rLanternYs.length; li++) {
+        const lx = rWallX + 18;
+        const ly = rLanternYs[li];
         const rFlicker = Math.sin(time * 6.4 + li * 2.3 + 1.0) * 0.18 + 0.82;
-
-        // Iron mounting bracket
-        ctx.fillStyle = isLight ? '#475569' : '#1e293b';
-        ctx.fillRect(rLt.x - 4, rLt.y - 3, 14, 5);
-        ctx.fillRect(rLt.x - 1, rLt.y - 12, 4, 12);
-
-        // Lantern housing cage
-        ctx.fillStyle = isLight ? '#cbd5e1' : '#081216';
-        ctx.beginPath();
-        ctx.roundRect(rLt.x - 7, rLt.y - 22, 16, 17, 3);
-        ctx.fill();
-        ctx.strokeStyle = '#14b8a6';
-        ctx.lineWidth = 1.4;
-        ctx.stroke();
-
-        // Dynamic radial light halo
-        const rHalo = ctx.createRadialGradient(rLt.x + 1, rLt.y - 13, 1, rLt.x + 1, rLt.y - 13, 30 * rFlicker);
+        const rHalo = ctx.createRadialGradient(lx + 1, ly - 13, 1, lx + 1, ly - 13, 30 * rFlicker);
         rHalo.addColorStop(0, `rgba(45, 212, 191, ${0.42 * rFlicker})`);
         rHalo.addColorStop(0.5, `rgba(13, 148, 136, ${0.15 * rFlicker})`);
         rHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = rHalo;
         ctx.beginPath();
-        ctx.arc(rLt.x + 1, rLt.y - 13, 30 * rFlicker, 0, Math.PI * 2);
+        ctx.arc(lx + 1, ly - 13, 30 * rFlicker, 0, Math.PI * 2);
         ctx.fill();
 
-        // Glowing lantern core
         ctx.fillStyle = `rgba(204, 251, 241, ${0.92 * rFlicker})`;
-        ctx.shadowColor = '#2dd4bf';
-        ctx.shadowBlur = 9 * rFlicker;
         ctx.beginPath();
-        ctx.arc(rLt.x + 1, rLt.y - 13, 4.2, 0, Math.PI * 2);
+        ctx.arc(lx + 1, ly - 13, 4.2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
       }
 
       // ── 7. COOL SUBTERRANEAN RIVER MIST & FOG BANKS ──
@@ -5056,20 +5165,19 @@ export class Game {
         ctx.fillRect(fX - 180, fY - 60, 360, 120);
       }
 
-      // ── 8. DRIFTING WATER SPRAY PARTICLES & GLOWING CAVE MOTES ──
+      // ── 8. DRIFTING WATER SPRAY PARTICLES & GLOWING CAVE MOTES (Pre-baked Sprites, 0 shadowBlur) ──
+      const sprayLargeSprite = this.getMoteSprite('#a5f3fc', '#14b8a6', 6);
+      const spraySmallSprite = this.getMoteSprite('#2dd4bf', '#14b8a6', 6);
       ctx.globalCompositeOperation = 'lighter';
-      for (const p of this.weatherParticles) {
-        const pColor = (p.size > 2.6)
-          ? `rgba(165, 243, 252, ${p.alpha * 0.65})`
-          : `rgba(45, 212, 191, ${p.alpha * 0.85})`;
-        ctx.fillStyle = pColor;
-        ctx.shadowColor = '#14b8a6';
-        ctx.shadowBlur = 6;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+      for (let i = 0; i < this.weatherParticles.length; i++) {
+        const p = this.weatherParticles[i];
+        const isLarge = p.size > 2.6;
+        const sprite = isLarge ? sprayLargeSprite : spraySmallSprite;
+        ctx.globalAlpha = isLarge ? p.alpha * 0.65 : p.alpha * 0.85;
+        const drawSz = 36 * (p.size / 4);
+        ctx.drawImage(sprite, p.x - drawSz * 0.5, p.y - drawSz * 0.5, drawSz, drawSz);
       }
-      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
 
       ctx.restore();
@@ -5316,16 +5424,21 @@ export class Game {
       ctx.fillStyle = fogGrad;
       ctx.fillRect(gridX, h * 0.80, w - gridX, h * 0.20);
 
-      // ── 9. FORGE CAVE EMBER SPARKS — subtle, high-contrast in both Light & Dark ──
+      // ── 9. FORGE CAVE EMBER SPARKS (Pre-baked Sprite, 0 shadowBlur) ──
+      const emberSprite = this.getMoteSprite(
+        isLight ? '#d97706' : '#ffc850',
+        isLight ? '#d97706' : '#ffaa00',
+        isLight ? 4 : 5
+      );
       ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
-      for (const p of this.weatherParticles) {
+      for (let i = 0; i < this.weatherParticles.length; i++) {
+        const p = this.weatherParticles[i];
         const sparkAlpha = p.alpha * (0.35 + Math.sin(time * 2.5 + p.x * 0.01) * 0.20);
-        ctx.fillStyle = isLight ? `rgba(217, 119, 6, ${Math.min(0.9, sparkAlpha * 0.9)})` : `rgba(255,200,80,${sparkAlpha * 0.5})`;
-        ctx.shadowColor = isLight ? '#d97706' : '#ffaa00';
-        ctx.shadowBlur = isLight ? 4 : 5;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 0.7, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = isLight ? Math.min(0.9, sparkAlpha * 0.9) : Math.min(1, sparkAlpha * 0.5);
+        const drawSz = 36 * ((p.size * 0.7) / 4);
+        ctx.drawImage(emberSprite, p.x - drawSz * 0.5, p.y - drawSz * 0.5, drawSz, drawSz);
       }
-      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
 
       ctx.restore();
@@ -5411,18 +5524,22 @@ export class Game {
         ctx.fillRect(fogX - 200, fogY - 100, 400, 200);
       }
 
-      // 5. Blizzard Snow Particles (Swirling white & cyan snowflakes)
+      // 5. Blizzard Snow Particles (Pre-baked Ellipse Sprite, 0 shadowBlur)
+      const snowSprite = this.getMoteSprite(
+        isLight ? '#0284c7' : '#e1f5fe',
+        isLight ? '#38bdf8' : '#00e5ff',
+        5,
+        true
+      );
       ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
-      for (const p of this.weatherParticles) {
+      for (let i = 0; i < this.weatherParticles.length; i++) {
+        const p = this.weatherParticles[i];
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.angle);
-        ctx.fillStyle = isLight ? `rgba(2, 132, 199, ${p.alpha * 0.7})` : `rgba(225, 245, 254, ${p.alpha})`;
-        ctx.shadowColor = isLight ? '#38bdf8' : '#00e5ff';
-        ctx.shadowBlur = 5;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, p.size * 1.6, p.size * 0.8, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.globalAlpha = isLight ? p.alpha * 0.7 : p.alpha;
+        const drawSz = 36 * (p.size / 4);
+        ctx.drawImage(snowSprite, -drawSz * 0.5, -drawSz * 0.5, drawSz, drawSz);
         ctx.restore();
       }
       ctx.restore();
@@ -5439,60 +5556,60 @@ export class Game {
         ctx.fillStyle = sg;
         ctx.fillRect(shaftX - 40, 0, 80, h);
       }
-      for (const p of this.weatherParticles) {
-        ctx.fillStyle = isLight ? `rgba(217, 119, 6, ${p.alpha * 0.8})` : `rgba(255, 224, 130, ${p.alpha})`;
-        ctx.shadowColor = isLight ? '#f59e0b' : '#ffd54f';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+      const asgardSprite = this.getMoteSprite(isLight ? '#d97706' : '#ffe082', isLight ? '#f59e0b' : '#ffd54f', 8);
+      for (let i = 0; i < this.weatherParticles.length; i++) {
+        const p = this.weatherParticles[i];
+        ctx.globalAlpha = isLight ? p.alpha * 0.8 : p.alpha;
+        const drawSz = 36 * (p.size / 4);
+        ctx.drawImage(asgardSprite, p.x - drawSz * 0.5, p.y - drawSz * 0.5, drawSz, drawSz);
       }
       ctx.restore();
     } else if (this.realm === 'helheim') {
       // Ghostly pale blue-grey souls
       ctx.save();
       ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
-      for (const p of this.weatherParticles) {
-        ctx.fillStyle = isLight ? `rgba(100, 116, 139, ${p.alpha * 0.75})` : `rgba(144, 164, 174, ${p.alpha})`;
-        ctx.shadowColor = isLight ? '#475569' : '#607d8b';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+      const helSprite = this.getMoteSprite(isLight ? '#64748b' : '#90a4ae', isLight ? '#475569' : '#607d8b', 8);
+      for (let i = 0; i < this.weatherParticles.length; i++) {
+        const p = this.weatherParticles[i];
+        ctx.globalAlpha = isLight ? p.alpha * 0.75 : p.alpha;
+        const drawSz = 36 * (p.size / 4);
+        ctx.drawImage(helSprite, p.x - drawSz * 0.5, p.y - drawSz * 0.5, drawSz, drawSz);
       }
       ctx.restore();
     } else if (this.realm === 'muspelheim' || this.realm === 'svartalfheim') {
       // Burning underworld embers / forge sparks
       ctx.save();
       ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
-      for (const p of this.weatherParticles) {
-        const color = this.realm === 'svartalfheim'
-          ? (isLight ? `rgba(217, 119, 6, ${p.alpha * 0.85})` : `rgba(255, 179, 0, ${p.alpha})`)
-          : (isLight ? `rgba(220, 38, 38, ${p.alpha * 0.85})` : `rgba(255, 112, 67, ${p.alpha})`);
-        const shadow = this.realm === 'svartalfheim' ? (isLight ? '#d97706' : '#ff8f00') : (isLight ? '#dc2626' : '#ff5722');
-        ctx.fillStyle = color;
-        ctx.shadowColor = shadow;
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+      const fill = this.realm === 'svartalfheim'
+        ? (isLight ? '#d97706' : '#ffb300')
+        : (isLight ? '#dc2626' : '#ff7043');
+      const shadow = this.realm === 'svartalfheim'
+        ? (isLight ? '#d97706' : '#ff8f00')
+        : (isLight ? '#dc2626' : '#ff5722');
+      const sparkSprite = this.getMoteSprite(fill, shadow, 10);
+      for (let i = 0; i < this.weatherParticles.length; i++) {
+        const p = this.weatherParticles[i];
+        ctx.globalAlpha = isLight ? p.alpha * 0.85 : p.alpha;
+        const drawSz = 36 * (p.size / 4);
+        ctx.drawImage(sparkSprite, p.x - drawSz * 0.5, p.y - drawSz * 0.5, drawSz, drawSz);
       }
       ctx.restore();
     } else if (this.realm === 'vanaheim' || this.realm === 'alfheim') {
       // Bioluminescent floating spores or magical light motes
       ctx.save();
       ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
-      for (const p of this.weatherParticles) {
-        const color = this.realm === 'alfheim'
-          ? (isLight ? `rgba(219, 39, 119, ${p.alpha * 0.8})` : `rgba(255, 128, 171, ${p.alpha})`)
-          : (isLight ? `rgba(22, 163, 74, ${p.alpha * 0.8})` : `rgba(129, 199, 132, ${p.alpha})`);
-        const shadow = this.realm === 'alfheim' ? (isLight ? '#ec4899' : '#ff4081') : (isLight ? '#22c55e' : '#66bb6a');
-        ctx.fillStyle = color;
-        ctx.shadowColor = shadow;
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+      const fill = this.realm === 'alfheim'
+        ? (isLight ? '#db2777' : '#ff80ab')
+        : (isLight ? '#16a34a' : '#81c784');
+      const shadow = this.realm === 'alfheim'
+        ? (isLight ? '#ec4899' : '#ff4081')
+        : (isLight ? '#22c55e' : '#66bb6a');
+      const sporeSprite = this.getMoteSprite(fill, shadow, 8);
+      for (let i = 0; i < this.weatherParticles.length; i++) {
+        const p = this.weatherParticles[i];
+        ctx.globalAlpha = isLight ? p.alpha * 0.8 : p.alpha;
+        const drawSz = 36 * (p.size / 4);
+        ctx.drawImage(sporeSprite, p.x - drawSz * 0.5, p.y - drawSz * 0.5, drawSz, drawSz);
       }
       ctx.restore();
     }
@@ -5694,7 +5811,13 @@ export class Game {
       ctx.fillText(`⛔ ${t('occupied')}`, cx + cellW / 2, cy + cellH / 2);
     } else {
       // Valid Placement: Glowing Norse Rune Circle (Cyan for Towers/Siege/Ordnance, Green for Plants)
-      const defenderInfo = getDefenderInfo(this.selectedUnit, this.realm);
+      const langKey = (typeof document !== 'undefined' && document.body?.dataset.lang) || 'en';
+      const pKey = `${this.selectedUnit}|${this.realm}|${langKey}`;
+      if (this.cachedPreviewKey !== pKey) {
+        this.cachedPreviewKey = pKey;
+        this.cachedPreviewInfo = getDefenderInfo(this.selectedUnit, this.realm, false);
+      }
+      const defenderInfo = this.cachedPreviewInfo;
       const isTower = defenderInfo?.category !== 'plants';
       const pulse = (Math.sin(now * 4) + 1) / 2;
 
@@ -5716,6 +5839,7 @@ export class Game {
       ctx.roundRect(cx + 6, cy + 6, cellW - 12, cellH - 12, 10);
       ctx.fill();
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // Rotating Runic Circle on Tile Floor
       const centerX = cx + cellW / 2;
@@ -5740,12 +5864,10 @@ export class Game {
       ctx.font = 'bold 11px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ['ᚱ', 'ᚨ', 'ᚷ', 'ᚾ', 'ᚨ', 'ᚱ'].forEach((rune, idx) => {
+      for (let idx = 0; idx < Game.PREVIEW_RUNES.length; idx++) {
         const angle = (idx * Math.PI) / 3;
-        const rx = Math.cos(angle) * (radius - 8);
-        const ry = Math.sin(angle) * (radius - 8);
-        ctx.fillText(rune, rx, ry);
-      });
+        ctx.fillText(Game.PREVIEW_RUNES[idx], Math.cos(angle) * (radius - 8), Math.sin(angle) * (radius - 8));
+      }
       ctx.restore();
 
       // Attack Trajectory Guide Arrow down the row
@@ -5755,7 +5877,7 @@ export class Game {
           ? (isLight ? 'rgba(2, 132, 199, 0.45)' : 'rgba(56, 189, 248, 0.4)')
           : (isLight ? 'rgba(22, 163, 74, 0.4)' : 'rgba(129, 199, 132, 0.35)');
         ctx.lineWidth = 2;
-        ctx.setLineDash([8, 8]);
+        ctx.setLineDash(Game.DASH_8_8);
         ctx.beginPath();
         ctx.moveTo(centerX + 30, centerY);
         ctx.lineTo(this.width - 20, centerY);
@@ -5784,64 +5906,56 @@ export class Game {
     const ctx = this.ctx;
     const now = Date.now() / 1000;
 
-    for (const zombie of this.attackers) {
-      const zcx = zombie.x + zombie.width / 2;
-      const zcy = zombie.y + zombie.height / 2;
+    for (let ai = 0; ai < this.attackers.length; ai++) {
+      const zombie = this.attackers[ai];
+      if (!zombie.isSlowed && !zombie.isStunned) continue;
+      const zcx = zombie.x + zombie.width * 0.5;
+      const zcy = zombie.y + zombie.height * 0.5;
 
-      // 1. Slowed / Frozen Effect: Frost spikes and cyan chill aura
+      // 1. Slowed / Frozen Effect: Batched frost spikes & motes
       if (zombie.isSlowed) {
+        const baseY = zombie.y + zombie.height;
         ctx.save();
-        ctx.shadowColor = '#00e5ff';
-        ctx.shadowBlur = 12;
         ctx.fillStyle = 'rgba(0, 229, 255, 0.85)';
-        
-        // Ice crystal spikes around base and head
-        [-15, 0, 15].forEach((offset, idx) => {
+        ctx.beginPath();
+        for (let idx = 0; idx < 3; idx++) {
+          const offset = (idx - 1) * 15;
           const spikeH = 8 + (idx % 2) * 5;
-          ctx.beginPath();
-          ctx.moveTo(zcx + offset - 4, zombie.y + zombie.height);
-          ctx.lineTo(zcx + offset, zombie.y + zombie.height - spikeH);
-          ctx.lineTo(zcx + offset + 4, zombie.y + zombie.height);
+          ctx.moveTo(zcx + offset - 4, baseY);
+          ctx.lineTo(zcx + offset, baseY - spikeH);
+          ctx.lineTo(zcx + offset + 4, baseY);
           ctx.closePath();
-          ctx.fill();
-        });
+        }
+        ctx.fill();
 
-        // Frost particle motes
         ctx.fillStyle = '#84ffff';
+        ctx.beginPath();
         for (let i = 0; i < 3; i++) {
           const fx = zcx + Math.sin(now * 3 + i * 2) * 20;
           const fy = zcy + Math.cos(now * 3 + i * 2) * 25;
-          ctx.beginPath();
+          ctx.moveTo(fx + 2, fy);
           ctx.arc(fx, fy, 2, 0, Math.PI * 2);
-          ctx.fill();
         }
+        ctx.fill();
         ctx.restore();
       }
 
       // 2. Stunned / Buttered: Spinning stars above head
       if (zombie.isStunned) {
         ctx.save();
-        ctx.shadowColor = '#ffd54f';
-        ctx.shadowBlur = 10;
         ctx.fillStyle = '#fff59d';
-
-        // Butter slab on head
         ctx.fillRect(zcx - 10, zombie.y - 12, 20, 10);
         ctx.strokeStyle = '#fbc02d';
         ctx.lineWidth = 1;
         ctx.strokeRect(zcx - 10, zombie.y - 12, 20, 10);
 
-        // 3 Spinning golden stars
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 12px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         for (let i = 0; i < 3; i++) {
           const angle = now * 4 + (i * Math.PI * 2) / 3;
-          const sx = zcx + Math.cos(angle) * 16;
-          const sy = zombie.y - 18 + Math.sin(angle) * 6;
-          
-          ctx.fillStyle = '#ffd700';
-          ctx.font = 'bold 12px serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('★', sx, sy);
+          ctx.fillText('★', zcx + Math.cos(angle) * 16, zombie.y - 18 + Math.sin(angle) * 6);
         }
         ctx.restore();
       }
@@ -6086,28 +6200,67 @@ export class Game {
     }
   }
 
+  private getFloaterStamp(ft: FloatingText, isLight: boolean): { canvas: HTMLCanvasElement; w: number; h: number } {
+    const dpr = getEffectiveDpr();
+    const critFlag = ft.isCritical ? 1 : 0;
+    const key = `${dpr}|${isLight ? 1 : 0}|${critFlag}|${ft.color}|${ft.text}`;
+    const cached = this.cachedFloaterStamps.get(key);
+    if (cached) return cached;
+
+    if (this.cachedFloaterStamps.size >= 96) {
+      const oldestKey = this.cachedFloaterStamps.keys().next().value;
+      if (oldestKey !== undefined) this.cachedFloaterStamps.delete(oldestKey);
+    }
+
+    const font = ft.isCritical
+      ? 'bold 20px "Outfit", sans-serif'
+      : 'bold 15px "Outfit", sans-serif';
+    const blur = ft.isCritical ? 16 : 8;
+    const pad = blur + 8;
+
+    this.ctx.save();
+    this.ctx.font = font;
+    const textW = Math.ceil(this.ctx.measureText(ft.text).width);
+    this.ctx.restore();
+
+    const w = Math.max(24, textW + pad * 2);
+    const h = (ft.isCritical ? 26 : 20) + pad * 2;
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(w * dpr);
+    c.height = Math.ceil(h * dpr);
+    const sctx = c.getContext('2d')!;
+    sctx.scale(dpr, dpr);
+
+    const isWhiteText = ft.color.toLowerCase() === '#ffffff' || ft.color.toLowerCase() === '#fff';
+    const fillColor = (isLight && isWhiteText) ? '#0f172a' : ft.color;
+    sctx.font = font;
+    sctx.textAlign = 'center';
+    sctx.textBaseline = 'middle';
+    sctx.strokeStyle = (isLight && isWhiteText) ? 'rgba(255, 255, 255, 0.92)' : 'rgba(0, 0, 0, 0.85)';
+    sctx.shadowColor = (isLight && isWhiteText) ? 'rgba(255, 255, 255, 0.8)' : ft.color;
+    sctx.shadowBlur = blur;
+    sctx.fillStyle = fillColor;
+    sctx.lineWidth = ft.isCritical ? 4 : 2.5;
+    sctx.strokeText(ft.text, w * 0.5, h * 0.5);
+    sctx.shadowBlur = 0;
+    sctx.fillText(ft.text, w * 0.5, h * 0.5);
+
+    const entry = { canvas: c, w, h };
+    this.cachedFloaterStamps.set(key, entry);
+    return entry;
+  }
+
   drawFloatingTexts() {
     if (this.floatingTexts.length === 0) return;
     const ctx = this.ctx;
-    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
+    const isLight = this.isLightTheme;
     ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
     for (let i = 0; i < this.floatingTexts.length; i++) {
       const ft = this.floatingTexts[i];
+      if (ft.alpha <= 0.01) continue;
+      const stamp = this.getFloaterStamp(ft, isLight);
       ctx.globalAlpha = ft.alpha;
-      const isWhiteText = ft.color.toLowerCase() === '#ffffff' || ft.color.toLowerCase() === '#fff';
-      const fillColor = (isLight && isWhiteText) ? '#0f172a' : ft.color;
-      ctx.strokeStyle = (isLight && isWhiteText) ? 'rgba(255, 255, 255, 0.92)' : 'rgba(0, 0, 0, 0.85)';
-      ctx.shadowColor = (isLight && isWhiteText) ? 'rgba(255, 255, 255, 0.8)' : ft.color;
-      ctx.shadowBlur = ft.isCritical ? 16 : 8;
-      ctx.fillStyle = fillColor;
-      ctx.font = ft.isCritical
-        ? 'bold 20px "Outfit", "Inter", sans-serif'
-        : 'bold 15px "Outfit", "Inter", sans-serif';
-      ctx.lineWidth = ft.isCritical ? 4 : 2.5;
-      ctx.strokeText(ft.text, ft.x, ft.y);
-      ctx.fillText(ft.text, ft.x, ft.y);
+      ctx.drawImage(stamp.canvas, ft.x - stamp.w * 0.5, ft.y - stamp.h * 0.5, stamp.w, stamp.h);
     }
     ctx.restore();
   }
@@ -6405,7 +6558,7 @@ export class Game {
       // Buttons
       // 1. Next Level (if unlocked) or Play Again Button (Left)
       const nextUnlockedCity = (this.realm === 'svartalfheim' && this.city)
-        ? MapMenu.getNextUnlockedCity(this.city)
+        ? getNextUnlockedCity(this.city)
         : null;
       const victoryLeftLabel = nextUnlockedCity ? '✦ Next Level' : `↺ ${t('play_again')}`;
       ctx.fillStyle = isLight ? '#15803d' : 'rgba(46, 125, 50, 0.85)';
@@ -6505,7 +6658,7 @@ export class Game {
     this.drawAtmosphere();
 
     this.drawCastle();
-    this.grid.draw(ctx);
+    this.grid.draw(ctx, this.isLightTheme);
     
     for (let i = 0; i < this.valkyries.length; i++) this.valkyries[i].draw(ctx);
     for (let i = 0; i < this.defenders.length; i++) this.defenders[i].draw(ctx);
@@ -6539,7 +6692,7 @@ export class Game {
   }
 
   getBgGradient(ctx: CanvasRenderingContext2D): CanvasGradient {
-    const isLight = typeof document !== 'undefined' && document.body?.dataset.activeTheme === 'light';
+    const isLight = this.isLightTheme;
     const currentTheme = isLight ? 'light' : 'dark';
     if (
       this.cachedBgGradient &&
@@ -6627,18 +6780,20 @@ export class Game {
   }
 
   loop = (timestamp: number) => {
+    if (this.isPaused) return;
     const deltaTime = timestamp - this.lastTime;
     this.lastTime = timestamp;
 
-    if (!this.isPaused) {
-      this.update(Math.min(deltaTime, 100));
-      this.draw();
-    }
+    this.update(Math.min(deltaTime, 100));
+    this.draw();
 
-    this.animationId = requestAnimationFrame(this.loop);
+    if (!this.isPaused) {
+      this.animationId = requestAnimationFrame(this.loop);
+    }
   }
 
   start() {
+    this.isPaused = false;
     this.lastTime = performance.now();
     cancelAnimationFrame(this.animationId);
     this.animationId = requestAnimationFrame(this.loop);
@@ -6648,18 +6803,31 @@ export class Game {
     this.grid = new Grid(width, height, this.realm, this.city);
     this.cachedBgGradient = null;
     this.cachedCastleCanvas = null;
+    this.cachedAtmosKey = '';
+    this.cachedAtmosBackCanvas = null;
+    this.cachedAtmosFrontCanvas = null;
   }
   
   stop() {
+    this.isPaused = true;
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('languagechange', this.handleLanguageChange);
     window.removeEventListener('infiniteresourcessettingchanged', this.handleInfiniteResourcesSettingChange);
     window.removeEventListener('levelconfigchanged', this.handleInfiniteResourcesSettingChange);
     window.removeEventListener('ragnarok-theme-changed', this.handleThemeChange);
+    const sidebar = document.getElementById('sidebar');
+    sidebar?.removeEventListener('click', this.handleSidebarClick);
     this.canvas.removeEventListener('mousemove', this.handleMouseMove);
     this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.removeEventListener('click', this.handleCanvasClick);
     this.particles.clear();
+    this.cachedCastleCanvas = null;
+    this.cachedAtmosBackCanvas = null;
+    this.cachedAtmosFrontCanvas = null;
+    this.cachedWaterwheelCanvas = null;
+    this.cachedFloaterStamps.clear();
+    this.cachedMoteSprites.clear();
+    this.sidebarUnitCardEls = [];
     cancelAnimationFrame(this.animationId);
   }
 }

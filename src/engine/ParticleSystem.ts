@@ -51,11 +51,13 @@ export class Particle {
 }
 
 export class ParticleSystem {
+  private static readonly MAX_PARTICLES = 600;
   particles: Particle[] = [];
   private pool: Particle[] = [];
 
   emit(x: number, y: number, color: string, count: number, speed: number, size: number, life: number, gravity: number = 0.05) {
     for (let i = 0; i < count; i++) {
+      if (this.particles.length >= ParticleSystem.MAX_PARTICLES) break;
       const angle = Math.random() * Math.PI * 2;
       const currentSpeed = Math.random() * speed;
       const vx = Math.cos(angle) * currentSpeed;
@@ -83,7 +85,7 @@ export class ParticleSystem {
       const p = this.particles[i];
       p.update(deltaTime);
       if (p.life <= 0) {
-        if (this.pool.length < 300) {
+        if (this.pool.length < ParticleSystem.MAX_PARTICLES) {
           this.pool.push(p);
         }
         const last = this.particles.pop();
@@ -96,7 +98,7 @@ export class ParticleSystem {
 
   clear() {
     for (let i = 0; i < this.particles.length; i++) {
-      if (this.pool.length < 300) {
+      if (this.pool.length < ParticleSystem.MAX_PARTICLES) {
         this.pool.push(this.particles[i]);
       }
     }
@@ -106,8 +108,18 @@ export class ParticleSystem {
   draw(ctx: CanvasRenderingContext2D) {
     const len = this.particles.length;
     if (len === 0) return;
+    let lastColor = '';
+    const tau = Math.PI * 2;
     for (let i = 0; i < len; i++) {
-      this.particles[i].draw(ctx);
+      const p = this.particles[i];
+      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      if (p.color !== lastColor) {
+        lastColor = p.color;
+        ctx.fillStyle = lastColor;
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, tau);
+      ctx.fill();
     }
     ctx.globalAlpha = 1.0;
   }

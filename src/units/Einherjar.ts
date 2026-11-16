@@ -1,36 +1,62 @@
 import { Defender } from '../entities/Defender';
-import { Game } from '../engine/Game';
+import type { Game } from '../engine/Game';
 import { Projectile } from '../entities/Projectile';
 import { SoundManager } from '../engine/SoundManager';
+import { getEffectiveDpr } from '../engine/GameConfig';
 
 class LightSpear extends Projectile {
+  private static sprite: HTMLCanvasElement | null = null;
+  private static spriteDpr = 0;
+  private static readonly PAD = 16;
+  private static readonly LOGICAL_W = 56;
+  private static readonly LOGICAL_H = 44;
+
   constructor(x: number, y: number, row: number) {
     super(x, y, 24, 12, 1, 380, 45, row);
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
-    const cy = this.y + this.height / 2;
+  private static getSprite(): HTMLCanvasElement {
+    const dpr = getEffectiveDpr();
+    if (LightSpear.sprite && LightSpear.spriteDpr === dpr) return LightSpear.sprite;
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(LightSpear.LOGICAL_W * dpr);
+    c.height = Math.ceil(LightSpear.LOGICAL_H * dpr);
+    const sctx = c.getContext('2d')!;
+    sctx.scale(dpr, dpr);
 
-    ctx.save();
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#ffd54f';
+    const sx = LightSpear.PAD;
+    const cy = LightSpear.LOGICAL_H * 0.5;
+    sctx.shadowBlur = 12;
+    sctx.shadowColor = '#ffd54f';
 
-    // Glowing golden lance beam
-    const grad = ctx.createLinearGradient(this.x, cy, this.x + this.width, cy);
+    const grad = sctx.createLinearGradient(sx, cy, sx + 24, cy);
     grad.addColorStop(0, 'rgba(255, 235, 59, 0.4)');
     grad.addColorStop(0.7, '#fff59d');
     grad.addColorStop(1, '#ffffff');
 
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(this.x + this.width, cy);
-    ctx.lineTo(this.x, cy - 5);
-    ctx.lineTo(this.x + 4, cy);
-    ctx.lineTo(this.x, cy + 5);
-    ctx.closePath();
-    ctx.fill();
+    sctx.fillStyle = grad;
+    sctx.beginPath();
+    sctx.moveTo(sx + 24, cy);
+    sctx.lineTo(sx, cy - 5);
+    sctx.lineTo(sx + 4, cy);
+    sctx.lineTo(sx, cy + 5);
+    sctx.closePath();
+    sctx.fill();
 
-    ctx.restore();
+    LightSpear.sprite = c;
+    LightSpear.spriteDpr = dpr;
+    return c;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    const cy = this.y + this.height * 0.5;
+    ctx.drawImage(
+      LightSpear.getSprite(),
+      this.x - LightSpear.PAD,
+      cy - LightSpear.LOGICAL_H * 0.5,
+      LightSpear.LOGICAL_W,
+      LightSpear.LOGICAL_H
+    );
   }
 }
 
@@ -61,9 +87,9 @@ export class Einherjar extends Defender {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
 
       // Ground shadow
       ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
@@ -119,8 +145,13 @@ export class Einherjar extends Defender {
       // --- 2. Celestial Einherjar Standing Atop Watchtower ---
       ctx.save();
       const auraPulse = 0.8 + Math.sin(this.animTimer / 120) * 0.2;
-      ctx.shadowBlur = 18 * auraPulse;
-      ctx.shadowColor = 'rgba(255, 215, 0, 0.7)';
+      const auraGrad = ctx.createRadialGradient(cx, cy - 12, 4, cx, cy - 12, 30);
+      auraGrad.addColorStop(0, `rgba(255, 215, 0, ${0.38 * auraPulse})`);
+      auraGrad.addColorStop(1, 'rgba(255, 215, 0, 0)');
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 12, 30, 0, Math.PI * 2);
+      ctx.fill();
 
       // Robe / Body
       ctx.fillStyle = '#1e3a8a';

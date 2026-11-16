@@ -1,4 +1,12 @@
 import { SoundManager } from './SoundManager';
+import {
+  getEffectiveDpr,
+  PROGRESSION_ORDER,
+  INITIAL_UNLOCKED_CITY,
+  getUnlockedCities,
+  isCityUnlocked,
+  getNextUnlockedCity
+} from './GameConfig';
 import { t } from '../i18n';
 
 export interface LocationNode {
@@ -35,12 +43,22 @@ export class MapMenu {
   realmId: string;
   onSelectCity: (city: string) => void;
   animationId: number = 0;
+  isActive: boolean = false;
+  isPaused: boolean = false;
 
-  // Background images for dark and light themes
+  // Shared background images cached across MapMenu instances; loaded on demand per active theme
+  private static sharedDarkImg: HTMLImageElement | null = null;
+  private static sharedLightImg: HTMLImageElement | null = null;
+  private static sharedDarkLoaded: boolean = false;
+  private static sharedLightLoaded: boolean = false;
+  private static emberSpriteCache = new Map<string, HTMLCanvasElement>();
+  private static padlockSpriteCache = new Map<string, HTMLCanvasElement>();
+
   bgDarkImg: HTMLImageElement | null = null;
   bgLightImg: HTMLImageElement | null = null;
   bgDarkLoaded: boolean = false;
   bgLightLoaded: boolean = false;
+  private wrapCache = new Map<string, string[][]>();
 
   // Richly detailed locations ordered strictly by campaign difficulty (Level 1 to 7)
   locations: LocationNode[] = [
@@ -209,39 +227,11 @@ export class MapMenu {
     this.updateReturnBtnClearance();
   }
 
-  static readonly PROGRESSION_ORDER = [
-    'althjofs-wheel',
-    'andvaris-falls',
-    'ivaldis-workshop',
-    'jarnsmida-quarry',
-    'dvalins-depths',
-    'sindris-forge',
-    'nidavellir'
-  ];
-
-  static readonly INITIAL_UNLOCKED_CITY = 'althjofs-wheel';
-
-  static getUnlockedCities(): string[] {
-    try {
-      localStorage.removeItem('ragnarok_svartalfheim_unlocked');
-    } catch (e) {}
-    return [MapMenu.INITIAL_UNLOCKED_CITY];
-  }
-
-  static isCityUnlocked(cityId: string): boolean {
-    return MapMenu.getUnlockedCities().includes(cityId);
-  }
-
-  static getNextUnlockedCity(currentCityId: string): string | null {
-    const idx = MapMenu.PROGRESSION_ORDER.indexOf(currentCityId);
-    if (idx !== -1 && idx < MapMenu.PROGRESSION_ORDER.length - 1) {
-      const nextId = MapMenu.PROGRESSION_ORDER[idx + 1];
-      if (MapMenu.isCityUnlocked(nextId)) {
-        return nextId;
-      }
-    }
-    return null;
-  }
+  static readonly PROGRESSION_ORDER = PROGRESSION_ORDER;
+  static readonly INITIAL_UNLOCKED_CITY = INITIAL_UNLOCKED_CITY;
+  static getUnlockedCities = getUnlockedCities;
+  static isCityUnlocked = isCityUnlocked;
+  static getNextUnlockedCity = getNextUnlockedCity;
 
   static unlockNextCity(_currentCityId: string) {
     // Progression unlocking beyond the first level in Svartalfheim is currently disabled.
@@ -319,18 +309,149 @@ export class MapMenu {
     return this.getFrontierCity();
   }
 
-  loadBackgrounds() {
-    this.bgDarkImg = new Image();
-    this.bgDarkImg.src = '/assets/svartalfheim_map_dark.webp';
-    this.bgDarkImg.onload = () => {
-      this.bgDarkLoaded = true;
-    };
+  private ensureThemeImage(mode: 'dark' | 'light') {
+    if (mode === 'dark') {
+      if (!MapMenu.sharedDarkImg) {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => {
+          MapMenu.sharedDarkLoaded = true;
+          this.bgDarkLoaded = true;
+        };
+        img.src = '/assets/svartalfheim_map_dark.webp';
+        MapMenu.sharedDarkImg = img;
+      }
+      this.bgDarkImg = MapMenu.sharedDarkImg;
+      this.bgDarkLoaded = MapMenu.sharedDarkLoaded || Boolean(MapMenu.sharedDarkImg.complete && MapMenu.sharedDarkImg.naturalWidth > 0);
+      if (this.bgDarkLoaded) MapMenu.sharedDarkLoaded = true;
+    } else {
+      if (!MapMenu.sharedLightImg) {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => {
+          MapMenu.sharedLightLoaded = true;
+          this.bgLightLoaded = true;
+        };
+        img.src = '/assets/svartalfheim_map_light.webp';
+        MapMenu.sharedLightImg = img;
+      }
+      this.bgLightImg = MapMenu.sharedLightImg;
+      this.bgLightLoaded = MapMenu.sharedLightLoaded || Boolean(MapMenu.sharedLightImg.complete && MapMenu.sharedLightImg.naturalWidth > 0);
+      if (this.bgLightLoaded) MapMenu.sharedLightLoaded = true;
+    }
+  }
 
-    this.bgLightImg = new Image();
-    this.bgLightImg.src = '/assets/svartalfheim_map_light.webp';
-    this.bgLightImg.onload = () => {
-      this.bgLightLoaded = true;
-    };
+  onThemeChanged = () => {
+    const isLight = document.body.dataset.activeTheme === 'light';
+    this.ensureThemeImage(isLight ? 'light' : 'dark');
+  };
+
+  loadBackgrounds() {
+    const isLight = document.body.dataset.activeTheme === 'light';
+    this.ensureThemeImage(isLight ? 'light' : 'dark');
+    if (MapMenu.sharedDarkImg) {
+      this.bgDarkImg = MapMenu.sharedDarkImg;
+      this.bgDarkLoaded = MapMenu.sharedDarkLoaded;
+    }
+    if (MapMenu.sharedLightImg) {
+      this.bgLightImg = MapMenu.sharedLightImg;
+      this.bgLightLoaded = MapMenu.sharedLightLoaded;
+    }
+  }
+
+  private static getEmberSprite(color: string): HTMLCanvasElement {
+    let sprite = MapMenu.emberSpriteCache.get(color);
+    if (sprite) return sprite;
+    sprite = document.createElement('canvas');
+    sprite.width = 32;
+    sprite.height = 32;
+    const sctx = sprite.getContext('2d')!;
+    const cx = 16;
+    const cy = 16;
+    // Soft outer glow halo matching original shadowBlur
+    const grad = sctx.createRadialGradient(cx, cy, 2, cx, cy, 15);
+    grad.addColorStop(0, color);
+    grad.addColorStop(0.32, color);
+    grad.addColorStop(0.62, `${color}55`);
+    grad.addColorStop(1, `${color}00`);
+    sctx.fillStyle = grad;
+    sctx.beginPath();
+    sctx.arc(cx, cy, 15, 0, Math.PI * 2);
+    sctx.fill();
+    // Solid ember core
+    sctx.fillStyle = color;
+    sctx.beginPath();
+    sctx.arc(cx, cy, 4.8, 0, Math.PI * 2);
+    sctx.fill();
+    MapMenu.emberSpriteCache.set(color, sprite);
+    return sprite;
+  }
+
+  private static getPadlockSprite(isLight: boolean, dpr: number): HTMLCanvasElement {
+    const key = `${isLight ? 'light' : 'dark'}|${dpr}`;
+    let sprite = MapMenu.padlockSpriteCache.get(key);
+    if (sprite) return sprite;
+
+    const size = 52;
+    const ox = 26;
+    const oy = 22;
+    sprite = document.createElement('canvas');
+    sprite.width = Math.ceil(size * dpr);
+    sprite.height = Math.ceil(size * dpr);
+    const sctx = sprite.getContext('2d')!;
+    sctx.scale(dpr, dpr);
+
+    const lockW = 18;
+    const lockH = 15;
+    const lockY = oy + 2;
+
+    sctx.save();
+    sctx.shadowColor = isLight ? 'rgba(69, 26, 3, 0.45)' : 'rgba(253, 224, 71, 0.65)';
+    sctx.shadowBlur = isLight ? 6 : 10;
+
+    // Radiant gold & silver shackle
+    sctx.beginPath();
+    sctx.arc(ox, lockY - 1, 5.5, Math.PI, 0);
+    sctx.strokeStyle = isLight ? '#78350f' : '#fef08a';
+    sctx.lineWidth = 3.2;
+    sctx.stroke();
+    sctx.strokeStyle = isLight ? '#fde68a' : '#ffffff';
+    sctx.lineWidth = 1.2;
+    sctx.stroke();
+
+    // Padlock body
+    const lockGrad = sctx.createLinearGradient(ox - lockW * 0.5, lockY, ox + lockW * 0.5, lockY + lockH);
+    lockGrad.addColorStop(0, '#ffffff');
+    lockGrad.addColorStop(0.25, '#fef08a');
+    lockGrad.addColorStop(0.7, '#f59e0b');
+    lockGrad.addColorStop(1, '#b45309');
+    sctx.fillStyle = lockGrad;
+    sctx.beginPath();
+    sctx.roundRect(ox - lockW * 0.5, lockY, lockW, lockH, 3.5);
+    sctx.fill();
+    sctx.strokeStyle = isLight ? '#78350f' : '#ffd700';
+    sctx.lineWidth = 1.3;
+    sctx.stroke();
+    sctx.restore();
+
+    // Specular diagonal highlight gleam across padlock
+    sctx.beginPath();
+    sctx.roundRect(ox - lockW * 0.5 + 1, lockY + 1, lockW - 2, 2.5, 1);
+    sctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    sctx.fill();
+
+    // Sparkling corner rivets
+    sctx.fillStyle = isLight ? '#78350f' : '#ffffff';
+    for (const rx of [ox - lockW * 0.5 + 2.5, ox + lockW * 0.5 - 2.5]) {
+      for (const ry of [lockY + 2.5, lockY + lockH - 2.5]) {
+        sctx.beginPath();
+        sctx.arc(rx, ry, 0.9, 0, Math.PI * 2);
+        sctx.fill();
+      }
+    }
+
+    MapMenu.padlockSpriteCache.set(key, sprite);
+    return sprite;
   }
 
   initParticles() {
@@ -393,6 +514,7 @@ export class MapMenu {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('resize', this.updateReturnBtnClearance);
     window.addEventListener('languagechange', this.updateReturnBtnClearance);
+    window.addEventListener('ragnarok-theme-changed', this.onThemeChanged);
   }
 
   unbindEvents() {
@@ -402,6 +524,7 @@ export class MapMenu {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.updateReturnBtnClearance);
     window.removeEventListener('languagechange', this.updateReturnBtnClearance);
+    window.removeEventListener('ragnarok-theme-changed', this.onThemeChanged);
   }
 
   onKeyDown = (e: KeyboardEvent) => {
@@ -428,11 +551,11 @@ export class MapMenu {
   };
 
   onMouseMove = (e: MouseEvent) => {
-    const rect = this.canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const w = rect.width;
-    const h = rect.height;
+    const mx = e.offsetX;
+    const my = e.offsetY;
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+    if (w <= 0 || h <= 0) return;
 
     this.hoveredCity = null;
     this.hoveredCard = false;
@@ -483,11 +606,10 @@ export class MapMenu {
     let targetCity = this.hoveredCity;
 
     if (!targetCity && !this.hoveredCard && e) {
-      const rect = this.canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      const w = rect.width;
-      const h = rect.height;
+      const mx = e.offsetX;
+      const my = e.offsetY;
+      const w = this.canvas.clientWidth;
+      const h = this.canvas.clientHeight;
 
       for (const loc of this.locations) {
         if (loc.locked) continue;
@@ -539,18 +661,47 @@ export class MapMenu {
   };
 
   start() {
+    this.isActive = true;
+    this.isPaused = false;
     this.initProgression();
+    this.loadBackgrounds();
     this.unbindEvents();
     this.bindEvents();
     this.updateReturnBtnClearance();
     cancelAnimationFrame(this.animationId);
     this.loop();
   }
-  stop() { cancelAnimationFrame(this.animationId); this.unbindEvents(); }
-  loop = () => { this.draw(); this.animationId = requestAnimationFrame(this.loop); };
+
+  pause() {
+    if (!this.isActive || this.isPaused) return;
+    this.isPaused = true;
+    cancelAnimationFrame(this.animationId);
+    this.animationId = 0;
+  }
+
+  resume() {
+    if (!this.isActive || !this.isPaused) return;
+    this.isPaused = false;
+    cancelAnimationFrame(this.animationId);
+    this.loop();
+  }
+
+  stop() {
+    this.isActive = false;
+    this.isPaused = false;
+    cancelAnimationFrame(this.animationId);
+    this.animationId = 0;
+    this.unbindEvents();
+  }
+
+  loop = () => {
+    if (!this.isActive || this.isPaused) return;
+    this.draw();
+    this.animationId = requestAnimationFrame(this.loop);
+  };
 
   draw() {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = getEffectiveDpr();
     const w = this.canvas.clientWidth || (this.canvas.width / dpr);
     const h = this.canvas.clientHeight || (this.canvas.height / dpr);
     const ctx = this.ctx;
@@ -560,6 +711,16 @@ export class MapMenu {
     this.themeLightWeight += (targetWeight - this.themeLightWeight) * 0.08;
     this.themeLightWeight = Math.max(0, Math.min(1, this.themeLightWeight));
 
+    // Sync shared image state in case decoding completed on another instance or tick
+    if (MapMenu.sharedDarkImg) {
+      this.bgDarkImg = MapMenu.sharedDarkImg;
+      this.bgDarkLoaded = MapMenu.sharedDarkLoaded;
+    }
+    if (MapMenu.sharedLightImg) {
+      this.bgLightImg = MapMenu.sharedLightImg;
+      this.bgLightLoaded = MapMenu.sharedLightLoaded;
+    }
+
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, w, h);
@@ -567,22 +728,29 @@ export class MapMenu {
     // ── 1. RENDER HIGH-RES ILLUSTRATED REALM MAP BACKGROUND WITH SMOOTH DISSOLVE ──
     const { dx, dy, dw, dh } = this.getMapTransform(w, h);
     let renderedAny = false;
+    const hasDark = Boolean(this.bgDarkImg && this.bgDarkLoaded);
+    const hasLight = Boolean(this.bgLightImg && this.bgLightLoaded);
 
-    // Draw Dark Realm Map
-    if (this.bgDarkImg && this.bgDarkLoaded) {
-      ctx.drawImage(this.bgDarkImg, dx, dy, dw, dh);
+    // Skip blitting the Dark map when Light map is fully opaque on top of it
+    if (hasDark && (!hasLight || this.themeLightWeight < 0.999)) {
+      ctx.drawImage(this.bgDarkImg!, dx, dy, dw, dh);
       renderedAny = true;
     }
 
     // Smoothly dissolve Light Realm Map on top based on themeLightWeight
-    if (this.bgLightImg && this.bgLightLoaded) {
-      if (this.themeLightWeight > 0.005) {
+    if (hasLight) {
+      if (!hasDark || this.themeLightWeight >= 0.999) {
+        ctx.drawImage(this.bgLightImg!, dx, dy, dw, dh);
+        renderedAny = true;
+      } else if (this.themeLightWeight > 0.005) {
         ctx.save();
         ctx.globalAlpha = this.themeLightWeight;
-        ctx.drawImage(this.bgLightImg, dx, dy, dw, dh);
+        ctx.drawImage(this.bgLightImg!, dx, dy, dw, dh);
         ctx.restore();
+        renderedAny = true;
+      } else {
+        renderedAny = true;
       }
-      if (!renderedAny) renderedAny = true;
     }
 
     if (!renderedAny) {
@@ -661,7 +829,7 @@ export class MapMenu {
       ctx.fill();
     }
 
-    // ── 4. ANIMATED FORGE EMBERS ──
+    // ── 4. ANIMATED FORGE EMBERS (PRE-BAKED GLOW SPRITES, ZERO SHADOWBLUR) ──
     for (const emb of this.forgeEmbers) {
       emb.x += emb.vx;
       emb.y += emb.vy;
@@ -672,15 +840,11 @@ export class MapMenu {
       const pSin = Math.sin(time * 5 + emb.pulse) * 0.3 + 0.7;
       const embPt = this.projectMapPoint(emb.x, emb.y, w, h);
       const embColor = isLight && emb.color === '#ffd54f' ? '#ea580c' : emb.color;
-      ctx.fillStyle = embColor;
-      ctx.shadowColor = embColor;
-      ctx.shadowBlur = (isLight ? 4 : 6) * pSin;
+      const sprite = MapMenu.getEmberSprite(embColor);
+      const drawR = emb.size * 3.125;
       ctx.globalAlpha = (isLight ? 0.88 : 0.82) * pSin;
-      ctx.beginPath();
-      ctx.arc(embPt.x, embPt.y, emb.size, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.drawImage(sprite, embPt.x - drawR, embPt.y - drawR, drawR * 2, drawR * 2);
     }
-    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 
     // ── 5. AMBIENT DRIFTING CAVERN MOTES ──
@@ -1269,70 +1433,24 @@ export class MapMenu {
     ctx.setLineDash([]);
     ctx.restore();
 
-    // 2. Light, Radiant Forged Dwarven Brass & Mithril Padlock
-    const lockW = 18;
+    // 2. Pre-baked Forged Dwarven Brass & Mithril Padlock + Pulsing Keyhole (zero per-frame shadowBlur)
     const lockH = 15;
     const lockY = cy + 2;
-
-    // Ambient golden aura behind the lock
-    ctx.save();
-    ctx.shadowColor = isLight ? 'rgba(69, 26, 3, 0.45)' : 'rgba(253, 224, 71, 0.65)';
-    ctx.shadowBlur = isLight ? 6 : 10;
-
-    // Radiant gold & silver shackle
-    ctx.beginPath();
-    ctx.arc(cx, lockY - 1, 5.5, Math.PI, 0);
-    ctx.strokeStyle = isLight ? '#78350f' : '#fef08a';
-    ctx.lineWidth = 3.2;
-    ctx.stroke();
-    ctx.strokeStyle = isLight ? '#fde68a' : '#ffffff';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    // Padlock body (gleaming light gold & polished dwarven brass)
-    const lockGrad = ctx.createLinearGradient(cx - lockW * 0.5, lockY, cx + lockW * 0.5, lockY + lockH);
-    lockGrad.addColorStop(0, '#ffffff');
-    lockGrad.addColorStop(0.25, '#fef08a');
-    lockGrad.addColorStop(0.7, '#f59e0b');
-    lockGrad.addColorStop(1, '#b45309');
-    ctx.fillStyle = lockGrad;
-    ctx.beginPath();
-    ctx.roundRect(cx - lockW * 0.5, lockY, lockW, lockH, 3.5);
-    ctx.fill();
-    ctx.strokeStyle = isLight ? '#78350f' : '#ffd700';
-    ctx.lineWidth = 1.3;
-    ctx.stroke();
-    ctx.restore();
-
-    // Specular diagonal highlight gleam across padlock
-    ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(cx - lockW * 0.5 + 1, lockY + 1, lockW - 2, 2.5, 1);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-    ctx.fill();
-    ctx.restore();
-
-    // Sparkling corner rivets
-    ctx.fillStyle = isLight ? '#78350f' : '#ffffff';
-    for (const rx of [cx - lockW * 0.5 + 2.5, cx + lockW * 0.5 - 2.5]) {
-      for (const ry of [lockY + 2.5, lockY + lockH - 2.5]) {
-        ctx.beginPath();
-        ctx.arc(rx, ry, 0.9, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+    const padlockSprite = MapMenu.getPadlockSprite(isLight, getEffectiveDpr());
+    ctx.drawImage(padlockSprite, cx - 26, cy - 22, 52, 52);
 
     // Glowing Crimson/Amber Rune Keyhole (Ward of sealing)
     const keyholePulse = Math.sin(time * 3.5) * 0.25 + 0.75;
-    ctx.save();
-    ctx.shadowColor = '#ef4444';
-    ctx.shadowBlur = 5;
+    const khY = lockY + lockH * 0.42;
+    ctx.fillStyle = `rgba(239, 68, 68, ${0.32 * keyholePulse})`;
+    ctx.beginPath();
+    ctx.arc(cx, khY + 1.0, 5.2, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = `rgba(220, 38, 38, ${keyholePulse})`;
     ctx.beginPath();
-    ctx.arc(cx, lockY + lockH * 0.42, 2.0, 0, Math.PI * 2);
+    ctx.arc(cx, khY, 2.0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillRect(cx - 0.9, lockY + lockH * 0.42, 1.8, 3.2);
-    ctx.restore();
+    ctx.fillRect(cx - 0.9, khY, 1.8, 3.2);
 
     ctx.restore();
   }
@@ -2505,54 +2623,59 @@ export class MapMenu {
     ctx.restore();
   }
 
-  measureWrappedTextHeight(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, lineHeight: number, paragraphSpacing: number = 6): number {
+  private getWrappedParagraphs(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[][] {
+    const quantizedWidth = Math.round(maxWidth * 2) * 0.5;
+    const cacheKey = `${ctx.font}|${quantizedWidth}|${text}`;
+    const cached = this.wrapCache.get(cacheKey);
+    if (cached) return cached;
+
     const paragraphs = text.split('\n\n');
-    let totalH = 0;
+    const result: string[][] = [];
     for (let p = 0; p < paragraphs.length; p++) {
       const words = paragraphs[p].replace(/\n/g, ' ').split(/\s+/);
+      const lines: string[] = [];
       let line = '';
-      let linesInParagraph = 0;
       for (let n = 0; n < words.length; n++) {
         if (!words[n]) continue;
         const testLine = line ? `${line} ${words[n]}` : words[n];
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && line) {
-          linesInParagraph++;
+        if (line && ctx.measureText(testLine).width > quantizedWidth) {
+          lines.push(line);
           line = words[n];
         } else {
           line = testLine;
         }
       }
-      if (line) linesInParagraph++;
-      totalH += linesInParagraph * lineHeight;
-      if (p < paragraphs.length - 1) totalH += paragraphSpacing;
+      if (line) lines.push(line);
+      result.push(lines);
+    }
+
+    if (this.wrapCache.size > 64) {
+      this.wrapCache.clear();
+    }
+    this.wrapCache.set(cacheKey, result);
+    return result;
+  }
+
+  measureWrappedTextHeight(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, lineHeight: number, paragraphSpacing: number = 6): number {
+    const wrapped = this.getWrappedParagraphs(ctx, text, maxWidth);
+    let totalH = 0;
+    for (let p = 0; p < wrapped.length; p++) {
+      totalH += wrapped[p].length * lineHeight;
+      if (p < wrapped.length - 1) totalH += paragraphSpacing;
     }
     return totalH;
   }
 
   drawWrappedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number, paragraphSpacing: number = 8): number {
-    const paragraphs = text.split('\n\n');
+    const wrapped = this.getWrappedParagraphs(ctx, text, maxWidth);
     let currY = y;
-    for (let p = 0; p < paragraphs.length; p++) {
-      const words = paragraphs[p].replace(/\n/g, ' ').split(/\s+/);
-      let line = '';
-      for (let n = 0; n < words.length; n++) {
-        if (!words[n]) continue;
-        const testLine = line ? `${line} ${words[n]}` : words[n];
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && line) {
-          ctx.fillText(line, x, currY);
-          line = words[n];
-          currY += lineHeight;
-        } else {
-          line = testLine;
-        }
-      }
-      if (line) {
-        ctx.fillText(line, x, currY);
+    for (let p = 0; p < wrapped.length; p++) {
+      const lines = wrapped[p];
+      for (let i = 0; i < lines.length; i++) {
+        ctx.fillText(lines[i], x, currY);
         currY += lineHeight;
       }
-      if (p < paragraphs.length - 1) {
+      if (p < wrapped.length - 1) {
         currY += paragraphSpacing;
       }
     }

@@ -10,10 +10,15 @@ export class WallNut extends Defender {
     super.update(deltaTime, game);
   }
 
+  private static readonly BASE_STUD_XS = [-18, -6, 6, 18] as const;
+  private static readonly MERLON_XS = [-17, -5.5, 6] as const;
+  private static readonly MERLON_RADII: [number, number, number, number] = [3, 3, 0, 0];
+  private static readonly BAND_RIVET_XS = [-16, -8, 0, 8, 16] as const;
+
   draw(ctx: CanvasRenderingContext2D) {
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
 
       // Health ratio
       const hpRatio = Math.max(0, this.health / this.maxHealth);
@@ -39,11 +44,12 @@ export class WallNut extends Defender {
 
       // Foundation base iron studs
       ctx.fillStyle = '#94a3b8';
-      for (const ox of [-18, -6, 6, 18]) {
-        ctx.beginPath();
+      ctx.beginPath();
+      for (const ox of WallNut.BASE_STUD_XS) {
+        ctx.moveTo(cx + ox + 2, cy + 30);
         ctx.arc(cx + ox, cy + 30, 2, 0, Math.PI * 2);
-        ctx.fill();
       }
+      ctx.fill();
 
       // --- 2. Main Fortress Tower Body ---
       const bodyGrad = ctx.createLinearGradient(cx - 21, cy - 18, cx + 21, cy + 24);
@@ -94,12 +100,12 @@ export class WallNut extends Defender {
       const merlonWidth = 11;
       const merlonHeight = 12;
       const merlonY = cy - 31;
-      [-17, -5.5, 6].forEach(mx => {
-        ctx.beginPath();
-        ctx.roundRect(cx + mx, merlonY, merlonWidth, merlonHeight, [3, 3, 0, 0]);
-        ctx.fill();
-        ctx.stroke();
-      });
+      ctx.beginPath();
+      for (const mx of WallNut.MERLON_XS) {
+        ctx.roundRect(cx + mx, merlonY, merlonWidth, merlonHeight, WallNut.MERLON_RADII);
+      }
+      ctx.fill();
+      ctx.stroke();
 
       // --- 4. Heavy Iron Reinforcement Bands & Rivets ---
       ctx.fillStyle = '#0f172a';
@@ -109,11 +115,12 @@ export class WallNut extends Defender {
       ctx.strokeRect(cx - 21, cy + 2, 42, 4);
 
       ctx.fillStyle = '#cbd5e1';
-      for (const rx of [-16, -8, 0, 8, 16]) {
-        ctx.beginPath();
+      ctx.beginPath();
+      for (const rx of WallNut.BAND_RIVET_XS) {
+        ctx.moveTo(cx + rx + 1.5, cy + 4);
         ctx.arc(cx + rx, cy + 4, 1.5, 0, Math.PI * 2);
-        ctx.fill();
       }
+      ctx.fill();
 
       // --- 5. Runic Protection Shield Emblem (Centerpiece) ---
       const runePulse = 0.75 + Math.sin(this.animTimer / 180) * 0.25;
@@ -132,6 +139,7 @@ export class WallNut extends Defender {
       ctx.arc(cx, cy - 7, 11, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // Carved Norse Bastion Rune (ᛟ - Odal / Protection)
       ctx.strokeStyle = '#e0f2fe';

@@ -22,9 +22,9 @@ export class PotatoMine extends Defender {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
 
       // 1. Subterranean Crater & Scorched Earth Base
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -155,6 +155,7 @@ export class PotatoMine extends Defender {
         ctx.moveTo(cx, mineY + 4);
         ctx.lineTo(cx, mineY - 1);
         ctx.stroke();
+        ctx.shadowBlur = 0;
 
         // 6. Central Volatile Magma-Crystal Pressure Plate & Beacon
         const coreGrad = ctx.createRadialGradient(cx, mineY - 7, 1, cx, mineY - 7, 7.5);
@@ -189,16 +190,16 @@ export class PotatoMine extends Defender {
         ctx.arc(cx, mineY - 12 + spikeBounce, 1.8, 0, Math.PI * 2);
         ctx.fill();
 
-        // Crackling energy arcs around the armed crystal
+        // Crackling energy arcs around the armed crystal (batched in single path)
         ctx.strokeStyle = `rgba(254, 240, 138, ${0.6 + dangerPulse * 0.4})`;
         ctx.lineWidth = 1.1;
+        ctx.beginPath();
         for (let i = 0; i < 4; i++) {
           const ang = (i * Math.PI) / 2 + this.animTimer * 0.04;
-          ctx.beginPath();
           ctx.moveTo(cx + Math.cos(ang) * 5, mineY - 12 + spikeBounce + Math.sin(ang) * 3);
           ctx.lineTo(cx + Math.cos(ang) * 9, mineY - 12 + spikeBounce + Math.sin(ang) * 5);
-          ctx.stroke();
         }
+        ctx.stroke();
         ctx.restore();
       }
     });

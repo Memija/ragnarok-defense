@@ -6,6 +6,7 @@ export class SoundManager {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
+  private lastShootSoundTime: number = 0;
   private lastHitSoundTime: number = 0;
   private lastMeleeSoundTime: number = 0;
   private lastDeathSoundTime: number = 0;
@@ -52,13 +53,14 @@ export class SoundManager {
         this.ctx = new AudioCtx();
       }
     }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
-    }
     if (this.ctx && !this.masterGain) {
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+      return null;
     }
     return this.ctx;
   }
@@ -72,9 +74,11 @@ export class SoundManager {
     return this.masterGain;
   }
 
-  public setVolume(vol: number): void {
+  public setVolume(vol: number, persist: boolean = true): void {
     this.volume = Math.max(0, Math.min(1, vol));
-    localStorage.setItem('ragnarok_volume', this.volume.toString());
+    if (persist) {
+      localStorage.setItem('ragnarok_volume', this.volume.toString());
+    }
     if (this.masterGain && this.ctx) {
       this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
     }
@@ -190,6 +194,8 @@ export class SoundManager {
     const ctx = this.initCtx();
     if (!ctx) return;
     const now = ctx.currentTime;
+    if (now - this.lastShootSoundTime < 0.028) return;
+    this.lastShootSoundTime = now;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 

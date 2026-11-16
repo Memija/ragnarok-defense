@@ -12,7 +12,11 @@ export abstract class Projectile extends Entity {
     this.row = row;
   }
 
-  update(deltaTime: number, ..._args: any[]) {
+  update(deltaTime: number, game?: { width?: number }, ..._args: any[]) {
     this.x += this.speed * (deltaTime / 1000);
+    const maxX = game && typeof game.width === 'number' && game.width > 0 ? game.width + 60 : 2560;
+    if (this.x > maxX) {
+      this.markedForDeletion = true;
+    }
   }
 }

@@ -841,6 +841,8 @@ export const DEFENDER_ICONS: Record<string, string> = {
 DEFENDER_ICONS.sunflower_midgard = DEFENDER_ICONS.sunflower;
 
 let svgInstanceCounter = 0;
+const SCOPE_SVG_RE = /\bid="([^"]+)"|url\(#([^)]+)\)|\b(xlink:href|href)="#([^"]+)"/g;
+const STRIP_UID_RE = /-u\d+$/;
 
 /**
  * Ensures every inline SVG instance has globally unique <defs> IDs so hidden modals
@@ -851,27 +853,19 @@ export function scopeSvgIds(svg: string): string {
     return svg;
   }
   const uid = ++svgInstanceCounter;
-  const idMap = new Map<string, string>();
-  svg.replace(/\bid="([^"]+)"/g, (_match, rawId: string) => {
-    const baseId = rawId.replace(/-u\d+$/, '');
-    idMap.set(rawId, `${baseId}-u${uid}`);
-    return _match;
+  return svg.replace(SCOPE_SVG_RE, (_m, defId?: string, urlId?: string, hrefAttr?: string, hrefId?: string) => {
+    if (defId !== undefined) {
+      return `id="${defId.replace(STRIP_UID_RE, '')}-u${uid}"`;
+    }
+    if (urlId !== undefined) {
+      return `url(#${urlId.replace(STRIP_UID_RE, '')}-u${uid})`;
+    }
+    return `${hrefAttr}="#${(hrefId || '').replace(STRIP_UID_RE, '')}-u${uid}"`;
   });
-  if (idMap.size === 0) return svg;
+}
 
-  let scoped = svg.replace(/\bid="([^"]+)"/g, (_m, rawId: string) => {
-    const mapped = idMap.get(rawId);
-    return mapped ? `id="${mapped}"` : _m;
-  });
-  scoped = scoped.replace(/url\(#([^)]+)\)/g, (_m, rawId: string) => {
-    const mapped = idMap.get(rawId);
-    return mapped ? `url(#${mapped})` : _m;
-  });
-  scoped = scoped.replace(/\b(xlink:href|href)="#([^"]+)"/g, (_m, attr: string, rawId: string) => {
-    const mapped = idMap.get(rawId);
-    return mapped ? `${attr}="#${mapped}"` : _m;
-  });
-  return scoped;
+export function getRawDefenderIcon(id: string): string {
+  return DEFENDER_ICONS[id] || '⚔️';
 }
 
 export function getDefenderIcon(id: string): string {

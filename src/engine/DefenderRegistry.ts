@@ -582,6 +582,24 @@ const PRIORITY_ORDER = [
 ];
 
 /**
+ * Fast raw metadata lookup without localization or SVG ID scoping.
+ */
+export function getRawDefenderInfo(id: string, realm?: string): DefenderInfo | undefined {
+  if (id.startsWith('sunflower_')) {
+    const targetRealm = id.slice(10);
+    return { ...getSunflowerForRealm(targetRealm), id, world: targetRealm as WorldId, isCurrencyProducer: true };
+  }
+  if (id === 'sunflower') {
+    if (realm) {
+      const normRealm = realm.toLowerCase().trim() as WorldId;
+      return { ...getSunflowerForRealm(normRealm), id, world: normRealm, isCurrencyProducer: true };
+    }
+    return DEFENDERS_MAP[id] || REALM_SUNFLOWERS.midgard;
+  }
+  return DEFENDERS_MAP[id];
+}
+
+/**
  * Checks whether a defender is allowed to be used when defending a specific realm.
  * If foreign units are allowed via settings, all units are permitted.
  * Otherwise, only defenders belonging to the home world / defending realm are permitted.
@@ -592,7 +610,7 @@ export function isDefenderAllowedInRealm(defenderId: string, realm?: string): bo
     return true;
   }
   const normRealm = (realm || 'midgard').toLowerCase().trim() as WorldId;
-  const def = getDefenderInfo(defenderId, normRealm) || DEFENDERS_MAP[defenderId];
+  const def = getRawDefenderInfo(defenderId, normRealm) || DEFENDERS_MAP[defenderId];
   if (!def) return false;
   if (isCurrencyProducer(def) && (def.id === 'sunflower' || def.id === `sunflower_${normRealm}`)) {
     return true;
@@ -625,7 +643,7 @@ export interface SquadSynergyReport {
 
 export function getSquadSynergies(selectedIds: string[], realm?: string): SquadSynergyReport {
   const normRealm = (realm || 'midgard').toLowerCase().trim() as WorldId;
-  const defenders = selectedIds.map(id => getDefenderInfo(id, normRealm) || DEFENDERS_MAP[id]).filter(Boolean);
+  const defenders = selectedIds.map(id => getRawDefenderInfo(id, normRealm) || DEFENDERS_MAP[id]).filter((d): d is DefenderInfo => Boolean(d));
 
   const hasEconomy = defenders.some(d => isCurrencyProducer(d));
   const hasTank = defenders.some(d => d.id === 'wallnut' || d.id === 'potatomine');
@@ -876,13 +894,13 @@ export function saveLoadout(defenders: string[]) {
   } catch (e) {}
 }
 
-export function getLocalizedDefender(def: DefenderInfo, realm?: string): DefenderInfo {
+export function getLocalizedDefender(def: DefenderInfo, realm?: string, scopeIcon: boolean = true): DefenderInfo {
   const isSunflower = isCurrencyProducer(def);
   let effectiveRealm = realm ? realm.toLowerCase().trim() : (def.origin ? def.origin.toLowerCase().trim() : 'midgard');
 
   // If this is a specific realm's sunflower (e.g. sunflower_midgard), localize by its target realm
   if (def.id.startsWith('sunflower_')) {
-    effectiveRealm = def.id.replace('sunflower_', '');
+    effectiveRealm = def.id.slice(10);
   }
 
   const nameKey = isSunflower ? `def_sunflower_${effectiveRealm}_name` : `def_${def.id}_name`;
@@ -893,30 +911,40 @@ export function getLocalizedDefender(def: DefenderInfo, realm?: string): Defende
   const originKey = `world_${targetWorld}`;
   const catKey = `cat_${def.category}_title`;
 
-  let name = t(nameKey) !== nameKey ? t(nameKey) : def.name;
+  const tName = t(nameKey);
+  let name = tName !== nameKey ? tName : def.name;
   if (name === nameKey) {
-    name = t(`def_${def.id}_name`) !== `def_${def.id}_name` ? t(`def_${def.id}_name`) : def.name;
+    const fb = t(`def_${def.id}_name`);
+    name = fb !== `def_${def.id}_name` ? fb : def.name;
   }
-  let desc = t(descKey) !== descKey ? t(descKey) : def.desc;
+  const tDesc = t(descKey);
+  let desc = tDesc !== descKey ? tDesc : def.desc;
   if (desc === descKey) {
-    desc = t(`def_${def.id}_desc`) !== `def_${def.id}_desc` ? t(`def_${def.id}_desc`) : def.desc;
+    const fb = t(`def_${def.id}_desc`);
+    desc = fb !== `def_${def.id}_desc` ? fb : def.desc;
   }
-  let tooltip = t(tooltipKey) !== tooltipKey ? t(tooltipKey) : def.tooltip;
+  const tTooltip = t(tooltipKey);
+  let tooltip = tTooltip !== tooltipKey ? tTooltip : def.tooltip;
   if (tooltip === tooltipKey) {
-    tooltip = t(`def_${def.id}_tooltip`) !== `def_${def.id}_tooltip` ? t(`def_${def.id}_tooltip`) : def.tooltip;
+    const fb = t(`def_${def.id}_tooltip`);
+    tooltip = fb !== `def_${def.id}_tooltip` ? fb : def.tooltip;
   }
-  let role = t(roleKey) !== roleKey ? t(roleKey) : def.role;
+  const tRole = t(roleKey);
+  let role = tRole !== roleKey ? tRole : def.role;
   if (role === roleKey) {
-    role = t(`def_${def.id}_role`) !== `def_${def.id}_role` ? t(`def_${def.id}_role`) : def.role;
+    const fb = t(`def_${def.id}_role`);
+    role = fb !== `def_${def.id}_role` ? fb : def.role;
   }
-  const origin = t(originKey) !== originKey ? t(originKey) : def.origin;
+  const tOrigin = t(originKey);
+  const origin = tOrigin !== originKey ? tOrigin : def.origin;
+  const tCat = isSunflower ? catKey : t(catKey);
   const categoryName = isSunflower
     ? def.categoryName
-    : (t(catKey) !== catKey ? t(catKey) : def.categoryName);
+    : (tCat !== catKey ? tCat : def.categoryName);
 
   return {
     ...def,
-    icon: scopeSvgIds(def.icon),
+    icon: scopeIcon ? scopeSvgIds(def.icon) : def.icon,
     world: targetWorld as WorldId,
     isCurrencyProducer: isSunflower,
     name,
@@ -980,23 +1008,11 @@ export function getLocalizedDefendersMap(realm?: string): Record<string, Defende
   return map;
 }
 
-export function getDefenderInfo(id: string, realm?: string): DefenderInfo | undefined {
-  let base: DefenderInfo | undefined;
-  if (id.startsWith('sunflower_')) {
-    const targetRealm = id.replace('sunflower_', '');
-    base = { ...getSunflowerForRealm(targetRealm), id, world: targetRealm as WorldId };
-    return getLocalizedDefender(base, targetRealm);
-  } else if (id === 'sunflower') {
-    if (realm) {
-      base = { ...getSunflowerForRealm(realm), id, world: realm.toLowerCase().trim() as WorldId };
-    } else {
-      base = DEFENDERS_MAP[id] || REALM_SUNFLOWERS.midgard;
-    }
-  } else {
-    base = DEFENDERS_MAP[id];
-  }
+export function getDefenderInfo(id: string, realm?: string, scopeIcon: boolean = true): DefenderInfo | undefined {
+  const base = getRawDefenderInfo(id, realm);
   if (!base) return undefined;
-  return getLocalizedDefender(base, realm);
+  const targetRealm = id.startsWith('sunflower_') ? id.slice(10) : realm;
+  return getLocalizedDefender(base, targetRealm, scopeIcon);
 }
 
 export interface WorldDefendersGroup {

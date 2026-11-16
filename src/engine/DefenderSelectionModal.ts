@@ -10,6 +10,7 @@ import {
   saveLoadout,
   getLocalizedDefender,
   getDefenderInfo,
+  getRawDefenderInfo,
   getDefendersListForRealm,
   getDefendersGroupedByWorld,
   getWorldMeta,
@@ -103,6 +104,8 @@ export class DefenderSelectionModal {
   private synergyScoreBadgeEl: HTMLElement | null;
   private toastEl: HTMLElement | null;
   private toastTimeout: any = null;
+  private slotsPulseTimeout: any = null;
+  private capacityAlertTimeout: any = null;
   private clearBtn: HTMLElement | null;
   private confirmBtn: HTMLElement | null;
   private confirmPillEl: HTMLElement | null;
@@ -214,7 +217,7 @@ export class DefenderSelectionModal {
       SoundManager.getInstance().playClick();
       this.selected = [];
       this.showToast(t('rosterCleared') || '✕ Squad Cleared');
-      this.render();
+      this.syncSelectionState();
     });
 
     this.confirmBtn?.addEventListener('click', () => {
@@ -319,9 +322,9 @@ export class DefenderSelectionModal {
           this.selected = this.selected.filter(id => isDefenderAllowedInRealm(id, realm));
         }
       }
-      this.renderWorldTabs();
-      this.updateModalHeaderAndButton();
       if (this.modalEl && !this.modalEl.classList.contains('hidden')) {
+        this.renderWorldTabs();
+        this.updateModalHeaderAndButton();
         this.render();
       }
     });
@@ -332,13 +335,13 @@ export class DefenderSelectionModal {
         if (this.selected.length > this.limit) {
           this.selected = this.selected.slice(0, this.limit);
         }
-        this.render();
+        this.syncSelectionState();
       }
     });
 
     window.addEventListener('infiniteresourcessettingchanged', () => {
       if (this.currentOptions && this.modalEl && !this.modalEl.classList.contains('hidden')) {
-        this.render();
+        this.syncSelectionState();
       }
     });
   }
@@ -346,8 +349,8 @@ export class DefenderSelectionModal {
   private hasSelectedCurrencyProducer(): boolean {
     const currentRealm = this.currentOptions?.realm || 'midgard';
     return this.selected.some(id => {
-      const unit = getDefenderInfo(id, currentRealm) || DEFENDERS_MAP[id];
-      return unit && isCurrencyProducer(unit);
+      const unit = getRawDefenderInfo(id, currentRealm) || DEFENDERS_MAP[id];
+      return Boolean(unit && isCurrencyProducer(unit));
     });
   }
 
@@ -371,21 +374,32 @@ export class DefenderSelectionModal {
 
   private pulseEquippedSlots() {
     if (!this.slotsPreviewEl) return;
-    this.slotsPreviewEl.classList.remove('slots-pulse-anim');
-    void this.slotsPreviewEl.offsetWidth;
+    if (this.slotsPulseTimeout) clearTimeout(this.slotsPulseTimeout);
     this.slotsPreviewEl.classList.add('slots-pulse-anim');
-    setTimeout(() => {
+    this.slotsPulseTimeout = setTimeout(() => {
       this.slotsPreviewEl?.classList.remove('slots-pulse-anim');
+      this.slotsPulseTimeout = null;
     }, 450);
   }
 
   private pulseCapacityInfo() {
     if (!this.capacityCountEl) return;
-    this.capacityCountEl.classList.remove('capacity-alert-anim');
-    void this.capacityCountEl.offsetWidth;
+    if (this.capacityAlertTimeout) clearTimeout(this.capacityAlertTimeout);
     this.capacityCountEl.classList.add('capacity-alert-anim');
-    setTimeout(() => {
+    this.capacityCountEl.animate?.(
+      [
+        { transform: 'translateX(0)' },
+        { transform: 'translateX(-4px)' },
+        { transform: 'translateX(4px)' },
+        { transform: 'translateX(-4px)' },
+        { transform: 'translateX(4px)' },
+        { transform: 'translateX(0)' }
+      ],
+      { duration: 450, easing: 'ease-in-out' }
+    );
+    this.capacityAlertTimeout = setTimeout(() => {
       this.capacityCountEl?.classList.remove('capacity-alert-anim');
+      this.capacityAlertTimeout = null;
     }, 500);
   }
 
@@ -748,6 +762,7 @@ export class DefenderSelectionModal {
     if (this.modalEl) {
       this.modalEl.classList.remove('hidden');
     }
+    window.dispatchEvent(new CustomEvent('ragnarok-modal-visibility'));
 
     if (options.isMidGame) {
       const game = (window as any).__getGame?.();
@@ -762,6 +777,7 @@ export class DefenderSelectionModal {
     if (this.modalEl) {
       this.modalEl.classList.add('hidden');
     }
+    window.dispatchEvent(new CustomEvent('ragnarok-modal-visibility'));
     if (this.currentOptions?.isMidGame) {
       const game = (window as any).__getGame?.();
       if (game && typeof game.resume === 'function') {
@@ -805,17 +821,26 @@ export class DefenderSelectionModal {
         return;
       }
     }
-    this.render();
+    this.syncSelectionState();
   }
 
-  private render() {
-    // Detect if current squad matches any preset
+  /**
+   * Updates selection state, slot tokens, synergy bar, and existing .roster-card
+   * DOM nodes in-place without tearing down and reparsing all 24 inline SVGs.
+   */
+  private syncSelectionState() {
     const detected = this.detectActivePreset();
     if (detected) {
       this.activePreset = detected;
     }
     this.updatePresetButtonAndMenu();
+    this.updateSelectionChrome();
+    this.renderEquippedSlots();
+    this.syncGridSelectionState();
+    this.renderSynergyBar();
+  }
 
+  private updateSelectionChrome() {
     // Update capacity count
     if (this.capacityCountEl) {
       this.capacityCountEl.textContent = `${this.selected.length} / ${this.limit}`;
@@ -833,6 +858,43 @@ export class DefenderSelectionModal {
         this.confirmBtn.title = '';
       }
     }
+  }
+
+  private syncGridSelectionState() {
+    if (!this.gridEl) return;
+    const isFull = this.selected.length >= this.limit;
+    const currentRealm = this.currentOptions?.realm || 'midgard';
+    const cards = this.gridEl.querySelectorAll<HTMLElement>('.roster-card');
+    cards.forEach(card => {
+      const unitId = card.dataset.unit;
+      if (!unitId) return;
+      const idx = this.selected.findIndex(id => this.isSameDefender(id, unitId));
+      const isSelected = idx !== -1;
+      const isAllowed = isDefenderAllowedInRealm(unitId, currentRealm);
+      const isDisabled = (!isSelected && isFull) || !isAllowed;
+
+      card.classList.toggle('selected', isSelected);
+      card.classList.toggle('disabled-cap', isDisabled);
+
+      const badge = card.querySelector<HTMLElement>('.card-slot-badge');
+      if (badge) {
+        if (isSelected) {
+          badge.textContent = `#${idx + 1}`;
+          badge.style.display = '';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  private render() {
+    const detected = this.detectActivePreset();
+    if (detected) {
+      this.activePreset = detected;
+    }
+    this.updatePresetButtonAndMenu();
+    this.updateSelectionChrome();
 
     // Render Equipped Slot Preview
     this.renderEquippedSlots();
@@ -864,7 +926,7 @@ export class DefenderSelectionModal {
 
     const statusLabel = isAlreadyEquipped ? (t('alreadyEquipped') || 'Already Equipped') : (t('applied') || 'Applied');
     this.showToast(`✦ ${presetName} · ${statusLabel}`);
-    this.render();
+    this.syncSelectionState();
   }
 
   private detectActivePreset(): SquadMixPreset | null {
@@ -1174,7 +1236,7 @@ export class DefenderSelectionModal {
               <span class="lock-text">${t('foreignUnitLocked') || 'Foreign Realm'}</span>
             </div>
           ` : ''}
-          ${isSelected ? `<span class="card-slot-badge">#${slotIdx}</span>` : ''}
+          <span class="card-slot-badge"${isSelected ? '' : ' style="display:none"'}>${isSelected ? `#${slotIdx}` : ''}</span>
           <div class="card-check">✓</div>
 
           <div class="card-top-row">

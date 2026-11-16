@@ -84,11 +84,19 @@ export class SunFlower extends Defender {
     }
   }
 
+  private static readonly VANAHEIM_CLUSTERS = [
+    [-18, -16, 8],
+    [18, -16, 8],
+    [0, -22, 10],
+    [-8, -10, 6],
+    [8, -10, 6]
+  ] as const;
+
   draw(ctx: CanvasRenderingContext2D) {
     const currency = getRealmCurrency(this.currentRealm);
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
       const t = this.animTimer / 1000;
 
       switch (this.currentRealm) {
@@ -156,14 +164,15 @@ export class SunFlower extends Defender {
 
     const numPetals = 10;
     const petalRotation = t * 0.4;
+    ctx.beginPath();
     for (let i = 0; i < numPetals; i++) {
       const angle = (Math.PI * 2 / numPetals) * i + petalRotation;
       const px = headX + Math.cos(angle) * 19;
       const py = headY + Math.sin(angle) * 19;
-      ctx.beginPath();
+      ctx.moveTo(px + Math.cos(angle) * 11, py + Math.sin(angle) * 11);
       ctx.ellipse(px, py, 11, 7, angle, 0, Math.PI * 2);
-      ctx.fill();
     }
+    ctx.fill();
     ctx.shadowBlur = 0;
 
     // Brown Sun-Heart Center Disk
@@ -296,6 +305,7 @@ export class SunFlower extends Defender {
     ctx.lineTo(cx - 10, cy + 30);
     ctx.closePath();
     ctx.fill();
+    ctx.shadowBlur = 0;
 
     ctx.fillStyle = '#fde047';
     ctx.beginPath();
@@ -370,7 +380,7 @@ export class SunFlower extends Defender {
   // ═════════════════════════════════════════════════════════════
   // 4. ALFHEIM: Sunstone Prism (Sacred Flora)
   // ═════════════════════════════════════════════════════════════
-  private drawAlfheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, currency: RealmCurrency) {
+  private drawAlfheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, _currency: RealmCurrency) {
     // Ethereal crystalline pedicel stem
     ctx.strokeStyle = '#38bdf8';
     ctx.lineWidth = 3;
@@ -403,8 +413,14 @@ export class SunFlower extends Defender {
     const lotusRotation = t * 0.5;
     ctx.save();
     ctx.translate(cx, cy - 8);
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = currency.color;
+
+    const haloGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, 26);
+    haloGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+    haloGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+    ctx.fillStyle = haloGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, 26, 0, Math.PI * 2);
+    ctx.fill();
 
     for (let i = 0; i < 8; i++) {
       const angle = (Math.PI * 2 / 8) * i + lotusRotation;
@@ -482,20 +498,12 @@ export class SunFlower extends Defender {
     ctx.strokeStyle = '#4d7c0f';
     ctx.lineWidth = 1;
 
-    const leafClusters = [
-      { x: cx - 18 + sway, y: cy - 16, r: 8 },
-      { x: cx + 18 + sway, y: cy - 16, r: 8 },
-      { x: cx + sway, y: cy - 22, r: 10 },
-      { x: cx - 8 + sway, y: cy - 10, r: 6 },
-      { x: cx + 8 + sway, y: cy - 10, r: 6 }
-    ];
-
-    leafClusters.forEach(c => {
+    for (const [ox, oy, r] of SunFlower.VANAHEIM_CLUSTERS) {
       ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.arc(cx + ox + sway, cy + oy, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-    });
+    }
 
     // Hanging Translucent Amber Teardrop Resin Jewel
     const dripPhase = (t * 1.5) % 1;
@@ -704,21 +712,18 @@ export class SunFlower extends Defender {
     ctx.quadraticCurveTo(cx - 12 + f1, flameY - 18, cx - 8, flameY - 26 + f1);
     ctx.quadraticCurveTo(cx - 4, flameY - 14, cx, flameY);
     ctx.closePath();
-    ctx.fill();
 
-    ctx.beginPath();
     ctx.moveTo(cx - 4, flameY);
     ctx.quadraticCurveTo(cx + f2, flameY - 24, cx + 4, flameY - 32 + f2);
     ctx.quadraticCurveTo(cx + 8, flameY - 16, cx + 12, flameY);
     ctx.closePath();
-    ctx.fill();
 
-    ctx.beginPath();
     ctx.moveTo(cx + 6, flameY);
     ctx.quadraticCurveTo(cx + 12 + f3, flameY - 16, cx + 14, flameY - 24 + f3);
     ctx.quadraticCurveTo(cx + 16, flameY - 10, cx + 18, flameY);
     ctx.closePath();
     ctx.fill();
+    ctx.shadowBlur = 0;
 
     // Bright yellow inner core flame
     ctx.fillStyle = '#fde047';

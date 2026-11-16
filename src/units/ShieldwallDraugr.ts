@@ -412,8 +412,6 @@ export class ShieldwallDraugr extends Attacker {
         c.restore();
       }
     });
-
-    this.drawHealthBar(ctx);
   }
 }
 

@@ -449,8 +449,6 @@ export class FlameDrake extends Attacker {
       // ── 7. Near Wing (Foreground Sweep) ──
       this.drawDrakeWing(c, bodyX + 4, bodyY - 2, flap, false);
     });
-
-    this.drawHealthBar(ctx);
   }
 }
 

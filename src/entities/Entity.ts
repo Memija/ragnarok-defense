@@ -1,6 +1,13 @@
+import { getEffectiveDpr } from '../engine/GameConfig';
+
 export abstract class Entity {
   private static scratchCanvas: HTMLCanvasElement | null = null;
   private static scratchCtx: CanvasRenderingContext2D | null = null;
+  private static frostGrad: CanvasGradient | null = null;
+  private static frostGradH: number = 0;
+  private static hpGradHigh: CanvasGradient | null = null;
+  private static hpGradMid: CanvasGradient | null = null;
+  private static hpGradLow: CanvasGradient | null = null;
 
   x: number;
   y: number;
@@ -87,12 +94,13 @@ export abstract class Entity {
     ctx.save();
     const barW = Math.min(48, Math.max(32, this.width * 0.8));
     const barH = 5;
-    const bx = this.x + (this.width - barW) / 2;
+    const bx = this.x + (this.width - barW) * 0.5;
     const by = this.y - this.getHeadClearance();
     const pct = Math.max(0, Math.min(1, this.health / this.maxHealth));
     const trailPct = Math.max(pct, Math.min(1, this.trailHealth / this.maxHealth));
     const alpha = Math.min(1, this.lastDamageTimer / 500);
 
+    ctx.translate(bx, by);
     ctx.globalAlpha = alpha;
     
     // Background
@@ -100,7 +108,7 @@ export abstract class Entity {
     ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(bx - 1, by - 1, barW + 2, barH + 2, 3);
+    ctx.roundRect(-1, -1, barW + 2, barH + 2, 3);
     ctx.fill();
     ctx.stroke();
 
@@ -108,26 +116,39 @@ export abstract class Entity {
     if (trailPct > pct + 0.005) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
       ctx.beginPath();
-      ctx.roundRect(bx, by, barW * trailPct, barH, 2);
+      ctx.roundRect(0, 0, barW * trailPct, barH, 2);
       ctx.fill();
     }
 
-    // HP Fill gradient
-    const hpGrad = ctx.createLinearGradient(bx, by, bx + barW, by);
+    // HP Fill gradient (cached across all defenders)
     if (pct > 0.5) {
-      hpGrad.addColorStop(0, '#4caf50');
-      hpGrad.addColorStop(1, '#81c784');
+      if (!Entity.hpGradHigh) {
+        const g = ctx.createLinearGradient(0, 0, 48, 0);
+        g.addColorStop(0, '#4caf50');
+        g.addColorStop(1, '#81c784');
+        Entity.hpGradHigh = g;
+      }
+      ctx.fillStyle = Entity.hpGradHigh;
     } else if (pct > 0.25) {
-      hpGrad.addColorStop(0, '#ff9800');
-      hpGrad.addColorStop(1, '#ffc107');
+      if (!Entity.hpGradMid) {
+        const g = ctx.createLinearGradient(0, 0, 48, 0);
+        g.addColorStop(0, '#ff9800');
+        g.addColorStop(1, '#ffc107');
+        Entity.hpGradMid = g;
+      }
+      ctx.fillStyle = Entity.hpGradMid;
     } else {
-      hpGrad.addColorStop(0, '#d32f2f');
-      hpGrad.addColorStop(1, '#ff5252');
+      if (!Entity.hpGradLow) {
+        const g = ctx.createLinearGradient(0, 0, 48, 0);
+        g.addColorStop(0, '#d32f2f');
+        g.addColorStop(1, '#ff5252');
+        Entity.hpGradLow = g;
+      }
+      ctx.fillStyle = Entity.hpGradLow;
     }
 
-    ctx.fillStyle = hpGrad;
     ctx.beginPath();
-    ctx.roundRect(bx, by, barW * pct, barH, 2);
+    ctx.roundRect(0, 0, barW * pct, barH, 2);
     ctx.fill();
 
     ctx.restore();
@@ -137,15 +158,17 @@ export abstract class Entity {
     if (typeof document === 'undefined') return null;
     if (!Entity.scratchCanvas) {
       Entity.scratchCanvas = document.createElement('canvas');
-      Entity.scratchCanvas.width = Math.max(360, reqW);
-      Entity.scratchCanvas.height = Math.max(360, reqH);
+      Entity.scratchCanvas.width = Math.max(512, reqW);
+      Entity.scratchCanvas.height = Math.max(512, reqH);
       Entity.scratchCtx = Entity.scratchCanvas.getContext('2d');
     } else {
       if (Entity.scratchCanvas.width < reqW) {
         Entity.scratchCanvas.width = reqW + 64;
+        Entity.frostGrad = null;
       }
       if (Entity.scratchCanvas.height < reqH) {
         Entity.scratchCanvas.height = reqH + 64;
+        Entity.frostGrad = null;
       }
     }
     if (!Entity.scratchCtx) return null;
@@ -153,23 +176,38 @@ export abstract class Entity {
   }
 
   drawWithTransform(ctx: CanvasRenderingContext2D, drawFn: (targetCtx: CanvasRenderingContext2D) => void) {
-    ctx.save();
-
-    const pivotX = this.x + this.width / 2;
-    const pivotY = this.y + this.height / 2;
-    ctx.translate(pivotX + this.offsetX + this.recoilX, pivotY + this.offsetY);
-    ctx.rotate(this.rotation);
-    ctx.scale(this.scaleX, this.scaleY);
-    ctx.translate(-pivotX, -pivotY);
-
     const isSlowed = Boolean((this as any).isSlowed);
     const needsSilhouetteOverlay = isSlowed || this.flashTimer > 0;
+    const isIdentity =
+      this.offsetX === 0 &&
+      this.recoilX === 0 &&
+      this.offsetY === 0 &&
+      this.rotation === 0 &&
+      this.scaleX === 1 &&
+      this.scaleY === 1;
+
+    if (isIdentity && !needsSilhouetteOverlay) {
+      drawFn(ctx);
+      this.drawHealthBar(ctx);
+      return;
+    }
+
+    ctx.save();
+
+    if (!isIdentity) {
+      const pivotX = this.x + this.width * 0.5;
+      const pivotY = this.y + this.height * 0.5;
+      ctx.translate(pivotX + this.offsetX + this.recoilX, pivotY + this.offsetY);
+      if (this.rotation !== 0) ctx.rotate(this.rotation);
+      if (this.scaleX !== 1 || this.scaleY !== 1) ctx.scale(this.scaleX, this.scaleY);
+      ctx.translate(-pivotX, -pivotY);
+    }
 
     if (needsSilhouetteOverlay && drawFn.length >= 1) {
-      const pad = 76;
+      const pad = this.width > 70 ? 54 : 38;
       const boxW = this.width + pad * 2;
       const boxH = this.height + pad * 2;
-      const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+      const dpr = getEffectiveDpr();
       const pxW = Math.ceil(boxW * dpr);
       const pxH = Math.ceil(boxH * dpr);
       const scratch = Entity.getScratchBuffer(pxW, pxH);
@@ -187,11 +225,15 @@ export abstract class Entity {
 
         sctx.globalCompositeOperation = 'source-atop';
         if (isSlowed) {
-          const frostGrad = sctx.createLinearGradient(0, 0, 0, boxH);
-          frostGrad.addColorStop(0, 'rgba(186, 230, 253, 0.5)');
-          frostGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.42)');
-          frostGrad.addColorStop(1, 'rgba(14, 116, 144, 0.46)');
-          sctx.fillStyle = frostGrad;
+          if (!Entity.frostGrad || Entity.frostGradH !== boxH) {
+            const fg = sctx.createLinearGradient(0, 0, 0, boxH);
+            fg.addColorStop(0, 'rgba(186, 230, 253, 0.5)');
+            fg.addColorStop(0.5, 'rgba(56, 189, 248, 0.42)');
+            fg.addColorStop(1, 'rgba(14, 116, 144, 0.46)');
+            Entity.frostGrad = fg;
+            Entity.frostGradH = boxH;
+          }
+          sctx.fillStyle = Entity.frostGrad;
           sctx.fillRect(0, 0, boxW, boxH);
         }
         if (this.flashTimer > 0) {

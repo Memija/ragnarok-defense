@@ -31,9 +31,9 @@ export class PeaShooter extends Defender {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
       const sway = Math.sin(this.animTimer / 280 + this.col) * 2.2;
       const chargeRatio = Math.min(1, this.fireTimer / this.fireRate);
 

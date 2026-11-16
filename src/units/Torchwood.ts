@@ -24,10 +24,13 @@ export class Torchwood extends Defender {
     }
   }
 
+  private static readonly BASE_ACCENT_XS = [-14, 0, 14] as const;
+  private static readonly BRAZIER_STUD_XS = [-12, -4, 4, 12] as const;
+
   draw(ctx: CanvasRenderingContext2D) {
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
 
       // --- Ground Shadow ---
       ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
@@ -56,11 +59,12 @@ export class Torchwood extends Defender {
 
       // Base runic accents
       ctx.fillStyle = '#f97316';
-      for (const ox of [-14, 0, 14]) {
-        ctx.beginPath();
+      ctx.beginPath();
+      for (const ox of Torchwood.BASE_ACCENT_XS) {
+        ctx.moveTo(cx + ox + 1.5, cy + 31);
         ctx.arc(cx + ox, cy + 31, 1.5, 0, Math.PI * 2);
-        ctx.fill();
       }
+      ctx.fill();
 
       // --- 2. Tapered Obsidian Spire Column ---
       const spireGrad = ctx.createLinearGradient(cx - 14, cy - 8, cx + 14, cy + 18);
@@ -132,7 +136,7 @@ export class Torchwood extends Defender {
 
       // Brazier rim studs & cutouts
       ctx.fillStyle = '#fef08a';
-      for (const bx of [-12, -4, 4, 12]) {
+      for (const bx of Torchwood.BRAZIER_STUD_XS) {
         ctx.fillRect(cx + bx - 1.5, cy - 14, 3, 4);
       }
 
@@ -142,7 +146,7 @@ export class Torchwood extends Defender {
       const firePulse = Math.sin(this.animTimer / 110) * 4;
 
       ctx.save();
-      // Radiant heat aura
+      // Radiant heat aura (applied to outer flame silhouette only)
       ctx.shadowBlur = 22;
       ctx.shadowColor = '#ff3d00';
 
@@ -160,6 +164,7 @@ export class Torchwood extends Defender {
       ctx.quadraticCurveTo(cx + 22, cy - 32 - fireWiggle1, cx + 16, cy - 15);
       ctx.closePath();
       ctx.fill();
+      ctx.shadowBlur = 0;
 
       // Secondary Tongue (Left curl)
       ctx.fillStyle = 'rgba(255, 145, 0, 0.7)';

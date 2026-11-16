@@ -1,12 +1,12 @@
 :root {
-  font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
   color: #f0f4f8;
 
   /* Typography */
-  --font-heading: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-subheading: 'Outfit', 'Inter', system-ui, sans-serif;
-  --font-ui: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-heading: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-subheading: 'Outfit', system-ui, sans-serif;
+  --font-ui: 'Outfit', system-ui, sans-serif;
 
   /* Theme: Dark (Default Cosmic Realm) */
   --bg-overlay: rgba(6, 11, 20, 0.88);
@@ -131,7 +131,7 @@
   --modal-btn-aux-color: #e2e8f0;
 
   /* In-Game Sidebar & Top Bar Theming */
-  --sidebar-card-bg: linear-gradient(145deg, rgba(18, 28, 45, 0.82) 0%, rgba(10, 16, 28, 0.92) 100%);
+  --sidebar-card-bg: linear-gradient(145deg, rgba(18, 28, 45, 0.90) 0%, rgba(10, 16, 28, 0.96) 100%);
   --sidebar-card-border: rgba(56, 189, 248, 0.22);
   --sidebar-card-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --sidebar-card-name: #f0f9ff;
@@ -162,8 +162,7 @@
   --topbar-btn-hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 16px rgba(56, 189, 248, 0.45);
 }
 
-body[data-active-theme="light"],
-[data-active-theme="light"] {
+body[data-active-theme="light"] {
   --bg-overlay: rgba(240, 249, 255, 0.88);
   --panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.98) 100%);
   --panel-border: rgba(2, 132, 199, 0.45);
@@ -327,9 +326,7 @@ body[data-active-theme="light"],
 
   /* Top Right Action Buttons (Settings & Audio) - Frost & Celestial Ice Light */
   .top-action-buttons {
-    .runic-medallion-btn,
-    .settings-btn, 
-    .sound-toggle-btn {
+    .runic-medallion-btn {
       background: #ffffff;
       border: 2px solid var(--frost-ice-secondary);
       color: var(--frost-ice-secondary);
@@ -367,10 +364,7 @@ body[data-active-theme="light"],
   }
 
   /* Settings Modal (Light Mode Frost & Celestial Ice) */
-  #app-layout #settings-modal,
-  #app-layout .settings-modal,
-  #settings-modal,
-  .settings-modal {
+  #app-layout #settings-modal {
     .settings-modal-backdrop {
       background: rgba(15, 23, 42, 0.5);
       backdrop-filter: blur(12px);
@@ -1139,8 +1133,7 @@ body[data-active-theme="light"],
   }
 
   /* Incomplete Squad Warning Modal (Light Mode Contrast) */
-  #app-layout #squad-warning-modal,
-  #squad-warning-modal {
+  #app-layout #squad-warning-modal {
     .squad-warning-backdrop {
       background: rgba(30, 24, 16, 0.55);
       backdrop-filter: blur(12px);
@@ -1270,8 +1263,7 @@ body[data-active-theme="light"],
   }
 
   /* In-Game Battle Container */
-  #app-layout #game-container,
-  #game-container {
+  #app-layout #game-container {
     background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     border: none;
     box-shadow: none;
@@ -1325,8 +1317,7 @@ body[data-active-theme="light"],
         border-top-color: rgba(2, 132, 199, 0.28);
       }
 
-      #unit-selection,
-      #sidebar-shovel-dock {
+      :is(#unit-selection, #sidebar-shovel-dock) {
         .unit-card {
           border-color: rgba(2, 132, 199, 0.42);
           background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);
@@ -1583,41 +1574,6 @@ body[data-active-theme="light"],
     }
   }
 
-  /* Sunlit Realm Backgrounds for Light Mode */
-  &.theme-midgard {
-    background: radial-gradient(circle at 50% 30%, #e2f5ea 0%, #cdecd8 60%, #b3dfc4 100%);
-  }
-  &.theme-asgard {
-    background: radial-gradient(circle at 50% 20%, #fef8e7 0%, #fbedc7 60%, #f5dba3 100%);
-  }
-  &.theme-helheim {
-    background: radial-gradient(circle at 50% 80%, #e2e8f0 0%, #cbd5e1 60%, #94a3b8 100%);
-  }
-  &.theme-jotunheim {
-    background: radial-gradient(circle at 50% 30%, #e0f2fe 0%, #bae6fd 60%, #7dd3fc 100%);
-  }
-  &.theme-vanaheim {
-    background: radial-gradient(circle at 50% 40%, #dcfce7 0%, #bbf7d0 60%, #86efac 100%);
-  }
-  &.theme-alfheim {
-    background: radial-gradient(circle at 50% 30%, #fdf2f8 0%, #fce7f3 60%, #fbcfe8 100%);
-  }
-  &.theme-svartalfheim {
-    background: radial-gradient(circle at 50% 50%, #fef3c7 0%, #fde68a 60%, #e2d9c8 100%);
-  }
-  &.location-althjofs-wheel {
-    background: radial-gradient(circle at 50% 50%, #ccfbf1 0%, #99f6e4 60%, #cbd5e1 100%);
-  }
-  &.location-andvaris-falls {
-    background: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 60%, #cbd5e1 100%);
-  }
-  &.theme-niflheim {
-    background: radial-gradient(circle at 50% 70%, #f1f5f9 0%, #e2e8f0 60%, #cbd5e1 100%);
-  }
-  &.theme-muspelheim {
-    background: radial-gradient(circle at 50% 80%, #ffedd5 0%, #fed7aa 60%, #fdba74 100%);
-  }
-
   /* High-Contrast Category Badges and Role Pills in Light Theme */
   .section-badge,
   .section-plants .section-badge,
@@ -1662,35 +1618,6 @@ body[data-active-theme="light"],
     box-shadow: 0 0 10px rgba(202, 138, 4, 0.35) !important;
   }
 
-  .roster-card.is-currency-producer {
-    border: 2px solid #ca8a04 !important;
-    background: linear-gradient(145deg, #fffdf2 0%, #fefcf3 100%) !important;
-    box-shadow: 0 4px 16px rgba(202, 138, 4, 0.22), 0 0 0 1px rgba(202, 138, 4, 0.15) !important;
-
-    .card-icon-frame {
-      border-color: #ca8a04 !important;
-      background: radial-gradient(circle at 50% 38%, #fde68a 0%, #fcd34d 70%, #fbbf24 100%) !important;
-      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.75), 0 2px 8px rgba(202, 138, 4, 0.25) !important;
-    }
-
-    .currency-producer-cost {
-      background: #fef3c7 !important;
-      border-color: #ca8a04 !important;
-      color: #854d0e !important;
-      box-shadow: none !important;
-    }
-
-    &:hover:not(.disabled-cap) {
-      border-color: #b45309 !important;
-      box-shadow: 0 6px 20px rgba(202, 138, 4, 0.35) !important;
-    }
-
-    &.selected {
-      border-color: #b45309 !important;
-      box-shadow: 0 0 20px rgba(202, 138, 4, 0.45) !important;
-    }
-  }
-
   .currency-producer-badge-header {
     background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%) !important;
     border-color: #d97706 !important;
@@ -1732,10 +1659,7 @@ body[data-active-theme="light"],
     }
   }
   /* Defender Selection Modal (Light Mode - Celestial Frost & Marble) */
-  #app-layout #defender-modal,
-  #app-layout .defender-modal,
-  #defender-modal,
-  .defender-modal {
+  #app-layout #defender-modal {
     .defender-modal-content {
       background: linear-gradient(150deg, #ffffff 0%, #f8fafc 40%, #f0f9ff 100%) !important;
       border: 2px solid rgba(2, 132, 199, 0.5) !important;
@@ -2385,17 +2309,12 @@ body[data-active-theme="light"],
               }
             }
 
-            .aux-btn,
-            .aux-btn-best-mix,
-            .mix-presets-trigger-btn,
-            button {
+            :is(.aux-btn, .aux-btn-best-mix, .mix-presets-trigger-btn, button) {
               transform: none !important;
               box-shadow: none !important;
               margin: 0 !important;
 
-              &:hover,
-              &:focus,
-              &:active {
+              &:is(:hover, :focus, :active) {
                 transform: none !important;
                 box-shadow: none !important;
               }
@@ -2658,9 +2577,7 @@ body[data-active-theme="light"].theme-muspelheim {
     gap: 12px;
     z-index: 400;
 
-    .runic-medallion-btn,
-    .settings-btn, 
-    .sound-toggle-btn {
+    .runic-medallion-btn {
       position: relative;
       width: 48px;
       height: 48px;
@@ -2673,9 +2590,7 @@ body[data-active-theme="light"].theme-muspelheim {
       align-items: center;
       justify-content: center;
       box-shadow: var(--frost-box-shadow);
-      transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, color 0.28s ease;
       user-select: none;
       padding: 0;
 
@@ -2724,6 +2639,10 @@ body[data-active-theme="light"].theme-muspelheim {
         opacity: 0;
         animation: pulse-ring 3.5s infinite cubic-bezier(0.2, 0.8, 0.2, 1);
         pointer-events: none;
+      }
+
+      #app-layout:has(#game-container:not(.hidden)) & .settings-pulse {
+        animation: none;
       }
 
       &:hover {
@@ -4823,7 +4742,7 @@ body[data-active-theme="light"].theme-muspelheim {
         /* Professional Readable Defender Card - Carved Stone Tablet */
         .roster-card {
           position: relative;
-          background: linear-gradient(150deg, rgba(16, 26, 42, 0.88) 0%, rgba(9, 15, 25, 0.95) 100%);
+          background: linear-gradient(150deg, rgba(16, 26, 42, 0.94) 0%, rgba(9, 15, 25, 0.98) 100%);
           border: 1.5px solid rgba(56, 189, 248, 0.22);
           border-radius: 14px;
           padding: 10px 12px 12px 12px;
@@ -4833,8 +4752,7 @@ body[data-active-theme="light"].theme-muspelheim {
           display: flex;
           flex-direction: column;
           gap: 7px;
-          transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-          backdrop-filter: blur(6px);
+          transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, opacity 0.22s ease;
           outline: none;
           box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
@@ -5280,17 +5198,12 @@ body[data-active-theme="light"].theme-muspelheim {
             }
 
             // Ensure the two split parts always stay perfectly flush and aligned on hover, focus, active
-            .aux-btn,
-            .aux-btn-best-mix,
-            .mix-presets-trigger-btn,
-            button {
+            :is(.aux-btn, .aux-btn-best-mix, .mix-presets-trigger-btn, button) {
               transform: none !important;
               box-shadow: none !important;
               margin: 0;
 
-              &:hover,
-              &:focus,
-              &:active {
+              &:is(:hover, :focus, :active) {
                 transform: none !important;
                 box-shadow: none !important;
               }
@@ -5677,9 +5590,9 @@ body[data-active-theme="light"].theme-muspelheim {
   }
 
   @keyframes slotTokensPulse {
-    0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(56, 189, 248, 0)); }
-    50% { transform: scale(1.08); filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.8)); }
-    100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(56, 189, 248, 0)); }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); box-shadow: 0 0 14px rgba(56, 189, 248, 0.75); }
+    100% { transform: scale(1); }
   }
 
   @keyframes capacityAlertShake {
@@ -6029,11 +5942,9 @@ body[data-active-theme="light"].theme-muspelheim {
       user-select: none;
       padding: 10px 24px;
       border-radius: 18px;
-      background: linear-gradient(180deg, rgba(14, 23, 40, 0.95) 0%, rgba(8, 14, 26, 0.98) 100%);
+      background: linear-gradient(180deg, rgba(14, 23, 40, 0.97) 0%, rgba(8, 14, 26, 0.99) 100%);
       border: 2px solid var(--frost-ice-border);
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75), 0 0 24px var(--frost-ice-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
 
       .header-crest-wing {
         width: 54px;
@@ -6208,14 +6119,12 @@ body[data-active-theme="light"].theme-muspelheim {
     user-select: none;
 
     /* Ancient Nordic Obsidian & Frost Tablet */
-    background: linear-gradient(180deg, rgba(16, 28, 48, 0.96) 0%, rgba(9, 16, 28, 0.98) 100%);
+    background: linear-gradient(180deg, rgba(16, 28, 48, 0.97) 0%, rgba(9, 16, 28, 0.99) 100%);
     border: 1.6px solid var(--frost-ice-border);
     box-shadow:
       0 6px 18px rgba(0, 0, 0, 0.72),
       0 0 14px rgba(56, 189, 248, 0.22),
       inset 0 1px 0 rgba(255, 255, 255, 0.18);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     transition:
       transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
       background 0.25s ease,
@@ -6709,8 +6618,6 @@ body[data-active-theme="light"].theme-muspelheim {
     border: none;
     border-radius: 0;
     box-shadow: none;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
 
     /* Left Sidebar: Defenders & Shovel Only */
     #sidebar {
@@ -6753,8 +6660,7 @@ body[data-active-theme="light"].theme-muspelheim {
         }
       }
 
-      #unit-selection,
-      #sidebar-shovel-dock {
+      :is(#unit-selection, #sidebar-shovel-dock) {
         .unit-card {
           position: relative;
           box-sizing: border-box;
@@ -6767,14 +6673,13 @@ body[data-active-theme="light"].theme-muspelheim {
           box-shadow: var(--sidebar-card-shadow);
           cursor: pointer;
           user-select: none;
-          transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+          transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, opacity 0.22s ease;
           text-align: center;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           gap: 2px;
-          backdrop-filter: blur(6px);
 
           .hotkey-badge {
             position: absolute;
@@ -7207,11 +7112,6 @@ body[data-active-theme="light"].theme-muspelheim {
   100% { transform: scale(1.3); opacity: 0; }
 }
 
-@keyframes sun-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 @keyframes modal-appear {
   from {
     opacity: 0;
@@ -7220,22 +7120,6 @@ body[data-active-theme="light"].theme-muspelheim {
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes rotateCelestialRing {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes subtlePulse {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
-    border-color: #f59e0b;
-  }
-  50% {
-    box-shadow: 0 0 18px rgba(245, 158, 11, 0.55);
-    border-color: #fbbf24;
   }
 }
 

@@ -1,5 +1,6 @@
 import { SoundManager } from './SoundManager';
 import { t, getRatatoskrQuotes } from '../i18n';
+import { getEffectiveDpr } from './GameConfig';
 
 function sr(seed: number): number {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
@@ -74,6 +75,10 @@ export class MainMenu {
   motes: CosmicMote[] = [];
   waterRipples: { x: number; y: number; r: number; maxR: number; life: number }[] = [];
   built = false;
+  isPaused = false;
+  isActive = false;
+  private cachedWoodCanvas: HTMLCanvasElement | null = null;
+  private cachedWoodKey = '';
 
   // Ratatoskr (The Celestial Messenger Spirit Squirrel of Yggdrasil)
   ratatoskr = {
@@ -155,10 +160,11 @@ export class MainMenu {
 
   onMouseMove = (e: MouseEvent) => {
     if (this.transitioningRealm) return;
-    const rect = this.canvas.getBoundingClientRect();
-    this.mouseX = e.clientX - rect.left;
-    this.mouseY = e.clientY - rect.top;
-    const nx = this.mouseX / rect.width, ny = this.mouseY / rect.height;
+    const cw = this.canvas.clientWidth || 1;
+    const ch = this.canvas.clientHeight || 1;
+    this.mouseX = e.offsetX;
+    this.mouseY = e.offsetY;
+    const nx = this.mouseX / cw, ny = this.mouseY / ch;
 
     // Check if hovering over Ratatoskr
     const ratDist = Math.hypot(this.mouseX - this.ratatoskr.posX, this.mouseY - this.ratatoskr.posY);
@@ -192,9 +198,8 @@ export class MainMenu {
     if (this.transitioningRealm) return;
 
     if (e) {
-      const rect = this.canvas.getBoundingClientRect();
-      this.mouseX = e.clientX - rect.left;
-      this.mouseY = e.clientY - rect.top;
+      this.mouseX = e.offsetX;
+      this.mouseY = e.offsetY;
     }
 
     // Click Ratatoskr to cycle dialogue with a cheerful chirp
@@ -204,9 +209,10 @@ export class MainMenu {
       return;
     }
 
-    const rect = this.canvas.getBoundingClientRect();
-    const nx = this.mouseX / rect.width;
-    const ny = this.mouseY / rect.height;
+    const cw = this.canvas.clientWidth || 1;
+    const ch = this.canvas.clientHeight || 1;
+    const nx = this.mouseX / cw;
+    const ny = this.mouseY / ch;
 
     let targetRealm = this.hoveredRealm;
     if (!targetRealm) {
@@ -585,53 +591,68 @@ export class MainMenu {
   }
 
   // Draw ancient gnarled wood with bioluminescent Norse runic grain (Theme-Aware)
-  drawYggdrasilWood(time: number, isLight: boolean) {
+  drawYggdrasilWood(w: number, h: number, time: number, isLight: boolean) {
     const ctx = this.ctx;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
     const branches = this.sortedBranches;
+    const dpr = getEffectiveDpr();
+    const woodKey = `${dpr}|${w}|${h}|${isLight ? 1 : 0}`;
 
-    // 1. Deep Ancient Cold Ash Bark Silhouette
-    const barkOuter = isLight ? '#24160d' : '#100805';
-    const barkCore = isLight ? '#382013' : '#1e1109';
-    const barkRidge = isLight ? '#54301d' : '#331c10';
+    // 1. Deep Ancient Cold Ash Bark Silhouette (Cached to Offscreen Canvas)
+    if (!this.cachedWoodCanvas || this.cachedWoodKey !== woodKey) {
+      const off = document.createElement('canvas');
+      off.width = Math.max(1, Math.ceil(w * dpr));
+      off.height = Math.max(1, Math.ceil(h * dpr));
+      const octx = off.getContext('2d')!;
+      octx.scale(dpr, dpr);
+      octx.lineCap = 'round';
+      octx.lineJoin = 'round';
 
-    for (const br of branches) {
-      const avgW = (br.w1 + br.w2) * 0.5;
+      const barkOuter = isLight ? '#24160d' : '#100805';
+      const barkCore = isLight ? '#382013' : '#1e1109';
+      const barkRidge = isLight ? '#54301d' : '#331c10';
 
-      ctx.beginPath();
-      ctx.moveTo(br.x1, br.y1);
-      ctx.quadraticCurveTo(br.cx, br.cy, br.x2, br.y2);
-      ctx.lineWidth = avgW * 1.15;
-      ctx.strokeStyle = barkOuter;
-      ctx.stroke();
+      for (let i = 0; i < branches.length; i++) {
+        const br = branches[i];
+        const avgW = (br.w1 + br.w2) * 0.5;
 
-      ctx.beginPath();
-      ctx.moveTo(br.x1, br.y1);
-      ctx.quadraticCurveTo(br.cx, br.cy, br.x2, br.y2);
-      ctx.lineWidth = avgW * 0.75;
-      ctx.strokeStyle = barkCore;
-      ctx.stroke();
+        octx.beginPath();
+        octx.moveTo(br.x1, br.y1);
+        octx.quadraticCurveTo(br.cx, br.cy, br.x2, br.y2);
+        octx.lineWidth = avgW * 1.15;
+        octx.strokeStyle = barkOuter;
+        octx.stroke();
 
-      // Ancient woodgrain ridge
-      ctx.beginPath();
-      ctx.moveTo(br.x1, br.y1);
-      ctx.quadraticCurveTo(br.cx - avgW * 0.12, br.cy, br.x2, br.y2);
-      ctx.lineWidth = Math.max(1.0, avgW * 0.22);
-      ctx.strokeStyle = barkRidge;
-      ctx.stroke();
+        octx.beginPath();
+        octx.moveTo(br.x1, br.y1);
+        octx.quadraticCurveTo(br.cx, br.cy, br.x2, br.y2);
+        octx.lineWidth = avgW * 0.75;
+        octx.strokeStyle = barkCore;
+        octx.stroke();
 
-      // Fimbulwinter crystalline rime frost lining along the upper bark surface
-      if (!br.isRoot && avgW > 4) {
-        ctx.beginPath();
-        ctx.moveTo(br.x1, br.y1 - avgW * 0.38);
-        ctx.quadraticCurveTo(br.cx, br.cy - avgW * 0.38, br.x2, br.y2 - avgW * 0.38);
-        ctx.lineWidth = Math.max(1.0, avgW * 0.14);
-        ctx.strokeStyle = isLight ? 'rgba(255, 255, 255, 0.72)' : 'rgba(224, 242, 254, 0.38)';
-        ctx.stroke();
+        octx.beginPath();
+        octx.moveTo(br.x1, br.y1);
+        octx.quadraticCurveTo(br.cx - avgW * 0.12, br.cy, br.x2, br.y2);
+        octx.lineWidth = Math.max(1.0, avgW * 0.22);
+        octx.strokeStyle = barkRidge;
+        octx.stroke();
+
+        if (!br.isRoot && avgW > 4) {
+          octx.beginPath();
+          octx.moveTo(br.x1, br.y1 - avgW * 0.38);
+          octx.quadraticCurveTo(br.cx, br.cy - avgW * 0.38, br.x2, br.y2 - avgW * 0.38);
+          octx.lineWidth = Math.max(1.0, avgW * 0.14);
+          octx.strokeStyle = isLight ? 'rgba(255, 255, 255, 0.72)' : 'rgba(224, 242, 254, 0.38)';
+          octx.stroke();
+        }
       }
+      this.cachedWoodCanvas = off;
+      this.cachedWoodKey = woodKey;
     }
+
+    ctx.drawImage(this.cachedWoodCanvas, 0, 0, w, h);
 
     // 2. Living Defiant Celestial Sap Veins (Resisting Fimbulwinter's Frozen Grasp)
     ctx.save();
@@ -684,21 +705,28 @@ export class MainMenu {
     ctx.restore();
   }
 
-  // Draw natural lush leaves along twigs (Ultra-Fast 60fps Single-Color-Set Batched Fills)
+  // Draw natural lush leaves along twigs (True Single-Color-Set Batched Fills: 5 fills instead of 3,160)
   drawLushLeaves(time: number, isLight: boolean) {
     const ctx = this.ctx;
     ctx.save();
     ctx.globalAlpha = isLight ? 0.92 : 0.88;
 
-    for (const batch of this.leafBatches) {
+    const branches = this.branches;
+    const bLen = branches.length;
+    const tau = Math.PI * 2;
+    for (let bi = 0; bi < this.leafBatches.length; bi++) {
+      const batch = this.leafBatches[bi];
       ctx.fillStyle = isLight ? batch.colorLight : batch.colorDark;
-      for (const lf of batch.leaves) {
-        const ph = lf.branchIdx >= 0 && lf.branchIdx < this.branches.length ? this.branches[lf.branchIdx].hover : 0;
-        const sway = Math.sin(time * 1.8 + lf.x) * 2.5 + ph * 4;
-        ctx.beginPath();
-        ctx.ellipse(lf.x + sway, lf.y, lf.rx, lf.ry, lf.rot, 0, Math.PI * 2);
-        ctx.fill();
+      ctx.beginPath();
+      const leaves = batch.leaves;
+      for (let li = 0; li < leaves.length; li++) {
+        const lf = leaves[li];
+        const ph = lf.branchIdx >= 0 && lf.branchIdx < bLen ? branches[lf.branchIdx].hover : 0;
+        const lx = lf.x + Math.sin(time * 1.8 + lf.x) * 2.5 + ph * 4;
+        ctx.moveTo(lx + Math.cos(lf.rot) * lf.rx, lf.y + Math.sin(lf.rot) * lf.rx);
+        ctx.ellipse(lx, lf.y, lf.rx, lf.ry, lf.rot, 0, tau);
       }
+      ctx.fill();
     }
     ctx.restore();
   }
@@ -824,6 +852,7 @@ export class MainMenu {
       ctx.shadowColor = 'rgba(253, 224, 71, 0.6)';
       ctx.shadowBlur = 6;
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // Shackle
       ctx.beginPath();
@@ -1579,7 +1608,11 @@ export class MainMenu {
     const time = Date.now() / 1000;
     const isLight = document.body.dataset.activeTheme === 'light';
 
-    if (!this.built) this.buildTree(w, h);
+    if (!this.built) {
+      this.cachedWoodCanvas = null;
+      this.cachedWoodKey = '';
+      this.buildTree(w, h);
+    }
 
     // Parallax
     const targetPX = this.mouseX > 0 ? (this.mouseX - w / 2) * 0.02 : 0;
@@ -1588,14 +1621,25 @@ export class MainMenu {
     this.parallaxY += (targetPY - this.parallaxY) * 0.05;
 
     // Hover detection for branches
-    for (const br of this.branches) {
-      const midX = (br.x1 + br.x2) * 0.5;
-      const midY = (br.y1 + br.y2) * 0.5;
-      const d = Math.hypot(this.mouseX - midX, this.mouseY - midY);
-      const thresh = 65 + br.w1;
-      const target = d < thresh ? (1 - d / thresh) : 0;
-      br.hover += (target - br.hover) * 0.4;
-      if (br.hover < 0.001) br.hover = 0;
+    const mouseInside = this.mouseX >= 0 && this.mouseY >= 0;
+    for (let i = 0; i < this.branches.length; i++) {
+      const br = this.branches[i];
+      let target = 0;
+      if (mouseInside) {
+        const midX = (br.x1 + br.x2) * 0.5;
+        const midY = (br.y1 + br.y2) * 0.5;
+        const thresh = 65 + br.w1;
+        const dx = this.mouseX - midX;
+        const dy = this.mouseY - midY;
+        if (Math.abs(dx) < thresh && Math.abs(dy) < thresh) {
+          const d = Math.hypot(dx, dy);
+          if (d < thresh) target = 1 - d / thresh;
+        }
+      }
+      if (target !== 0 || br.hover !== 0) {
+        br.hover += (target - br.hover) * 0.4;
+        if (br.hover < 0.001) br.hover = 0;
+      }
     }
 
     // === 1. ATMOSPHERIC SKY & AURORA BOREALIS ===
@@ -1611,7 +1655,7 @@ export class MainMenu {
     this.drawLushLeaves(time, isLight);
 
     // === 5. ANCIENT YGGDRASIL TREE STRUCTURE ===
-    this.drawYggdrasilWood(time, isLight);
+    this.drawYggdrasilWood(w, h, time, isLight);
 
     // === 6. TARGETED BIFROST SAP SURGES ===
     this.drawTargetedBifrostSurge(time, isLight);
@@ -1670,12 +1714,30 @@ export class MainMenu {
   }
 
   loop = () => {
+    if (!this.isActive || this.isPaused) return;
     this.draw();
+    if (this.isActive && !this.isPaused) {
+      this.animationId = requestAnimationFrame(this.loop);
+    }
+  }
+
+  pause() {
+    if (!this.isActive || this.isPaused) return;
+    this.isPaused = true;
+    cancelAnimationFrame(this.animationId);
+  }
+
+  resume() {
+    if (!this.isActive || !this.isPaused) return;
+    this.isPaused = false;
+    cancelAnimationFrame(this.animationId);
     this.animationId = requestAnimationFrame(this.loop);
   }
 
   start() {
     this.built = false;
+    this.isActive = true;
+    this.isPaused = false;
     this.transitioningRealm = null;
     this.transitionTimer = 0;
     cancelAnimationFrame(this.animationId);
@@ -1683,6 +1745,10 @@ export class MainMenu {
   }
 
   stop() {
+    this.isActive = false;
+    this.isPaused = false;
+    this.cachedWoodCanvas = null;
+    this.cachedWoodKey = '';
     cancelAnimationFrame(this.animationId);
   }
 }

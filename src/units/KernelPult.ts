@@ -41,9 +41,9 @@ export class KernelPult extends Defender {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    this.drawWithTransform(ctx, () => {
-      const cx = this.x + this.width / 2;
-      const cy = this.y + this.height / 2;
+    this.drawWithTransform(ctx, (ctx) => {
+      const cx = this.x + this.width * 0.5;
+      const cy = this.y + this.height * 0.5;
 
       // --- Ground Shadow ---
       ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
