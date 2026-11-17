@@ -128,6 +128,10 @@ export class DefenderSelectionModal {
   private selected: string[] = [];
   private limit: number = 4;
   private activeWorldFilter: 'all' | WorldId = 'all';
+  private cachedGridSignature: string = '';
+  private cachedSectionEls: HTMLElement[] = [];
+  private cachedCardEntries: { card: HTMLElement; badge: HTMLElement | null; unitId: string }[] = [];
+  private tokenIconCache = new Map<string, string>();
 
   constructor() {
     this.modalEl = document.getElementById('defender-modal');
@@ -864,10 +868,8 @@ export class DefenderSelectionModal {
     if (!this.gridEl) return;
     const isFull = this.selected.length >= this.limit;
     const currentRealm = this.currentOptions?.realm || 'midgard';
-    const cards = this.gridEl.querySelectorAll<HTMLElement>('.roster-card');
-    cards.forEach(card => {
-      const unitId = card.dataset.unit;
-      if (!unitId) return;
+    for (let i = 0; i < this.cachedCardEntries.length; i++) {
+      const { card, badge, unitId } = this.cachedCardEntries[i];
       const idx = this.selected.findIndex(id => this.isSameDefender(id, unitId));
       const isSelected = idx !== -1;
       const isAllowed = isDefenderAllowedInRealm(unitId, currentRealm);
@@ -876,7 +878,6 @@ export class DefenderSelectionModal {
       card.classList.toggle('selected', isSelected);
       card.classList.toggle('disabled-cap', isDisabled);
 
-      const badge = card.querySelector<HTMLElement>('.card-slot-badge');
       if (badge) {
         if (isSelected) {
           badge.textContent = `#${idx + 1}`;
@@ -885,7 +886,7 @@ export class DefenderSelectionModal {
           badge.style.display = 'none';
         }
       }
-    });
+    }
   }
 
   private render() {
@@ -1084,7 +1085,14 @@ export class DefenderSelectionModal {
       const unitId = this.selected[i];
       const currentRealm = this.currentOptions?.realm || 'midgard';
       if (unitId && (DEFENDERS_MAP[unitId] || unitId === 'sunflower' || unitId.startsWith('sunflower_'))) {
-        const unit = getDefenderInfo(unitId, currentRealm) || DEFENDERS_MAP[unitId];
+        const unit = getRawDefenderInfo(unitId, currentRealm) || DEFENDERS_MAP[unitId];
+        const iconKey = `${currentRealm}|${unitId}|slot${i}`;
+        let tokenIcon = this.tokenIconCache.get(iconKey);
+        if (!tokenIcon) {
+          const scopedUnit = getDefenderInfo(unitId, currentRealm) || DEFENDERS_MAP[unitId];
+          tokenIcon = scopedUnit.icon;
+          this.tokenIconCache.set(iconKey, tokenIcon);
+        }
         const isCurrency = isCurrencyProducer(unit);
         const categoryLabel = isCurrency
           ? (t('cat_economy_title') || 'Economy')
@@ -1096,7 +1104,7 @@ export class DefenderSelectionModal {
         token.title = `${unit.name} (${worldName} · ${categoryLabel}) — ${t('clickToRemove')}`;
         token.style.borderColor = isCurrency ? '#ffd700' : worldMeta.badgeBorder;
         token.innerHTML = `
-          <span class="token-icon">${unit.icon}</span>
+          <span class="token-icon">${tokenIcon}</span>
           ${isCurrency ? `<span class="token-coin-pip" title="${t('producesCurrency') || 'Produces Currency'}">🪙</span>` : ''}
           <span class="slot-num">${i + 1}</span>
           <span class="token-remove-hint">✕</span>
@@ -1115,19 +1123,35 @@ export class DefenderSelectionModal {
 
   private renderGrid() {
     if (!this.gridEl) return;
-    this.gridEl.innerHTML = '';
     const isFull = this.selected.length >= this.limit;
     const currentRealm = this.currentOptions?.realm || 'midgard';
+    const mode = getForeignUnitsMode();
+    const lang = (typeof document !== 'undefined' && document.body?.dataset.lang) || 'en';
+    const limitedKey = mode === 'limited' ? getLimitedForeignWorlds().join(',') : '';
+    const gridSig = `${currentRealm}|${lang}|${mode}|${limitedKey}`;
+
+    // Fast path: reuse existing built <section> & SVG DOM nodes across tab switches and modal re-opens
+    if (this.cachedGridSignature === gridSig && this.cachedSectionEls.length > 0 && this.gridEl.children.length > 0) {
+      for (let i = 0; i < this.cachedSectionEls.length; i++) {
+        const sec = this.cachedSectionEls[i];
+        const hide = this.activeWorldFilter !== 'all' && sec.dataset.world !== this.activeWorldFilter;
+        sec.style.display = hide ? 'none' : '';
+      }
+      this.syncGridSelectionState();
+      return;
+    }
+
+    this.gridEl.innerHTML = '';
+    this.cachedGridSignature = gridSig;
+    this.cachedSectionEls = [];
+    this.cachedCardEntries = [];
 
     const unlockedGroups = getDefendersGroupedByWorld(currentRealm).filter(g =>
       this.isWorldUnlocked(g, currentRealm)
     );
-    const groupsToRender = this.activeWorldFilter === 'all'
-      ? unlockedGroups
-      : unlockedGroups.filter(g => g.world.id === this.activeWorldFilter);
-    const mode = getForeignUnitsMode();
+    const frag = document.createDocumentFragment();
 
-    groupsToRender.forEach(group => {
+    unlockedGroups.forEach(group => {
       const world = group.world;
       const units = group.defenders.filter(d => isDefenderAllowedInRealm(d.id, currentRealm));
       if (units.length === 0) return;
@@ -1138,6 +1162,10 @@ export class DefenderSelectionModal {
       if (isRealmLocked) return;
 
       const section = document.createElement('section');
+      section.dataset.world = world.id;
+      if (this.activeWorldFilter !== 'all' && world.id !== this.activeWorldFilter) {
+        section.style.display = 'none';
+      }
       section.className = `roster-section section-world section-${world.id} ${group.isHomeWorld ? 'is-home-realm' : ''} ${isRealmLocked ? 'is-foreign-restricted' : ''}`;
       section.style.setProperty('--world-accent', world.color);
       section.style.setProperty('--world-border', world.badgeBorder);
@@ -1282,11 +1310,19 @@ export class DefenderSelectionModal {
           }
         });
 
+        this.cachedCardEntries.push({
+          card,
+          badge: card.querySelector<HTMLElement>('.card-slot-badge'),
+          unitId: def.id
+        });
         cardsGrid.appendChild(card);
       });
 
       section.appendChild(cardsGrid);
-      this.gridEl?.appendChild(section);
+      this.cachedSectionEls.push(section);
+      frag.appendChild(section);
     });
+
+    this.gridEl.appendChild(frag);
   }
 }

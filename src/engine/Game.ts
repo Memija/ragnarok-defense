@@ -3936,29 +3936,23 @@ export class Game {
         ctx.fill();
 
         ctx.fillStyle = `rgba(204, 251, 241, ${0.9 * lFlicker})`;
-        ctx.shadowColor = '#2dd4bf';
-        ctx.shadowBlur = 10 * lFlicker;
         ctx.beginPath();
         ctx.arc(lt.x - 1, lt.y - 15, 4.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
       }
 
-      // 5. Carved Canal Water Runes Glow
+      // 5. Carved Canal Water Runes Glow (zero shadowBlur)
       const aRunes = ['ᚨ', 'ᛚ', 'ᛏ', '·', 'ᚲ', 'ᚨ', 'ᚾ', 'ᚨ', 'ᛚ'];
       ctx.font = 'bold 13px serif';
       ctx.textAlign = 'center';
       const runeGlow = 0.55 + Math.sin(time * 1.8) * 0.25;
       ctx.fillStyle = `rgba(45, 212, 191, ${runeGlow})`;
-      ctx.shadowColor = '#14b8a6';
-      ctx.shadowBlur = 8;
       const runeYStart = gateTop + 30;
       const runeSpacing = Math.min(26, (gateH - 60) / aRunes.length);
       const runeX = bastionLeft + 10;
       for (let ri = 0; ri < aRunes.length; ri++) {
         ctx.fillText(aRunes[ri], runeX, runeYStart + ri * runeSpacing);
       }
-      ctx.shadowBlur = 0;
       ctx.restore();
 
       // Hydraulic Defensive Canal Ram Launchers (Lane Defenses)
@@ -4107,33 +4101,29 @@ export class Game {
           ctx.lineWidth = 1.2;
           ctx.stroke();
 
-          // Dwarven Runic Harpoon / Canal Ram Prow
+          // Dwarven Runic Harpoon / Canal Ram Prow (batched path + halo stroke, zero shadowBlur)
           ctx.fillStyle = '#0f172a';
           ctx.fillRect(18, -3, 20, 6);
           const spearHeadX = 38;
-          ctx.fillStyle = '#2dd4bf';
-          ctx.shadowColor = '#14b8a6';
-          ctx.shadowBlur = 8;
           ctx.beginPath();
           ctx.moveTo(spearHeadX, -6.5);
           ctx.lineTo(spearHeadX + 11, 0);
           ctx.lineTo(spearHeadX, 6.5);
           ctx.lineTo(spearHeadX + 3, 0);
           ctx.closePath();
-          ctx.fill();
-          ctx.beginPath();
           ctx.moveTo(spearHeadX - 4, -8.5);
           ctx.lineTo(spearHeadX + 4, -4);
           ctx.lineTo(spearHeadX - 2, -3);
           ctx.closePath();
-          ctx.fill();
-          ctx.beginPath();
           ctx.moveTo(spearHeadX - 4, 8.5);
           ctx.lineTo(spearHeadX + 4, 4);
           ctx.lineTo(spearHeadX - 2, 3);
           ctx.closePath();
+          ctx.strokeStyle = 'rgba(20, 184, 166, 0.35)';
+          ctx.lineWidth = 4.5;
+          ctx.stroke();
+          ctx.fillStyle = '#2dd4bf';
           ctx.fill();
-          ctx.shadowBlur = 0;
 
           const sFoam = ctx.createRadialGradient(26, 0, 1, 26, 0, 14);
           sFoam.addColorStop(0, 'rgba(240, 253, 250, 0.9)');
@@ -4161,13 +4151,10 @@ export class Game {
           ctx.stroke();
 
           ctx.fillStyle = '#2dd4bf';
-          ctx.shadowColor = '#14b8a6';
-          ctx.shadowBlur = 6;
           ctx.font = 'bold 9px serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText('ᛏ', -6, 0);
-          ctx.shadowBlur = 0;
         } else {
           ctx.fillStyle = isLight ? '#f1f5f9' : '#0f172a';
           ctx.beginPath();
@@ -5973,18 +5960,15 @@ export class Game {
       de.attacker.draw(ctx);
       ctx.restore();
 
-      // Rising Norse soul-wisp banishment mote
+      // Rising Norse soul-wisp banishment mote (pre-baked sprite, zero shadowBlur)
       const wispAlpha = Math.max(0, (1 - p) * 0.85);
       if (wispAlpha > 0.02) {
+        const sprite = this.getMoteSprite(de.soulColor, de.soulColor, 10);
+        const driftX = de.soulX + Math.sin(de.timer * 0.018) * 5;
+        const sz = 36 * (3.6 * (1 - p * 0.4)) / 4;
         ctx.save();
         ctx.globalAlpha = wispAlpha;
-        ctx.fillStyle = de.soulColor;
-        ctx.shadowColor = de.soulColor;
-        ctx.shadowBlur = 10;
-        const driftX = de.soulX + Math.sin(de.timer * 0.018) * 5;
-        ctx.beginPath();
-        ctx.arc(driftX, de.soulY, 3.6 * (1 - p * 0.4), 0, Math.PI * 2);
-        ctx.fill();
+        ctx.drawImage(sprite, driftX - sz * 0.5, de.soulY - sz * 0.5, sz, sz);
         ctx.restore();
       }
     }

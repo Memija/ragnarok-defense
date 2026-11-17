@@ -130,10 +130,6 @@ export class ShieldwallDraugr extends Attacker {
 
     // Glowing Algiz (ᛉ) Ward Rune painted above boss
     c.save();
-    c.strokeStyle = integrity > 0.35 ? '#38bdf8' : '#7dd3fc';
-    c.shadowColor = '#0284c7';
-    c.shadowBlur = 6;
-    c.lineWidth = 1.7;
     c.lineCap = 'round';
     c.beginPath();
     c.moveTo(-1, -9);
@@ -142,6 +138,11 @@ export class ShieldwallDraugr extends Attacker {
     c.lineTo(-5.5, -18.5);
     c.moveTo(-1, -14);
     c.lineTo(3.5, -18.5);
+    c.strokeStyle = 'rgba(2, 132, 199, 0.32)';
+    c.lineWidth = 4.6;
+    c.stroke();
+    c.strokeStyle = integrity > 0.35 ? '#38bdf8' : '#7dd3fc';
+    c.lineWidth = 1.7;
     c.stroke();
     c.restore();
 
@@ -268,9 +269,12 @@ export class ShieldwallDraugr extends Attacker {
 
       // Glowing Frost-Cyan Draugr Eyes
       c.save();
+      c.fillStyle = 'rgba(14, 165, 233, 0.30)';
+      c.beginPath();
+      c.arc(headX - 6.5, headY + 1.5, 4.2, 0, Math.PI * 2);
+      c.arc(headX - 1.2, headY + 1.5, 4.4, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#38bdf8';
-      c.shadowColor = '#0ea5e9';
-      c.shadowBlur = 7;
       c.beginPath();
       c.arc(headX - 6.5, headY + 1.5, 1.9, 0, Math.PI * 2);
       c.arc(headX - 1.2, headY + 1.5, 2.1, 0, Math.PI * 2);

@@ -287,10 +287,13 @@ export class BasicZombie extends Attacker {
       c.ellipse(headX - 0.5, headY - 1.5, 3.6, 3.0, 0.08, 0, Math.PI * 2);
       c.fill();
 
-      // Blazing Cyan Helheim Soul-Fire Eyes + Trailing Wisp
+      // Blazing Cyan Helheim Soul-Fire Eyes + Trailing Wisp (layered glow, zero shadowBlur)
       c.save();
-      c.shadowColor = '#00e5ff';
-      c.shadowBlur = 10;
+      c.fillStyle = 'rgba(0, 229, 255, 0.28)';
+      c.beginPath();
+      c.arc(headX - 8.8, headY - 1.5, 4.8, 0, Math.PI * 2);
+      c.arc(headX - 0.8, headY - 1.5, 5.2, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#38bdf8';
       c.beginPath();
       c.arc(headX - 8.8, headY - 1.5, 2.2, 0, Math.PI * 2);
@@ -458,13 +461,14 @@ export class BasicZombie extends Attacker {
       if (pose.slashAlpha > 0.04) {
         c.save();
         c.globalAlpha = pose.slashAlpha * 0.85;
-        c.strokeStyle = '#7dd3fc';
-        c.shadowColor = '#00e5ff';
-        c.shadowBlur = 10;
-        c.lineWidth = 3.2;
         c.lineCap = 'round';
         c.beginPath();
         c.arc(cx - 6, cy - 2, 24, Math.PI * 0.72, Math.PI * 1.32);
+        c.strokeStyle = 'rgba(0, 229, 255, 0.34)';
+        c.lineWidth = 7.5;
+        c.stroke();
+        c.strokeStyle = '#7dd3fc';
+        c.lineWidth = 3.2;
         c.stroke();
 
         c.strokeStyle = '#ffffff';

@@ -180,14 +180,6 @@ export class DraugrJarl extends Attacker {
     // Glowing Elder Futhark war-rune etched into the Dane-axe cheek
     const pulse = 0.65 + Math.sin(animT / 140) * 0.25;
     c.save();
-    c.strokeStyle = enragedGlow
-      ? `rgba(239, 68, 68, ${Math.min(1, pulse + 0.2)})`
-      : `rgba(251, 191, 36, ${pulse})`;
-    if (enragedGlow) {
-      c.shadowColor = '#ef4444';
-      c.shadowBlur = 9;
-    }
-    c.lineWidth = 1.4;
     c.beginPath();
     c.moveTo(-13, -38);
     c.lineTo(-13, -24);
@@ -195,6 +187,15 @@ export class DraugrJarl extends Attacker {
     c.lineTo(-18, -31);
     c.moveTo(-13, -30);
     c.lineTo(-17.5, -26);
+    if (enragedGlow) {
+      c.strokeStyle = 'rgba(239, 68, 68, 0.34)';
+      c.lineWidth = 4.6;
+      c.stroke();
+    }
+    c.strokeStyle = enragedGlow
+      ? `rgba(239, 68, 68, ${Math.min(1, pulse + 0.2)})`
+      : `rgba(251, 191, 36, ${pulse})`;
+    c.lineWidth = 1.4;
     c.stroke();
     c.restore();
   }
@@ -358,10 +359,6 @@ export class DraugrJarl extends Attacker {
       } else {
         // Shattered plate exposing blazing crimson-gold undead warlord rib-hearth!
         c.save();
-        c.shadowColor = '#ef4444';
-        c.shadowBlur = 10;
-        c.strokeStyle = '#fb923c';
-        c.lineWidth = 1.8;
         c.beginPath();
         c.moveTo(cx - 10, bodyY - 5);
         c.lineTo(cx + 6, bodyY - 3);
@@ -369,6 +366,11 @@ export class DraugrJarl extends Attacker {
         c.lineTo(cx + 7, bodyY + 3);
         c.moveTo(cx - 9, bodyY + 7);
         c.lineTo(cx + 5, bodyY + 8);
+        c.strokeStyle = 'rgba(239, 68, 68, 0.34)';
+        c.lineWidth = 5.2;
+        c.stroke();
+        c.strokeStyle = '#fb923c';
+        c.lineWidth = 1.8;
         c.stroke();
         c.restore();
       }
@@ -439,8 +441,11 @@ export class DraugrJarl extends Attacker {
 
       // Blazing Warlord Eyes (amber-gold while armored, raging crimson when plate shatters)
       c.save();
-      c.shadowColor = this.enraged ? '#ef4444' : '#f59e0b';
-      c.shadowBlur = 10;
+      c.fillStyle = this.enraged ? 'rgba(239, 68, 68, 0.32)' : 'rgba(245, 158, 11, 0.30)';
+      c.beginPath();
+      c.arc(headX - 5.5, headY - 1, 5.0, 0, Math.PI * 2);
+      c.arc(headX + 2, headY - 1, 5.2, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = this.enraged ? '#fca5a5' : '#fef08a';
       c.beginPath();
       c.arc(headX - 5.5, headY - 1, 2.3, 0, Math.PI * 2);

@@ -94,17 +94,11 @@ export class Torchwood extends Defender {
       ctx.moveTo(cx - 12, cy - 1); ctx.lineTo(cx + 12, cy - 1);
       ctx.stroke();
 
-      // --- 3. Glowing Flame Runes on the Column (ᚲ - Kaunan / Fire) ---
+      // --- 3. Glowing Flame Runes on the Column (ᚲ - Kaunan / Fire, zero shadowBlur) ---
       const runeFlicker = 0.7 + Math.sin(this.animTimer / 90) * 0.3;
       ctx.save();
-      ctx.shadowBlur = 12 * runeFlicker;
-      ctx.shadowColor = '#ff5722';
-      ctx.strokeStyle = `rgba(255, 183, 77, ${0.8 + runeFlicker * 0.2})`;
-      ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-
-      // Kaunan flame rune symbol
       ctx.beginPath();
       ctx.moveTo(cx - 1, cy - 4);
       ctx.lineTo(cx - 1, cy + 14);
@@ -112,6 +106,11 @@ export class Torchwood extends Defender {
       ctx.lineTo(cx + 6, cy);
       ctx.moveTo(cx - 1, cy + 5);
       ctx.lineTo(cx + 6, cy + 10);
+      ctx.strokeStyle = `rgba(255, 87, 34, ${0.34 * runeFlicker})`;
+      ctx.lineWidth = 6;
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(255, 183, 77, ${0.8 + runeFlicker * 0.2})`;
+      ctx.lineWidth = 2;
       ctx.stroke();
       ctx.restore();
 
@@ -146,9 +145,11 @@ export class Torchwood extends Defender {
       const firePulse = Math.sin(this.animTimer / 110) * 4;
 
       ctx.save();
-      // Radiant heat aura (applied to outer flame silhouette only)
-      ctx.shadowBlur = 22;
-      ctx.shadowColor = '#ff3d00';
+      // Radiant heat aura (soft radial glow, zero shadowBlur)
+      ctx.fillStyle = 'rgba(255, 61, 0, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 28, 25, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
 
       // Outer Red/Orange Flame Body
       const fireGrad = ctx.createRadialGradient(cx, cy - 22, 4, cx, cy - 30, 26);
@@ -164,7 +165,6 @@ export class Torchwood extends Defender {
       ctx.quadraticCurveTo(cx + 22, cy - 32 - fireWiggle1, cx + 16, cy - 15);
       ctx.closePath();
       ctx.fill();
-      ctx.shadowBlur = 0;
 
       // Secondary Tongue (Left curl)
       ctx.fillStyle = 'rgba(255, 145, 0, 0.7)';

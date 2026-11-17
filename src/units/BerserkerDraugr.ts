@@ -221,17 +221,18 @@ export class BerserkerDraugr extends Attacker {
 
       // Crimson Woad War-Paint Stripes (ignite orange-red in Blood-Rage!)
       c.save();
-      c.strokeStyle = this.enraged ? '#fb923c' : '#b91c1c';
-      if (this.enraged) {
-        c.shadowColor = '#ef4444';
-        c.shadowBlur = 9;
-      }
-      c.lineWidth = 2.2;
       c.beginPath();
       c.moveTo(cx - 9, torsoY + 4);
       c.lineTo(cx + 3, torsoY + 17);
       c.moveTo(cx + 4, torsoY + 4);
       c.lineTo(cx - 8, torsoY + 17);
+      if (this.enraged) {
+        c.strokeStyle = 'rgba(239, 68, 68, 0.34)';
+        c.lineWidth = 5.5;
+        c.stroke();
+      }
+      c.strokeStyle = this.enraged ? '#fb923c' : '#b91c1c';
+      c.lineWidth = 2.2;
       c.stroke();
       c.restore();
 
@@ -285,8 +286,11 @@ export class BerserkerDraugr extends Attacker {
 
       // Blazing Berserker Eyes
       c.save();
-      c.shadowColor = this.enraged ? '#ff1744' : '#f97316';
-      c.shadowBlur = this.enraged ? 14 : 9;
+      c.fillStyle = this.enraged ? 'rgba(255, 23, 68, 0.34)' : 'rgba(249, 115, 22, 0.28)';
+      c.beginPath();
+      c.arc(headX - 8.2, headY - 1, this.enraged ? 5.6 : 4.8, 0, Math.PI * 2);
+      c.arc(headX - 0.5, headY - 1, this.enraged ? 5.8 : 5.0, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = this.enraged ? '#ff5252' : '#fb923c';
       c.beginPath();
       c.arc(headX - 8.2, headY - 1, 2.4, 0, Math.PI * 2);
@@ -379,13 +383,14 @@ export class BerserkerDraugr extends Attacker {
       if (pose.slashAlpha > 0.04) {
         c.save();
         c.globalAlpha = pose.slashAlpha * 0.9;
-        c.strokeStyle = this.enraged ? '#fb923c' : '#f87171';
-        c.shadowColor = '#ef4444';
-        c.shadowBlur = 13;
-        c.lineWidth = 3.6;
         c.lineCap = 'round';
         c.beginPath();
         c.arc(cx - 7, cy - 2, 25, Math.PI * 0.68, Math.PI * 1.34);
+        c.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+        c.lineWidth = 8.5;
+        c.stroke();
+        c.strokeStyle = this.enraged ? '#fb923c' : '#f87171';
+        c.lineWidth = 3.6;
         c.stroke();
 
         c.strokeStyle = '#fef2f2';

@@ -195,14 +195,14 @@ export class PeaShooter extends Defender {
       // Glowing Emerald Energy Orb charging inside the bore
       if (chargeRatio > 0.25) {
         const orbAlpha = (chargeRatio - 0.25) / 0.75;
-        ctx.save();
+        ctx.fillStyle = `rgba(74, 222, 128, ${orbAlpha * 0.32})`;
+        ctx.beginPath();
+        ctx.arc(headX + 22, headY, 4.5 + orbAlpha * 3.0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = `rgba(134, 239, 172, ${orbAlpha * 0.92})`;
-        ctx.shadowColor = '#4ade80';
-        ctx.shadowBlur = 9 * orbAlpha;
         ctx.beginPath();
         ctx.arc(headX + 22, headY, 2.2 + orbAlpha * 2.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
       }
 
       // 8. Expressive Fierce Eye & Brow

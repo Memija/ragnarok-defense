@@ -273,8 +273,10 @@ export class FenrirRaider extends Attacker {
 
       // Blazing Ice-Emerald Fenrir Eye & Spectral Trail
       c.save();
-      c.shadowColor = '#2dd4bf';
-      c.shadowBlur = 10;
+      c.fillStyle = 'rgba(45, 212, 191, 0.30)';
+      c.beginPath();
+      c.ellipse(headX - 4.5, headY - 3.5, 5.8, 4.2, -0.2, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#5eead4';
       c.beginPath();
       c.ellipse(headX - 4.5, headY - 3.5, 3.0, 2.0, -0.2, 0, Math.PI * 2);
@@ -296,14 +298,15 @@ export class FenrirRaider extends Attacker {
       if (pose.slashAlpha > 0.04) {
         c.save();
         c.globalAlpha = pose.slashAlpha * 0.9;
-        c.strokeStyle = '#2dd4bf';
-        c.shadowColor = '#14b8a6';
-        c.shadowBlur = 10;
         c.lineCap = 'round';
         for (let r = 0; r < 2; r++) {
-          c.lineWidth = 2.6 - r * 0.6;
           c.beginPath();
           c.arc(headX - 10, headY + 2 + r * 5, 16, Math.PI * 0.72, Math.PI * 1.28);
+          c.strokeStyle = 'rgba(20, 184, 166, 0.34)';
+          c.lineWidth = 6.2 - r * 1.2;
+          c.stroke();
+          c.strokeStyle = '#2dd4bf';
+          c.lineWidth = 2.6 - r * 0.6;
           c.stroke();
         }
         c.restore();

@@ -226,8 +226,11 @@ export class ConeheadZombie extends Attacker {
       c.fill();
 
       c.save();
-      c.shadowColor = '#f59e0b';
-      c.shadowBlur = 12;
+      c.fillStyle = 'rgba(245, 158, 11, 0.30)';
+      c.beginPath();
+      c.arc(headX - 8.8, headY - 1.5, 5.0, 0, Math.PI * 2);
+      c.arc(headX - 0.8, headY - 1.5, 5.4, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#fbbf24';
       c.beginPath();
       c.arc(headX - 8.8, headY - 1.5, 2.3, 0, Math.PI * 2);
@@ -301,8 +304,6 @@ export class ConeheadZombie extends Attacker {
         // Glowing Tyr Rune (ᛏ) on Cone Front
         c.save();
         c.fillStyle = `rgba(254, 240, 138, ${0.55 + armorIntegrity * 0.4})`;
-        c.shadowColor = '#f59e0b';
-        c.shadowBlur = 6;
         c.font = 'bold 9px serif';
         c.textAlign = 'center';
         c.fillText('ᛏ', headX - 3, headY - 11);
@@ -449,13 +450,14 @@ export class ConeheadZombie extends Attacker {
       if (pose.slashAlpha > 0.04) {
         c.save();
         c.globalAlpha = pose.slashAlpha * 0.88;
-        c.strokeStyle = '#fbbf24';
-        c.shadowColor = '#f59e0b';
-        c.shadowBlur = 12;
-        c.lineWidth = 3.6;
         c.lineCap = 'round';
         c.beginPath();
         c.arc(cx - 6, cy - 2, 24, Math.PI * 0.72, Math.PI * 1.3);
+        c.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+        c.lineWidth = 8.5;
+        c.stroke();
+        c.strokeStyle = '#fbbf24';
+        c.lineWidth = 3.6;
         c.stroke();
         c.restore();
       }

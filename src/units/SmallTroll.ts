@@ -256,8 +256,11 @@ export class SmallTroll extends Attacker {
 
       // Glowing Feral Sulfur-Yellow Slit Eyes + Furrowed Brow
       c.save();
-      c.shadowColor = '#eab308';
-      c.shadowBlur = 9;
+      c.fillStyle = 'rgba(234, 179, 8, 0.28)';
+      c.beginPath();
+      c.ellipse(headX - 7, headY - 2, 5.0, 5.4, -0.15, 0, Math.PI * 2);
+      c.ellipse(headX + 0.5, headY - 2, 5.4, 5.6, -0.1, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#fde047';
       c.beginPath();
       c.ellipse(headX - 7, headY - 2, 2.6, 3.0, -0.15, 0, Math.PI * 2);
@@ -354,13 +357,14 @@ export class SmallTroll extends Attacker {
       if (pose.slashAlpha > 0.04) {
         c.save();
         c.globalAlpha = pose.slashAlpha * 0.85;
-        c.strokeStyle = '#bef264';
-        c.shadowColor = '#eab308';
-        c.shadowBlur = 10;
-        c.lineWidth = 3.2;
         c.lineCap = 'round';
         c.beginPath();
         c.arc(cx - 8, cy, 22, Math.PI * 0.72, Math.PI * 1.3);
+        c.strokeStyle = 'rgba(234, 179, 8, 0.34)';
+        c.lineWidth = 7.5;
+        c.stroke();
+        c.strokeStyle = '#bef264';
+        c.lineWidth = 3.2;
         c.stroke();
         c.restore();
       }

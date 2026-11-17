@@ -270,10 +270,6 @@ export class JotunnFrostbreaker extends Attacker {
       // Glowing Cyan Elder-Rune Chest Fissures
       const runeGlow = 0.4 + frostFury * 0.5 + Math.sin(animT / 170) * 0.1;
       c.save();
-      c.strokeStyle = `rgba(224, 242, 254, ${runeGlow})`;
-      c.shadowColor = '#38bdf8';
-      c.shadowBlur = 8 + frostFury * 6;
-      c.lineWidth = 1.7;
       c.beginPath();
       c.moveTo(cx - 8, bodyY - 8);
       c.lineTo(cx - 8, bodyY + 13);
@@ -282,6 +278,11 @@ export class JotunnFrostbreaker extends Attacker {
       c.moveTo(cx + 6, bodyY - 6);
       c.lineTo(cx + 2, bodyY + 4);
       c.lineTo(cx + 9, bodyY + 11);
+      c.strokeStyle = `rgba(56, 189, 248, ${0.26 + frostFury * 0.16})`;
+      c.lineWidth = 5.2;
+      c.stroke();
+      c.strokeStyle = `rgba(224, 242, 254, ${runeGlow})`;
+      c.lineWidth = 1.7;
       c.stroke();
       c.restore();
 
@@ -380,8 +381,11 @@ export class JotunnFrostbreaker extends Attacker {
 
       // Piercing White-Cyan Glacial Eyes
       c.save();
-      c.shadowColor = '#38bdf8';
-      c.shadowBlur = 11;
+      c.fillStyle = 'rgba(56, 189, 248, 0.32)';
+      c.beginPath();
+      c.ellipse(headX - 8.5, headY - 1.5, 6.2, 4.8, -0.08, 0, Math.PI * 2);
+      c.ellipse(headX + 1.5, headY - 1.5, 6.4, 5.0, 0.08, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#f0f9ff';
       c.beginPath();
       c.ellipse(headX - 8.5, headY - 1.5, 3.1, 2.4, -0.08, 0, Math.PI * 2);

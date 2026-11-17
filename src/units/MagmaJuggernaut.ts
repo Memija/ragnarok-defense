@@ -122,9 +122,6 @@ export class MagmaJuggernaut extends Attacker {
 
     // Incandescent Magma Strike-Face & Lava Fissures
     c.save();
-    c.fillStyle = `rgba(251, 146, 60, ${0.8 + corePulse * 0.2})`;
-    c.shadowColor = '#ea580c';
-    c.shadowBlur = 9;
     c.beginPath();
     c.moveTo(-21, -46);
     c.lineTo(-25, -38);
@@ -133,6 +130,10 @@ export class MagmaJuggernaut extends Attacker {
     c.lineTo(-18, -38);
     c.lineTo(-16, -43);
     c.closePath();
+    c.strokeStyle = 'rgba(234, 88, 12, 0.38)';
+    c.lineWidth = 4.5;
+    c.stroke();
+    c.fillStyle = `rgba(251, 146, 60, ${0.8 + corePulse * 0.2})`;
     c.fill();
 
     // Surtr forge-rune glowing in center of hammer block
@@ -259,17 +260,15 @@ export class MagmaJuggernaut extends Attacker {
       c.fill();
       c.stroke();
 
-      // Blazing Molten Furnace Core in Center of Chest
+      // Blazing Molten Furnace Core in Center of Chest (radial gradient already provides soft falloff)
       c.save();
-      const coreR = 11.5 + corePulse * 1.4 + meltdown * 2;
+      const coreR = 14 + corePulse * 1.8 + meltdown * 3;
       const coreGrad = c.createRadialGradient(cx - 4, bodyY + 2, 1.5, cx - 4, bodyY + 2, coreR);
       coreGrad.addColorStop(0, '#fef9c3');
-      coreGrad.addColorStop(0.4, '#fb923c');
-      coreGrad.addColorStop(0.8, '#dc2626');
+      coreGrad.addColorStop(0.35, '#fb923c');
+      coreGrad.addColorStop(0.72, '#dc2626');
       coreGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');
       c.fillStyle = coreGrad;
-      c.shadowColor = '#f97316';
-      c.shadowBlur = 12 + meltdown * 8;
       c.beginPath();
       c.arc(cx - 4, bodyY + 2, coreR, 0, Math.PI * 2);
       c.fill();
@@ -375,16 +374,17 @@ export class MagmaJuggernaut extends Attacker {
 
       // Piercing White-Hot Visor Slit Eyes
       c.save();
-      c.shadowColor = '#fb923c';
-      c.shadowBlur = 11;
+      c.fillStyle = 'rgba(251, 146, 60, 0.34)';
+      c.beginPath();
+      c.ellipse(headX - 8.5, headY - 2.5, 6.2, 3.4, 0, 0, Math.PI * 2);
+      c.ellipse(headX + 5.5, headY - 2.5, 6.2, 3.4, 0, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#fef08a';
       c.beginPath();
       c.moveTo(headX - 12, headY - 4);
       c.lineTo(headX - 4, headY - 2.5);
       c.lineTo(headX - 11, headY - 1);
       c.closePath();
-      c.fill();
-      c.beginPath();
       c.moveTo(headX + 9, headY - 4);
       c.lineTo(headX + 1, headY - 2.5);
       c.lineTo(headX + 8, headY - 1);

@@ -288,16 +288,20 @@ export class FlameDrake extends Attacker {
       c.fill();
       c.stroke();
 
-      // Glowing magma chest/belly scutes
+      // Glowing magma chest/belly scutes (batched path, zero shadowBlur)
       c.save();
-      c.fillStyle = '#fb923c';
-      c.shadowColor = '#ea580c';
-      c.shadowBlur = 6;
+      c.beginPath();
       for (let s = 0; s < 4; s++) {
-        c.beginPath();
-        c.ellipse(bodyX - 11 + s * 6, bodyY + 7.5 - s * 0.7, 3.2, 1.9, -0.2, 0, Math.PI * 2);
-        c.fill();
+        const sx = bodyX - 11 + s * 6;
+        const sy = bodyY + 7.5 - s * 0.7;
+        c.moveTo(sx + 3.2, sy);
+        c.ellipse(sx, sy, 3.2, 1.9, -0.2, 0, Math.PI * 2);
       }
+      c.strokeStyle = 'rgba(234, 88, 12, 0.35)';
+      c.lineWidth = 3.5;
+      c.stroke();
+      c.fillStyle = '#fb923c';
+      c.fill();
       c.restore();
 
       // Dorsal obsidian spines along back
@@ -436,9 +440,11 @@ export class FlameDrake extends Attacker {
 
       // Blazing Molten-Gold Slit Eye
       c.save();
+      c.fillStyle = 'rgba(249, 115, 22, 0.32)';
+      c.beginPath();
+      c.ellipse(-3.5, -2.2, 5.2, 3.6, -0.15, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#fef08a';
-      c.shadowColor = '#f97316';
-      c.shadowBlur = 8;
       c.beginPath();
       c.ellipse(-3.5, -2.2, 2.7, 1.8, -0.15, 0, Math.PI * 2);
       c.fill();

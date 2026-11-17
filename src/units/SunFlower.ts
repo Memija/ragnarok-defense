@@ -155,11 +155,16 @@ export class SunFlower extends Defender {
     ctx.ellipse(cx + 14, cy + 14, 12, 6, 0.4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Solar Petal Halo
+    // Solar Petal Halo (soft radial glow, zero shadowBlur)
     const headX = cx + sway;
     const headY = cy - 10;
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = currency.color;
+    ctx.save();
+    ctx.globalAlpha = 0.24;
+    ctx.fillStyle = currency.color;
+    ctx.beginPath();
+    ctx.arc(headX, headY, 33, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
     ctx.fillStyle = '#fde047';
 
     const numPetals = 10;
@@ -173,7 +178,6 @@ export class SunFlower extends Defender {
       ctx.ellipse(px, py, 11, 7, angle, 0, Math.PI * 2);
     }
     ctx.fill();
-    ctx.shadowBlur = 0;
 
     // Brown Sun-Heart Center Disk
     ctx.fillStyle = '#854d0e';
@@ -207,7 +211,7 @@ export class SunFlower extends Defender {
   // ═════════════════════════════════════════════════════════════
   // 2. ASGARD: Draupnir Font (Divine Relic Tower)
   // ═════════════════════════════════════════════════════════════
-  private drawAsgard(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, currency: RealmCurrency) {
+  private drawAsgard(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, _currency: RealmCurrency) {
     // Stepped Marble & Gold Altar Pedestal
     ctx.fillStyle = '#f8fafc';
     ctx.strokeStyle = '#eab308';
@@ -223,14 +227,15 @@ export class SunFlower extends Defender {
     ctx.strokeRect(cx - 12, cy + 6, 24, 20);
 
     // Glowing Golden Fehu Rune ᚠ
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.25)';
+    ctx.beginPath();
+    ctx.arc(cx, cy + 16, 7.5, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#fbbf24';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#f59e0b';
     ctx.font = 'bold 12px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('ᚠ', cx, cy + 16);
-    ctx.shadowBlur = 0;
 
     // Gilded Font Basin
     ctx.fillStyle = '#fef08a';
@@ -249,8 +254,11 @@ export class SunFlower extends Defender {
     const ringY = cy - 18 + Math.sin(t * 2) * 3;
     const ringScaleX = 14 + Math.sin(t * 3) * 2;
     ctx.save();
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = currency.color;
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.28)';
+    ctx.lineWidth = 8.5;
+    ctx.beginPath();
+    ctx.ellipse(cx, ringY, ringScaleX, 8, 0, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.strokeStyle = '#fde047';
     ctx.lineWidth = 3.5;
     ctx.beginPath();
@@ -278,7 +286,7 @@ export class SunFlower extends Defender {
   // ═════════════════════════════════════════════════════════════
   // 3. SVARTALFHEIM: Forge Bellows (Dwarven Tower)
   // ═════════════════════════════════════════════════════════════
-  private drawSvartalfheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, currency: RealmCurrency) {
+  private drawSvartalfheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, _currency: RealmCurrency) {
     // Heavy Dwarven Basalt Furnace Chassis
     ctx.fillStyle = '#334155';
     ctx.strokeStyle = '#1e293b';
@@ -293,11 +301,17 @@ export class SunFlower extends Defender {
     ctx.fillRect(cx - 22, cy + 4, 44, 3);
     ctx.fillRect(cx - 22, cy + 30, 44, 3);
 
-    // Glowing Molten Fire Hearth Arch
+    // Glowing Molten Fire Hearth Arch (layered glow, zero shadowBlur)
     const heatPulse = (Math.sin(t * 5) + 1) / 2;
     ctx.save();
-    ctx.shadowBlur = 16 + heatPulse * 8;
-    ctx.shadowColor = currency.color;
+    ctx.fillStyle = `rgba(249, 115, 22, ${0.24 + heatPulse * 0.16})`;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 23, 15 + heatPulse * 3, Math.PI, 0, false);
+    ctx.lineTo(cx + 15, cy + 32);
+    ctx.lineTo(cx - 15, cy + 32);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.fillStyle = '#ea580c';
     ctx.beginPath();
     ctx.arc(cx, cy + 22, 10, Math.PI, 0, false);
@@ -305,7 +319,6 @@ export class SunFlower extends Defender {
     ctx.lineTo(cx - 10, cy + 30);
     ctx.closePath();
     ctx.fill();
-    ctx.shadowBlur = 0;
 
     ctx.fillStyle = '#fde047';
     ctx.beginPath();
@@ -470,7 +483,7 @@ export class SunFlower extends Defender {
   // ═════════════════════════════════════════════════════════════
   // 5. VANAHEIM: Amber Sapling (Sacred Flora)
   // ═════════════════════════════════════════════════════════════
-  private drawVanaheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, currency: RealmCurrency) {
+  private drawVanaheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, _currency: RealmCurrency) {
     const sway = Math.sin(t * 1.8) * 2;
 
     // Twisting Golden Tree Trunk
@@ -509,8 +522,10 @@ export class SunFlower extends Defender {
     const dripPhase = (t * 1.5) % 1;
     const tearY = cy - 4 + dripPhase * 24;
     ctx.save();
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = currency.color;
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.28)';
+    ctx.beginPath();
+    ctx.arc(cx + sway, tearY + 5, 7.5, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
     ctx.moveTo(cx + sway, tearY);
@@ -529,7 +544,7 @@ export class SunFlower extends Defender {
   // ═════════════════════════════════════════════════════════════
   // 6. JÖTUNHEIM: Rime Geyser (Glacial Tower)
   // ═════════════════════════════════════════════════════════════
-  private drawJotunheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, currency: RealmCurrency) {
+  private drawJotunheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, _currency: RealmCurrency) {
     // Jagged Craggy Ice Base
     ctx.fillStyle = '#0891b2';
     ctx.strokeStyle = '#155e75';
@@ -545,8 +560,10 @@ export class SunFlower extends Defender {
 
     // Chiseled Glacial Ice Monolith Spire
     ctx.save();
-    ctx.shadowBlur = 16;
-    ctx.shadowColor = currency.color;
+    ctx.fillStyle = 'rgba(34, 211, 238, 0.22)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 2, 20, 30, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#22d3ee';
     ctx.beginPath();
     ctx.moveTo(cx - 14, cy + 24);
@@ -589,7 +606,7 @@ export class SunFlower extends Defender {
   // ═════════════════════════════════════════════════════════════
   // 7. NIFLHEIM: Hvergelmir Well (Primordial Shrine)
   // ═════════════════════════════════════════════════════════════
-  private drawNiflheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, currency: RealmCurrency) {
+  private drawNiflheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, _currency: RealmCurrency) {
     // Ancient Slate Stone Basin
     ctx.fillStyle = '#334155';
     ctx.strokeStyle = '#0f172a';
@@ -625,8 +642,10 @@ export class SunFlower extends Defender {
     // Overflowing Cascading Mist
     const mistWave = Math.sin(t * 2) * 2;
     ctx.save();
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = currency.color;
+    ctx.fillStyle = 'rgba(103, 232, 249, 0.22)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 11, 25 + mistWave, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = 'rgba(207, 250, 254, 0.75)';
     ctx.beginPath();
     ctx.ellipse(cx, cy + 10, 20 + mistWave, 5.5, 0, 0, Math.PI * 2);
@@ -643,8 +662,10 @@ export class SunFlower extends Defender {
     // Levitating Mist Crystal Vapor Orb
     const orbY = cy - 8 + Math.sin(t * 1.8) * 3;
     ctx.save();
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = currency.color;
+    ctx.fillStyle = 'rgba(103, 232, 249, 0.25)';
+    ctx.beginPath();
+    ctx.arc(cx, orbY, 15, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = 'rgba(165, 243, 252, 0.9)';
     ctx.beginPath();
     ctx.arc(cx, orbY, 9, 0, Math.PI * 2);
@@ -660,7 +681,7 @@ export class SunFlower extends Defender {
   // ═════════════════════════════════════════════════════════════
   // 8. MUSPELHEIM: Magma Font (Volcanic Tower)
   // ═════════════════════════════════════════════════════════════
-  private drawMuspelheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, currency: RealmCurrency) {
+  private drawMuspelheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, _currency: RealmCurrency) {
     // Volcanic Basalt Pedestal Base
     ctx.fillStyle = '#1c1917';
     ctx.strokeStyle = '#450a0a';
@@ -699,8 +720,10 @@ export class SunFlower extends Defender {
     // Dancing Fire Flames leaping upward
     const flameY = cy + 16;
     ctx.save();
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = currency.color;
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.22)';
+    ctx.beginPath();
+    ctx.ellipse(cx + 1, flameY - 12, 22, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#f97316';
 
     const f1 = Math.sin(t * 8) * 3;
@@ -723,7 +746,6 @@ export class SunFlower extends Defender {
     ctx.quadraticCurveTo(cx + 16, flameY - 10, cx + 18, flameY);
     ctx.closePath();
     ctx.fill();
-    ctx.shadowBlur = 0;
 
     // Bright yellow inner core flame
     ctx.fillStyle = '#fde047';
@@ -739,7 +761,7 @@ export class SunFlower extends Defender {
   // ═════════════════════════════════════════════════════════════
   // 9. HELHEIM: Soul Beacon (Necrotic Tower)
   // ═════════════════════════════════════════════════════════════
-  private drawHelheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, currency: RealmCurrency) {
+  private drawHelheim(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number, _currency: RealmCurrency) {
     // Tombstone Base
     ctx.fillStyle = '#1e293b';
     ctx.strokeStyle = '#0f172a';
@@ -791,10 +813,12 @@ export class SunFlower extends Defender {
 
     // Dancing Violet Soul Flame inside cage
     ctx.save();
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = currency.color;
-    ctx.fillStyle = '#c084fc';
     const flameFlicker = Math.sin(t * 6) * 1.5;
+    ctx.fillStyle = 'rgba(192, 132, 252, 0.26)';
+    ctx.beginPath();
+    ctx.ellipse(cx + flameFlicker * 0.5, cy + 2, 10, 13 + flameFlicker, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#c084fc';
     ctx.beginPath();
     ctx.ellipse(cx + flameFlicker * 0.5, cy + 2, 4.5, 7 + flameFlicker, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -809,12 +833,13 @@ export class SunFlower extends Defender {
     const wispAngle = t * 2.5;
     const wx = cx + Math.cos(wispAngle) * 18;
     const wy = cy - 2 + Math.sin(wispAngle * 1.5) * 8;
-    ctx.fillStyle = 'rgba(216, 180, 254, 0.8)';
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = '#c084fc';
+    ctx.fillStyle = 'rgba(192, 132, 252, 0.28)';
+    ctx.beginPath();
+    ctx.arc(wx, wy, 5.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(216, 180, 254, 0.85)';
     ctx.beginPath();
     ctx.arc(wx, wy, 2.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
   }
 }

@@ -132,10 +132,12 @@ export class SnowPea extends Defender {
         ctx.stroke();
       }
 
-      // 6. Crystalline Frost Sprite Head (Luminous Glacial Sphere with Facets)
+      // 6. Crystalline Frost Sprite Head (Luminous Glacial Sphere with Facets, zero shadowBlur)
       ctx.save();
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 12 + chargeRatio * 8;
+      ctx.fillStyle = `rgba(56, 189, 248, ${0.20 + chargeRatio * 0.14})`;
+      ctx.beginPath();
+      ctx.ellipse(headX - 2, headY, 21 + chargeRatio * 2.5, 19.5 + chargeRatio * 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
       const bodyGrad = ctx.createRadialGradient(headX - 6, headY - 6, 2, headX - 2, headY, 18);
       bodyGrad.addColorStop(0, '#ffffff');
       bodyGrad.addColorStop(0.32, '#bae6fd');
@@ -201,14 +203,14 @@ export class SnowPea extends Defender {
       // Charging Frost Shard Core inside Muzzle
       if (chargeRatio > 0.2) {
         const frostAlpha = (chargeRatio - 0.2) / 0.8;
-        ctx.save();
+        ctx.fillStyle = `rgba(56, 189, 248, ${frostAlpha * 0.35})`;
+        ctx.beginPath();
+        ctx.arc(headX + 22, headY, 4.8 + frostAlpha * 3.2, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = `rgba(224, 242, 254, ${frostAlpha * 0.95})`;
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 10 * frostAlpha;
         ctx.beginPath();
         ctx.arc(headX + 22, headY, 2.2 + frostAlpha * 2.4, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
       }
 
       // 8. Piercing Luminous Ice Eye

@@ -224,14 +224,14 @@ export class Repeater extends Defender {
         // Charging emerald plasma in both barrels
         if (chargeRatio > 0.3 || this.isFiringSecond) {
           const glowA = this.isFiringSecond ? 1 : (chargeRatio - 0.3) / 0.7;
-          ctx.save();
+          ctx.fillStyle = `rgba(74, 222, 128, ${glowA * 0.32})`;
+          ctx.beginPath();
+          ctx.arc(bx + 12, by, 3.8 + glowA * 2.4, 0, Math.PI * 2);
+          ctx.fill();
           ctx.fillStyle = `rgba(134, 239, 172, ${glowA * 0.9})`;
-          ctx.shadowColor = '#4ade80';
-          ctx.shadowBlur = 7 * glowA;
           ctx.beginPath();
           ctx.arc(bx + 12, by, 1.8 + glowA * 1.8, 0, Math.PI * 2);
           ctx.fill();
-          ctx.restore();
         }
       }
 

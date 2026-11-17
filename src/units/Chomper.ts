@@ -136,14 +136,14 @@ export class Chomper extends Defender {
         ctx.fill();
 
         // Glowing Helheim Soul Lure Orb inside throat
-        ctx.save();
+        ctx.fillStyle = 'rgba(232, 121, 249, 0.28)';
+        ctx.beginPath();
+        ctx.arc(headX + 1, headY, 6.8, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = '#f5d0fe';
-        ctx.shadowColor = '#e879f9';
-        ctx.shadowBlur = 10;
         ctx.beginPath();
         ctx.arc(headX + 1, headY, 3.2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
 
         // Upper Jaw Hood
         const jawGrad = ctx.createLinearGradient(headX - 18, headY - 22, headX + 22, headY + 18);
@@ -235,8 +235,10 @@ export class Chomper extends Defender {
         bulbGrad.addColorStop(1, '#1e0236');
 
         ctx.save();
-        ctx.shadowColor = '#a855f7';
-        ctx.shadowBlur = 12;
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(headX + 1, headY, pulseRx + 4, pulseRy + 4, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = bulbGrad;
         ctx.strokeStyle = '#1e0236';
         ctx.lineWidth = 1.7;

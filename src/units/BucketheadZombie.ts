@@ -231,8 +231,9 @@ export class BucketheadZombie extends Attacker {
 
         // Blazing Crimson Juggernaut Eyes Inside Visor + Red Glare Trail
         c.save();
-        c.shadowColor = '#ef4444';
-        c.shadowBlur = 13;
+        c.fillStyle = 'rgba(239, 68, 68, 0.32)';
+        c.fillRect(headX - 14.5, headY - 6.0, 8.8, 6.0);
+        c.fillRect(headX - 3.5, headY - 6.0, 9.2, 6.0);
         c.fillStyle = '#f87171';
         c.fillRect(headX - 12.5, headY - 4.4, 4.8, 2.8);
         c.fillRect(headX - 1.5, headY - 4.4, 5.2, 2.8);
@@ -314,8 +315,11 @@ export class BucketheadZombie extends Attacker {
 
         // Blazing Crimson Unmasked Eyes
         c.save();
-        c.shadowColor = '#ef4444';
-        c.shadowBlur = 14;
+        c.fillStyle = 'rgba(239, 68, 68, 0.32)';
+        c.beginPath();
+        c.arc(headX - 8.5, headY - 2, 5.8, 0, Math.PI * 2);
+        c.arc(headX - 0.5, headY - 2, 6.2, 0, Math.PI * 2);
+        c.fill();
         c.fillStyle = '#ef4444';
         c.beginPath();
         c.arc(headX - 8.5, headY - 2, 2.7, 0, Math.PI * 2);
@@ -429,13 +433,14 @@ export class BucketheadZombie extends Attacker {
       if (pose.slashAlpha > 0.04) {
         c.save();
         c.globalAlpha = pose.slashAlpha * 0.9;
-        c.strokeStyle = '#ef4444';
-        c.shadowColor = '#dc2626';
-        c.shadowBlur = 14;
-        c.lineWidth = 4.2;
         c.lineCap = 'round';
         c.beginPath();
         c.arc(cx - 7, cy - 2, 26, Math.PI * 0.7, Math.PI * 1.34);
+        c.strokeStyle = 'rgba(220, 38, 38, 0.35)';
+        c.lineWidth = 9.5;
+        c.stroke();
+        c.strokeStyle = '#ef4444';
+        c.lineWidth = 4.2;
         c.stroke();
 
         c.strokeStyle = '#fecaca';

@@ -181,12 +181,6 @@ export class Troll extends Attacker {
       // Glowing Jötunn Chest Rune Fissures (blaze hotter as damaged!)
       const runeGlowAlpha = 0.28 + rageRatio * 0.65 + Math.sin(animT / 180) * 0.08;
       c.save();
-      c.strokeStyle = `rgba(251, 191, 36, ${runeGlowAlpha})`;
-      if (rageRatio > 0.15) {
-        c.shadowColor = '#f59e0b';
-        c.shadowBlur = 10 * rageRatio;
-      }
-      c.lineWidth = 1.6 + rageRatio * 0.8;
       c.beginPath();
       c.moveTo(cx - 14, bodyY - 4);
       c.lineTo(cx - 7, bodyY + 4);
@@ -194,6 +188,13 @@ export class Troll extends Attacker {
       c.moveTo(cx + 4, bodyY - 6);
       c.lineTo(cx + 1, bodyY + 5);
       c.lineTo(cx + 9, bodyY + 11);
+      if (rageRatio > 0.15) {
+        c.strokeStyle = `rgba(245, 158, 11, ${0.32 * rageRatio})`;
+        c.lineWidth = 5.5;
+        c.stroke();
+      }
+      c.strokeStyle = `rgba(251, 191, 36, ${runeGlowAlpha})`;
+      c.lineWidth = 1.6 + rageRatio * 0.8;
       c.stroke();
       c.restore();
 
@@ -301,8 +302,11 @@ export class Troll extends Attacker {
 
       // Piercing Molten Amber-Crimson Jötunn Eyes
       c.save();
-      c.shadowColor = '#f59e0b';
-      c.shadowBlur = 12;
+      c.fillStyle = 'rgba(245, 158, 11, 0.30)';
+      c.beginPath();
+      c.ellipse(headX - 11, headY - 1, 6.8, 5.6, -0.1, 0, Math.PI * 2);
+      c.ellipse(headX + 1.5, headY - 1, 7.2, 5.8, 0.08, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = '#fbbf24';
       c.beginPath();
       c.ellipse(headX - 11, headY - 1, 3.4, 2.8, -0.1, 0, Math.PI * 2);
@@ -344,9 +348,11 @@ export class Troll extends Attacker {
 
       // Glowing Forehead Elder Rune (ᚦ - Thurisaz / Jötunn)
       c.save();
+      c.fillStyle = 'rgba(245, 158, 11, 0.25)';
+      c.beginPath();
+      c.arc(headX - 2, headY - 13, 6.5, 0, Math.PI * 2);
+      c.fill();
       c.fillStyle = `rgba(254, 240, 138, ${0.6 + rageRatio * 0.4})`;
-      c.shadowColor = '#f59e0b';
-      c.shadowBlur = 10;
       c.font = 'bold 12px serif';
       c.textAlign = 'center';
       c.fillText('ᚦ', headX - 2, headY - 10);
@@ -472,13 +478,14 @@ export class Troll extends Attacker {
       if (pose.slashAlpha > 0.04) {
         c.save();
         c.globalAlpha = pose.slashAlpha * 0.92;
-        c.strokeStyle = '#f59e0b';
-        c.shadowColor = '#ea580c';
-        c.shadowBlur = 16;
-        c.lineWidth = 5.2;
         c.lineCap = 'round';
         c.beginPath();
         c.arc(cx - 10, cy - 6, 36, Math.PI * 0.68, Math.PI * 1.32);
+        c.strokeStyle = 'rgba(234, 88, 12, 0.35)';
+        c.lineWidth = 11.5;
+        c.stroke();
+        c.strokeStyle = '#f59e0b';
+        c.lineWidth = 5.2;
         c.stroke();
 
         c.strokeStyle = '#fef08a';

@@ -204,9 +204,12 @@ export abstract class Entity {
     }
 
     if (needsSilhouetteOverlay && drawFn.length >= 1) {
-      const pad = this.width > 70 ? 54 : 38;
-      const boxW = this.width + pad * 2;
-      const boxH = this.height + pad * 2;
+      const isLarge = this.width > 70;
+      const padX = isLarge ? 42 : 28;
+      const padTop = isLarge ? 54 : 38;
+      const padBottom = 14;
+      const boxW = this.width + padX * 2;
+      const boxH = this.height + padTop + padBottom;
       const dpr = getEffectiveDpr();
       const pxW = Math.ceil(boxW * dpr);
       const pxH = Math.ceil(boxH * dpr);
@@ -219,7 +222,7 @@ export abstract class Entity {
         sctx.scale(dpr, dpr);
 
         sctx.save();
-        sctx.translate(pad - this.x, pad - this.y);
+        sctx.translate(padX - this.x, padTop - this.y);
         drawFn(sctx);
         sctx.restore();
 
@@ -243,7 +246,7 @@ export abstract class Entity {
         }
         sctx.globalCompositeOperation = 'source-over';
 
-        ctx.drawImage(scratch.canvas, 0, 0, pxW, pxH, this.x - pad, this.y - pad, boxW, boxH);
+        ctx.drawImage(scratch.canvas, 0, 0, pxW, pxH, this.x - padX, this.y - padTop, boxW, boxH);
       } else {
         drawFn(ctx);
       }

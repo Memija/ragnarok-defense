@@ -75,14 +75,14 @@ export class PotatoMine extends Defender {
 
         // Recessed Amber Charging Core
         const chargeFlash = (Math.sin(this.animTimer / 110) + 1) / 2;
-        ctx.save();
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#f59e0b';
+        ctx.fillStyle = `rgba(245, 158, 11, ${0.18 + chargeFlash * 0.22})`;
+        ctx.beginPath();
+        ctx.ellipse(cx, liftY - 2, 9.5, 4.8, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = `rgba(245, 158, 11, ${0.4 + chargeFlash * 0.55})`;
         ctx.beginPath();
         ctx.ellipse(cx, liftY - 2, 5.5, 2.5, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
       } else {
         // --- FULLY ARMED: Dwarven Forged Runic Pressure Mine ---
         const mineY = cy + 22;
@@ -90,12 +90,13 @@ export class PotatoMine extends Defender {
 
         // 1. Outer Crimson/Amber Proximity Ward Ring
         ctx.save();
-        ctx.shadowBlur = 14;
-        ctx.shadowColor = '#ef4444';
-        ctx.strokeStyle = `rgba(239, 68, 68, ${0.55 + dangerPulse * 0.45})`;
-        ctx.lineWidth = 1.6;
         ctx.beginPath();
         ctx.ellipse(cx, mineY + 4, 23, 8, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(239, 68, 68, ${0.18 + dangerPulse * 0.2})`;
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(239, 68, 68, ${0.55 + dangerPulse * 0.45})`;
+        ctx.lineWidth = 1.6;
         ctx.stroke();
         ctx.restore();
 
@@ -142,10 +143,6 @@ export class PotatoMine extends Defender {
 
         // 5. Glowing Magma Vent Seams on the Dome
         ctx.save();
-        ctx.shadowBlur = 10 + dangerPulse * 6;
-        ctx.shadowColor = '#ef4444';
-        ctx.strokeStyle = '#f97316';
-        ctx.lineWidth = 1.6;
         ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(cx - 11, mineY - 2);
@@ -154,8 +151,12 @@ export class PotatoMine extends Defender {
         ctx.lineTo(cx + 5, mineY - 5);
         ctx.moveTo(cx, mineY + 4);
         ctx.lineTo(cx, mineY - 1);
+        ctx.strokeStyle = `rgba(239, 68, 68, ${0.28 + dangerPulse * 0.22})`;
+        ctx.lineWidth = 5;
         ctx.stroke();
-        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
 
         // 6. Central Volatile Magma-Crystal Pressure Plate & Beacon
         const coreGrad = ctx.createRadialGradient(cx, mineY - 7, 1, cx, mineY - 7, 7.5);
